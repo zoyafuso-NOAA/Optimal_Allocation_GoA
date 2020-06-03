@@ -1,62 +1,38 @@
 #################################
-## Optimization Data
+## Create dataset used for all optimization runs based on a 
+## Gulf of Alaska Multispecies Groundfish VAST Spatiotemporal Operating Model
 #################################
 rm(list = ls())
 
 ###############################
 ## Import required packages
 ###############################
-library(VAST);  library(mvtnorm); library(sp); library(RColorBrewer); 
-library(raster)
-library(memoise); library(doParallel); library(foreach); library(iterators); 
-library(parallel); library(pbapply); library(formattable)
-
+library(SamplingStrata)
 
 ###############################
 ## Set up directories
 ###############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3, 'VM' = 4)[2]
-optimization_type = c('_spatial', '')[1]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
 VAST_model = "6g"
 
-SamplingStrata_dir = paste0(c('', 
-                              'C:/Users/Zack Oyafuso',
-                              'C:/Users/zack.oyafuso',
-                              'C:/Users/zack.oyafuso')[which_machine],
-                            '/Downloads/SamplingStrata-master/R')
-github_dir = paste0(c('', 
+github_dir = paste0(c('/Users/zackoyafuso/Documents', 
                       'C:/Users/Zack Oyafuso/Documents',
                       'C:/Users/zack.oyafuso/Work',
                       'C:/Users/zack.oyafuso/Work')[which_machine],
-                    '/GitHub/MS_OM_GoA/Optimum_Allocation/')
+                    '/GitHub/Optimal_Allocation_GoA/')
 
-VAST_dir = paste0(c('', 
+VAST_dir = paste0(c('/Users/zackoyafuso/Google Drive/', 
                     'C:/Users/Zack Oyafuso/Google Drive/', 
                     'C:/Users/zack.oyafuso/Desktop/',
                     'C:/Users/zack.oyafuso/Desktop/')[which_machine],
-                  'VAST_Runs/VAST_output', VAST_model)
-
-
-output_wd = paste0(c('/Users/zackoyafuso/Documents/', 
-                     'C:/Users/Zack Oyafuso/Documents/',
-                     'C:/Users/zack.oyafuso/Work/', 
-                     'C:/Users/zack.oyafuso/Work/' )[which_machine], 
-                   "GitHub/MS_OM_GoA/Optimum_Allocation/model_", VAST_model,
-                   optimization_type)
-
-#########################
-## Load functions from SamplingStrata packages into global environment
-## Load modified buildStrataDF function
-#########################
-for(ifile in dir(SamplingStrata_dir, full.names = T)) source(ifile)
-source(paste0(github_dir, '/buildStrataDF_Zack.R'))
+                  'VAST_Runs/VAST_output', VAST_model, '/')
 
 #########################
 ## Load VAST products
 #########################
 load(paste0(VAST_dir, '/VAST_MS_GoA_Run.RData'))
 load(paste0(VAST_dir, '/Spatial_Settings.RData'))
-load(paste0(dirname(github_dir), '/Extrapolation_depths.RData'))
+load(paste0(github_dir, 'data/Extrapolation_depths.RData'))
 
 #########################
 ## Index years that had data
@@ -110,14 +86,35 @@ frame_raw <- buildFrameDF(df = df_raw,
                           Y = gsub(x = Save$Spp, pattern = ' ', replacement = '_'),
                           domainvalue = "Domain")
 
+#################
+# true density
+#################
 ns = Save$TmbData$n_c
+N = nrow(frame)
+sci_names = c("Atheresthes stomias", "Gadus chalcogrammus", 
+              "Gadus macrocephalus", "Glyptocephalus zachirus" , 
+              "Hippoglossoides elassodon", "Hippoglossus stenolepis", 
+              "Lepidopsetta bilineata", "Lepidopsetta polyxystra", 
+              "Limanda aspera", "Microstomus pacificus",
+              "Sebastes alutus", "Sebastes B_R", "Sebastes polyspinis", 
+              "Sebastes variabilis", "Sebastolobus alascanus" )
+
+frame_raw$year = rep(1:NTime, each = N)
+stmt = paste0('aggregate(cbind(',
+              paste0('Y', 1:(ns-1), sep = ',', collapse = ''), 'Y',ns, 
+              ") ~ year, data = frame_raw, FUN = mean)")
+true_mean = eval(parse(text = stmt))[,-1]
+colnames(true_mean) = sci_names
+
+
+############################
+## Save Data
+###########################
 
 rm(list = c('Save', 'Spatial_List', 'spp_df', 'strata.limits', 'fine_scale',
             'Method', 'modelno', 'n_x', 'which_spp', 'Year_Set', 
             'Years2Include', 'Data_Geostat', 'df', 'Extrapolation_List',
-            'gulf_of_alaska_grid', 'ifile', 'iT', 'df_raw'))
+            'gulf_of_alaska_grid', 'iT', 'df_raw'))
 
-save(list = c('Extrapolation_depths', 'frame', 
-              'frame_raw', 'ns', 'NTime'),
-     file = paste0(output_wd, '/optimization_data_model_', 
-            VAST_model, '.RData'))
+save(list = c('frame','frame_raw','true_mean','ns','NTime','N','sci_names'),
+     file = paste0(github_dir, 'data/optimization_data.RData'))
