@@ -7,32 +7,30 @@ rm(list = ls())
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3, 'VM' = 4)[2]
-modelno = "6g"
-optimization_type = c('_spatial', '_spatiotemporal')[2]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
 
-output_wd = paste0(c('/Users/zackoyafuso/Documents/', 
+github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                      'C:/Users/Zack Oyafuso/Documents/',
-                     'C:/Users/zack.oyafuso/Work/', 
-                     'C:/Users/zack.oyafuso/Work/' )[which_machine], 
-                   "GitHub/MS_OM_GoA/Optimum_Allocation/model_", modelno,
-                   optimization_type)
+                     'C:/Users/zack.oyafuso/Work/')[which_machine], 
+                   "GitHub/Optimal_Allocation_GoA/")
 
-load(paste0(output_wd, '/optimization_data_model_', modelno, '.RData'))
+load(paste0(github_dir, 'data/optimization_data.RData'))
 
 ####################
 ## Data objects
 ####################
-master_res_df = data.frame(id = 1:nrow(frame))
+master_res_df = data.frame(id = 1:N)
 master_settings = data.frame()
 master_strata_list = list()
 
-for(ifile in dir(github_dir, pattern = 'strata', full.names = TRUE)){
+for(ifile in dir(paste0(github_dir, 'Spatiotemporal_Optimization/'), pattern = 'strata', full.names = TRUE)){
         
         #Load object
         load(ifile)
         
-        istrata = gsub(ifile, pattern = paste0(github_dir,'/optimization_'), 
+        istrata = gsub(ifile, pattern = paste0(github_dir,
+                                               'Spatiotemporal_Optimization//',
+                                               'optimization_'), 
                        replacement = '')
         istrata = gsub(istrata, pattern = '_strata.RData', replacement = '')
         istrata = as.integer(istrata)
@@ -58,5 +56,6 @@ res_df = master_res_df[,c(1,1+order(master_settings$nstrata))]
 strata_list = master_strata_list[order(master_settings$nstrata)]
 
 save(list = c('res_df', 'settings', 'strata_list'),
-     file = paste0(output_wd, '/optimization_results.RData'))
+     file = paste0(github_dir, 'Spatiotemporal_Optimization/',
+                   'spatiotemporal_optimization_results.RData'))
 
