@@ -28,13 +28,13 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
 
 ######
 stratas = c(5,10,15,20,25,30,40,50,60)
-NStrata = length(stratas)
+Nstrata = length(stratas)
 
 settings = data.frame()
 strata_list = list()
 res_df = data.frame(id = 1:N)
 
-for(istrata in c(1:4, 9)){
+for(istrata in c(1:Nstrata)){
  temp_strata = paste0('Str_', stratas[istrata])
  runs = grep(x = dir(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2'),
                      full.names = T), 
