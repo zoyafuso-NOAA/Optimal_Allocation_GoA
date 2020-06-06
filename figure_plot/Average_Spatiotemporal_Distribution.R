@@ -8,7 +8,7 @@ rm(list = ls())
 ## Import Libraries
 #######################################
 library(VAST); 
-library(mvtnorm); library(SamplingStrata); 
+library(mvtnorm); library(SamplingStrata); library(Matrix)
 library(sp); library(raster); library(RColorBrewer)
 
 #######################################
@@ -80,7 +80,7 @@ for(ispp in 1:ns){
     temp = data.frame(mean = mean_density_gc[,ispp])#,
                       #cv = cv_density_gc[,ispp])
     
-    temp_int = as.integer(cut(x = temp$mean, 
+    temp_int = as.numeric(cut(x = temp$mean, 
                               breaks = quantile(temp$mean, 
                                                 probs = seq(0,1,.1)) ))
     
