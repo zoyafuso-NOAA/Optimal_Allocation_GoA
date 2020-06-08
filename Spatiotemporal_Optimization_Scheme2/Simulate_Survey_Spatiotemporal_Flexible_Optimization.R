@@ -24,7 +24,7 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
 
 #Constants
 ids = as.numeric(rownames(frame))
-stratas = c(5,10,15,20,30,40,50,60)
+stratas = c(5,10,15,20,30,60)
 Nstrata = length(stratas)
 Niters = 1000
 
@@ -41,7 +41,7 @@ sim_mean = sim_cv = array(dim = c(NTime, ns, Nstrata, 3, Niters),
 ##########################
 settings$id = 1:nrow(settings)
 
-for(istrata in c(8)){
+for(istrata in c(1:4,6)){
  for(isample in 1:3) {
   
   #Load optimization data

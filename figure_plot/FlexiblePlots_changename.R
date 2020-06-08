@@ -20,12 +20,12 @@ github_dir = paste0(c('/Users/zackoyafuso/Documents',
 ## Load Data
 ###########################
 load(paste0(github_dir, 'data/optimization_data.RData'))
-stratas = c(5,10,15,20,25,30,40,50,60)
+stratas = c(5,10,15,20,30,40,50,60)
 NStrata = length(stratas)
 ns = 15
 spp_cv = samplesizes = list()
 
-for(istrata in c(1:4, 9)){
+for(istrata in c(1:4, 8)){
  temp_strata = paste0('Str_', stratas[istrata])
  runs = grep(x = dir(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/'), 
                      full.names = T), 
@@ -59,3 +59,4 @@ plot(samplesizes[[istrata]]$n[run_order], type = 'l', cex = 2,
      xlab = 'Run Number', ylab = 'Total Sample Size', las = 1, ylim = c(0,850))
 abline(h = c(280, 550, 820), col = 'darkgrey', lty = 'dashed')
 text(1:nruns, samplesizes[[istrata]]$n[run_order], paste(1:nruns))
+
