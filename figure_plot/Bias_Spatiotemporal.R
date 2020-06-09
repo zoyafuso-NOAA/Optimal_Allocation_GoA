@@ -40,7 +40,7 @@ for(itype in 1:2){ #1: spatiotemporal, #2: flexible spatiotemporal
   
   layout(mat = matrix(1:(15*7), nrow = 15, byrow = T),
          widths = c(1,1,1,0.4,1,1,1))
-  par(mar = c(0,0,0,0), oma = c(2,5,2,0.5))
+  par(mar = c(0,0,0,0), oma = c(2,5,4,0.5))
   
   for(ispp in 1:ns){
     for(itype in c('Est', 'CV')){
@@ -71,8 +71,16 @@ for(itype in 1:2){ #1: spatiotemporal, #2: flexible spatiotemporal
              ylim = c(-1.5,1.5)*max(max(bias_box),25), xlim = c(0,1))
         box()
         abline(h = 0, col = 'darkgrey', lty = 'dashed')
-        if(ispp == 1) mtext(side = 3, paste(isample, 'Boat'), line = 0.5,
+        
+        if(ispp == 1) {
+          mtext(side = 3, paste(isample, 'Boat'), line = 0.5,
                             font = 2, cex = 0.75)
+          if(isample == 2) mtext(side = 3, ifelse(itype == 'Est', 
+                                                  'Point Estimate', "CV"), 
+                                 line = 2, font = 2, cex = 0.75)
+          }
+        
+        
         if(isample == 1) axis(side = 2, las = 1, at = seq(-50,50,by=25))
         if(isample == 2) mtext(side = 3, sci_names[ispp], line = -1,
                                font =3, cex = 0.5)

@@ -80,7 +80,7 @@ for(itype in c('Spatiotemporal', 'Spatiotemporal_Flexible')){
       
       if(ispp%%3 != 0) plot(1, type = 'n', axes = F, ann = F)
    }
-   mtext(side = 2, 'True CV', outer = T, line = 3)
+   mtext(side = 2, 'RRMSE of CV', outer = T, line = 3)
    mtext(side = 1, 'Number of Strata', outer = T, line = 3)
    dev.off()
 }

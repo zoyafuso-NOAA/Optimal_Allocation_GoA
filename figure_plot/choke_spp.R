@@ -65,7 +65,7 @@ png(filename = paste0(PP_dir, 'choke_spp.png'),
     
   }
   mtext(side = 1, paste0('Percent Difference of the True CV ',
-                         'Relative to the Optimization CV Constraint'), 
+                         'Relative to the Upper CV Constraint'), 
         outer = T, line = 0)
   
   #######################
