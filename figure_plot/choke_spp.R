@@ -6,58 +6,96 @@ rm(list = ls())
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3, 'VM' = 4)[2]
-optimization_type = c('_spatial', '_spatiotemporal')[1]
-VAST_model = '6g'
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
 
-output_wd = paste0(c('/Users/zackoyafuso/Documents/', 
-                     'C:/Users/Zack Oyafuso/Documents/',
-                     'C:/Users/zack.oyafuso/Work/', 
-                     'C:/Users/zack.oyafuso/Work/' )[which_machine], 
-                   "GitHub/MS_OM_GoA/Optimum_Allocation/model_", VAST_model,
-                   optimization_type)
+github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
+                      'C:/Users/Zack Oyafuso/Documents/',
+                      'C:/Users/zack.oyafuso/Work/', 
+                      'C:/Users/zack.oyafuso/Work/' )[which_machine], 
+                    "GitHub/Optimal_Allocation_GoA/")
 
-paper_dir = paste0(c('/Users/zackoyafuso/', 
-                     'C:/Users/Zack Oyafuso/')[which_machine],
-                   'Google Drive/MS_Optimizations/figure_plot/')
 PP_dir = paste0(c('/Users/zackoyafuso/', 
                   'C:/Users/Zack Oyafuso/')[which_machine],
                 'Google Drive/MS_Optimizations/powerpoint_plot/')
 
-load(paste0(output_wd, '/Stratified_RS_Simulation_Results.RData'))
-load(paste0(output_wd, '/optimization_results.RData'))
+load(paste0(github_dir, 'data/optimization_data.RData'))
+
+################
+## Plot Settings
+################
+plot_settings = data.frame(
+  type = c('Spatial', 'Spatiotemporal'),
+  data_filename = c('spatial_only_', 
+                    'spatiotemporal_'),
+  subtitle = c('Spatial Only\n(One CV Constraint Across Species)', 
+               'Spatiotemporal\n(One CV Constraint Across Species)')
+)
+
 rockfish_cod_idx = c(2,3,11:15)
 flatfish_idx = (1:ns)[-rockfish_cod_idx]
 
-settings$id = 1:nrow(settings)
-
-{png(filename = paste0(PP_dir, 'choke_spp', optimization_type,'.png'), 
-     width = 10, height = 5, units = 'in', res =500)
-par(mfrow = c(1,2), mar = c(0,0,0,0), oma = c(5,5,1,1))
-for(istrata in c(5)){
- sub_settings = subset(settings, nstrata == istrata)
- 
- for(idx in list(flatfish_idx, rockfish_cod_idx)){
-  mean_truecv = apply( STRS_true_cv_array[,idx,sub_settings$id], 
-                       MARGIN = 3:2, mean)
+####################
+png(filename = paste0(PP_dir, 'choke_spp.png'),
+    width = 10, height = 5, units = 'in', res =500)
+{
   
-  if(optimization_type == '_spatial') xlim_ = c(0.1,0.19)
-  if(optimization_type == '_spatiotemporal') xlim_ = c(0.15,0.31)
+  par(mfrow = c(1,3), mar = c(3,0,3,0), oma = c(1,12,0,1))
   
-  matplot(x = sub_settings$cv[(round((sub_settings$cv * 1000)) %% 10) == 0], 
-          y = mean_truecv[(round((sub_settings$cv * 1000)) %% 10) == 0,], 
-          lty = 1, type = 'b',  pch = paste0(1:length(idx)), col = 'grey',
-          xlim = xlim_, ylim = c(0, 0.4), las = 1,
-          axes = F, ann = F)
+  for(irow in 1:2){
+    load(paste0(github_dir, plot_settings$type[irow], 
+                '_Optimization/STRS_Sim_Res_',
+                plot_settings$type[irow], '.RData'))
+    load(paste0(github_dir,plot_settings$type[irow],'_Optimization/',
+                plot_settings$data_filename[irow], 
+                'optimization_results.RData'))
+    
+    sub_settings = subset(settings, nstrata == 10)
+    sample_idx = which.min(abs(sub_settings$n - 550))
+    
+    abs_diff = STRS_true_cv_array[,,2,2] - sub_settings$cv[sample_idx]
+    rel_diff = 100* abs_diff / sub_settings$cv[sample_idx]
+    
+    boxplot(rel_diff, horizontal = TRUE, add = F, axes = F,
+            pch = 16, cex = 0.5, ylim = c(-160,160),
+            main = plot_settings$subtitle[irow])
+    box()
+    abline(v = 0, col = 'darkgrey', lty = 'dashed')
+    axis(side = 1)
+    if(irow == 1) axis(side = 2, sci_names, las = 1, font = 3, at = 1:ns)
+    
+  }
+  mtext(side = 1, paste0('Percent Difference of the True CV ',
+                         'Relative to the Optimization CV Constraint'), 
+        outer = T, line = 0)
+  
+  #######################
+  ## Flexible Scheme
+  #######################
+  load(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/',
+              'spatiotemporal_Flexible_optimization_results.RData'))
+  load(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/',
+              'STRS_Sim_Res_Spatiotemporal_Flexible.RData'))
+  settings$id = 1:nrow(settings)
+  
+  sub_settings = subset(settings, nstrata == 10)
+  idx = which.min(abs(sub_settings$n - 550))
+  expected_cv = unlist(sub_settings[idx-1,paste0('CV_',1:ns)] * 0.95)
+  expected_cv = sapply(expected_cv, function(x) max(x, 0.1))
+  abs_diff = sweep(x = STRS_true_cv_array[,,2,2], MARGIN = 2, 
+                   STATS = expected_cv, FUN = '-' )
+  rel_diff = 100*sweep(x = abs_diff, MARGIN = 2, 
+                       STATS = expected_cv, FUN = '/' )
+  
+  boxplot(rel_diff, horizontal = TRUE, add = F, axes = F,
+          pch = 16, cex = 0.5, ylim = c(-160,160),
+          main =  'Spatiotemporal\n(Flexible CV Constraints)')
   box()
-  if(identical(idx, flatfish_idx)) axis(side = 2, las = 1)
-  if(istrata == 5) axis(side = 1)
-  abline(a = 0, b = 1)
-  legend('topleft', legend = sci_names[idx], ncol = 2, pch = paste0(1:length(idx)),
-         col = 'black', bty = 'n', cex = 0.75)
- }
+  abline(v = 0, col = 'darkgrey', lty = 'dashed')
+  axis(side = 1)
+  
+  points(rep(-125, sum(expected_cv == 0.1)), (1:ns)[expected_cv == 0.1], 
+         pch = '*', cex = 3, col = 'blue')
+  
+  dev.off()
+  
 }
-
-mtext(side = 1, 'Spatiotemporal Upper CV Constraint', outer = T, line = 3)
-mtext(side = 2, 'True CV Average across Years', outer = T, line = 3)
-dev.off()}

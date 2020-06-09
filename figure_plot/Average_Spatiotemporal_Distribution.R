@@ -9,6 +9,7 @@ rm(list = ls())
 #######################################
 library(sp); library(raster); library(RColorBrewer); library(plotrix)
 
+
 #######################################
 ## Set up directories
 #######################################
@@ -63,10 +64,28 @@ sd_density_gc = apply(density_gct, MARGIN = 1:2, sd)
 mean_density_gc = apply(density_gct, MARGIN = 1:2, mean)
 
 {
-    
     png(paste0(figure_dir, 'Mean_CV.png'),
      width = 190, height = 190, units = 'mm', res = 500)
     par(mar = c(0,0,0,0), mfrow = c(5,3), oma = c(1,1,1,1))
+
+    # png(paste0(figure_dir, 'Mean_CV.png'),
+    #  width = 190, height = 190, units = 'mm', res = 500)
+par(mar = c(0,0,0,0), mfrow = c(5,3))
+
+for(ispp in 1:ns){
+    
+    #Base Plot
+    plot(1, type = 'n', axes = F, ann = F,
+         xlim = bbox_[c('xmin', 'xmax')],
+         ylim = c(bbox_['ymin']-1*yrange, bbox_['ymax']))
+    
+    #Extract Data for a species
+    temp = data.frame(mean = mean_density_gc[,ispp])#,
+                      #cv = cv_density_gc[,ispp])
+    
+    temp_int = as.numeric(cut(x = temp$mean, 
+                              breaks = quantile(temp$mean, 
+                                                probs = seq(0,1,.1)) ))
     
     for(ispp in 1:ns){
         
