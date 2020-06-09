@@ -7,27 +7,27 @@ rm(list = ls())
 #######################################
 ## Import Libraries
 #######################################
-library(VAST); 
-library(mvtnorm); library(SamplingStrata); 
-library(sp); library(raster); library(RColorBrewer)
+library(sp); library(raster); library(RColorBrewer); library(plotrix)
 
 #######################################
 ## Set up directories
 #######################################
-which_machine = c('Zack_MAC' = 1, 'Zack_PC' = 2)[1]
+which_machine = c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
 
 VAST_model = "6g"
 VAST_dir = paste0(c('/Users/zackoyafuso/Google Drive/', 
-                    'C:/Users/Zack Oyafuso/Google Drive/')[which_machine],
+                    'C:/Users/Zack Oyafuso/Google Drive/',
+                    'C:/Users/zack.oyafuso/Desktop/')[which_machine],
                   'VAST_Runs/VAST_output', VAST_model, '/')
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
-                      'C:/Users/Zack Oyafuso/Documents/')[which_machine],
-                    'GitHub/Optimal_Allocation_GoA/')
+                      'C:/Users/Zack Oyafuso/Documents/',
+                      'C:/Users/zack.oyafuso/Work/')[which_machine],
+                    'GitHub/MS_OM_GoA/')
 
 PP_dir = paste0(c('/Users/zackoyafuso/Google Drive/', 
-              'C:/Users/Zack Oyafuso/Google Drive/')[which_machine],
-              'MS_Optimizations/powerpoint_plot/')
+                  'C:/Users/Zack Oyafuso/Google Drive/')[which_machine],
+                'MS_Optimizations/powerpoint_plot/')
 
 figure_dir = paste0(c('/Users/zackoyafuso/Google Drive/', 
                       'C:/Users/Zack Oyafuso/Google Drive/')[which_machine],
@@ -38,7 +38,7 @@ figure_dir = paste0(c('/Users/zackoyafuso/Google Drive/',
 #######################################
 load(paste0(VAST_dir,'VAST_MS_GoA_Run.RData'))
 load(paste0(VAST_dir,'Spatial_Settings.RData'))
-load(paste0(github_dir, 'data/Extrapolation_depths.RData'))
+load(paste0(github_dir, 'Extrapolation_depths.RData'))
 
 Year_Set = seq(min(Data_Geostat[,'Year']),max(Data_Geostat[,'Year']))
 Years2Include = which( Year_Set %in% sort(unique(Data_Geostat[,'Year'])))
@@ -61,80 +61,69 @@ NTime = length(Years2Include)
 density_gct = Save$Report$D_gcy[,,Years2Include]
 sd_density_gc = apply(density_gct, MARGIN = 1:2, sd)
 mean_density_gc = apply(density_gct, MARGIN = 1:2, mean)
-#cv_density_gc = sd_density_gc / mean_density_gc / sqrt(NTime)
 
 {
     
-    # png(paste0(figure_dir, 'Mean_CV.png'),
-    #  width = 190, height = 190, units = 'mm', res = 500)
-par(mar = c(0,0,0,0), mfrow = c(5,3))
-
-for(ispp in 1:ns){
+    png(paste0(figure_dir, 'Mean_CV.png'),
+     width = 190, height = 190, units = 'mm', res = 500)
+    par(mar = c(0,0,0,0), mfrow = c(5,3), oma = c(1,1,1,1))
     
-    #Base Plot
-    plot(1, type = 'n', axes = F, ann = F,
-         xlim = bbox_[c('xmin', 'xmax')],
-         ylim = c(bbox_['ymin']-1*yrange, bbox_['ymax']))
+    for(ispp in 1:ns){
+        
+        #Base Plot
+        plot(1, type = 'n', axes = F, ann = F,
+             xlim = bbox_[c('xmin', 'xmax')],
+             ylim = c(bbox_['ymin'], bbox_['ymax']))
+        box()
+        
+        #Extract Data for a species
+        temp = data.frame(mean = mean_density_gc[,ispp])
+        
+        temp_int = as.integer(cut(x = temp$mean, 
+                                  breaks = c(0,1,quantile(temp$mean[temp$mean > 1], 
+                                                          probs = seq(0,1,length=10))[-1] )))
+        
+        #Spatial Object
+        goa = SpatialPointsDataFrame(coords = Extrapolation_depths[,c('E_km', 
+                                                                      'N_km')], 
+                                     data = data.frame(val = temp_int))
+        
+        goa_ras = raster(goa, resolution = 20)
+        goa_ras = rasterize(x = goa, y = goa_ras, field = 'val')
+        image(goa_ras, col = c(brewer.pal(n = 9, name = 'YlOrRd'), 'black'),
+              axes = F, asp = 1, ann = F, add = T)
+        
+        text(x = bbox_[1] + xrange*0.15, 
+             y = bbox_[4] - yrange*0.15,
+             gsub(Save$Spp[ispp], pattern = ' ', replacement = '\n'), font = 3)
+        
+        
+        legend_vals = list(
+            top = c("< 1", 
+                    round(quantile(temp$mean[temp$mean > 1], 
+                                   probs = seq(0,1,length=10)))[c(NA,3,NA, 5,NA, 7,NA, 9,NA)]),
+            bottom = c(round(quantile(temp$mean[temp$mean > 1], 
+                                      probs = seq(0,1,length=10)))[c(NA,2,NA,4,NA,6,NA,8,NA,10)]) )
+        
+        plotrix::color.legend(
+            xl = bbox_[1] + xrange*0.4, 
+            xr = bbox_[1] + xrange*1, 
+            yb = bbox_[3] + yrange*0.05, 
+            yt = bbox_[3] + yrange*0.15,
+            legend = legend_vals[['top']], 
+            rect.col = c(brewer.pal(n = 9, name = 'YlOrRd'),
+                         'black'), cex = 0.7, align = 'rb' )
+        plotrix::color.legend(
+            xl = bbox_[1] + xrange*0.4, 
+            xr = bbox_[1] + xrange*1, 
+            yb = bbox_[3] + yrange*0.05, 
+            yt = bbox_[3] + yrange*0.15,
+            legend = legend_vals[['bottom']], 
+            rect.col = c(brewer.pal(n = 9, name = 'YlOrRd'),
+                         'black'), cex = 0.7, align = 'lt' )
+        
+    }
     
-    #Extract Data for a species
-    temp = data.frame(mean = mean_density_gc[,ispp])#,
-                      #cv = cv_density_gc[,ispp])
+    dev.off()
     
-    temp_int = as.integer(cut(x = temp$mean, 
-                              breaks = quantile(temp$mean, 
-                                                probs = seq(0,1,.1)) ))
-    
-    #Spatial Object
-    goa = SpatialPointsDataFrame(coords = Extrapolation_depths[,c('E_km', 
-                                                                  'N_km')], 
-                                 data = data.frame(val = temp_int))
-    
-    goa_ras = raster(goa, resolution = 5)
-    goa_ras = rasterize(x = goa, y = goa_ras, field = 'val')
-    image(goa_ras, col = rev(brewer.pal(n = 9, name = 'Blues')), axes = F,
-          asp = 1, ann = F, add = T)
-    
-    # for(itype in c('Mean', 'CV')){
-    #     goa_ras = raster(goa, resolution = 5)
-    #     goa_ras =rasterize(x = goa, y = goa_ras, field = itype)
-    #     
-    #     vals  = values(goa_ras)
-    #     
-    #     if(itype == 'CV') val_cuts = c(0,0.25,0.5,1,2,10)
-    #     
-    #     if(itype == 'Mean')     {
-    #         vals = vals[vals > 1]
-    #         val_cuts = c(0, quantile(vals , na.rm = T, 
-    #                                  probs = seq(0,1, length = 5))[-1])
-    #     } 
-    #     
-    #     values(goa_ras) = cut(x = values(goa_ras), breaks = val_cuts)
-    #     
-    #     if(itype == 'CV') goa_ras = raster::shift(x = goa_ras, dy = -yrange)
-    #     
-    #     image(goa_ras, asp = 1, axes = F, ann = F, add = T,
-    #           col = list('Mean' = c(hcl.colors(n=4, "YlOrRd", rev = TRUE)[c(1,2,3)], 'black'), 
-    #                      'CV' = hcl.colors(n=5, palette='viridis', rev=T))[[itype]])
-    #     
-    #     if(itype == 'Mean') val_cuts = round(val_cuts)
-    #     if(itype == 'CV') val_cuts = c(0,0.25,0.5,1,2,10)
-    #     legend(x = goa_ras@extent[1] + xrange*0.55,
-    #            y = goa_ras@extent[3] + yrange*0.7,
-    #            bty = 'n', cex = 0.75,
-    #            fill = list('Mean' =c(hcl.colors(n=4, "YlOrRd", rev = TRUE)[c(1,2,3)], 'black'), 
-    #                        'CV' = hcl.colors(n=5, palette='viridis', rev=T))[[itype]], 
-    #            legend = paste0(val_cuts[1:(length(val_cuts)-1)], '-',
-    #                            val_cuts[2:length(val_cuts)]) )
-    #     
-    #     if(itype == 'Mean') text(x = goa_ras@extent[1] + xrange*0.15, 
-    #                              y = goa_ras@extent[4] - yrange*0.15,
-    #                              gsub(Save$Spp[i], pattern = ' ', 
-    #                                   replacement = '\n'),
-    #                              font = 3)
-    # }
-    box()
-}
-
-#dev.off()
-
 }
