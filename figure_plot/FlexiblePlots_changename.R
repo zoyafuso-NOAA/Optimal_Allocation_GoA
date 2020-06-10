@@ -25,7 +25,7 @@ NStrata = length(stratas)
 ns = 15
 spp_cv = samplesizes = list()
 
-for(istrata in c(1:4, 8)){
+for(istrata in c(1:5, 8)){
  temp_strata = paste0('Str_', stratas[istrata])
  runs = grep(x = dir(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/'), 
                      full.names = T), 
@@ -41,7 +41,7 @@ for(istrata in c(1:4, 8)){
  }
 }
 
-istrata = 'Str_20'
+istrata = 'Str_10'
 nruns = length(samplesizes[[istrata]]$n)
 spp_order = order(spp_cv[[istrata]]$cv[nruns,])
 run_order = order(samplesizes[[istrata]]$n)
