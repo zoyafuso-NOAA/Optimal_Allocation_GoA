@@ -35,6 +35,7 @@ source(paste0(github_dir, 'modified_functions/buildStrataDF_Zack.R'))
 ## Load Data
 ###########################
 load(paste0(github_dir, 'data/optimization_data.RData'))
+load(paste0(github_dir, 'data/Extrapolation_depths.RData'))
 
 ###########################
 ## Load Current CV Simulation
@@ -43,14 +44,14 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
 stratas = c(5,10,15,20,25,30,40,50,60)
 ns = 15
 creep_rate = 0.05
-threshold = 0.20
+threshold = 0.10
 
 ############################
 ## Optimizer
 ############################
 par(mfrow = c(6,6), mar = c(2,2,0,0))
 
-for(istrata in 4){  
+for(istrata in 6){  
   
   Run = 1
   CV_constraints = rep(.3, ns)
@@ -97,7 +98,9 @@ for(istrata in 4){
                                               lon = solution$framenew$X2) )
     goa_ras = raster(goa, resolution = 5)
     goa_ras =rasterize(x = goa, y = goa_ras, field = 'Str_no')
-    plot(goa_ras, col = terrain.colors(10)[-10], axes = F)
+    plot(goa_ras, 
+		col = terrain.colors(stratas[istrata])[sample(stratas[istrata])], 
+		axes = F)
     
     
     #Save Output
