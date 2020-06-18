@@ -23,35 +23,36 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
 stratas = c(5,10,15,20,30,40,50,60)
 NStrata = length(stratas)
 ns = 15
+threshold = 5
 spp_cv = samplesizes = list()
 
-for(istrata in c(1:5, 8)){
+for(istrata in c(1)){
  temp_strata = paste0('Str_', stratas[istrata])
  runs = grep(x = dir(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/'), 
                      full.names = T), 
-             pattern = paste0('Thres10Str', stratas[istrata]),
+             pattern = paste0('Thres', threshold,'Str', stratas[istrata]),
              value = T)
  
  nruns = length(runs)
  for(irun in 1:nruns){
-  load(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/Thres10Str',
-              stratas[istrata], 'Run', irun, '/result_list.RData') )
+  load(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/Thres', threshold,
+              'Str', stratas[istrata], 'Run', irun, '/result_list.RData') )
   samplesizes[[temp_strata]]$n = c(samplesizes[[temp_strata]]$n, result_list$n) 
   spp_cv[[temp_strata]]$cv = rbind(spp_cv[[temp_strata]]$cv, result_list[[3]])
  }
 }
 
-istrata = 'Str_10'
+istrata = 'Str_5'
 nruns = length(samplesizes[[istrata]]$n)
 spp_order = order(spp_cv[[istrata]]$cv[nruns,])
 run_order = order(samplesizes[[istrata]]$n)
 par(mar = c(5,5,2,1), mfrow = c(1,2))
 
 matplot( t(spp_cv[[istrata]]$cv[,spp_order]), 
-         type = 'l', lty = 1, las = 1, xlab = 'Species', ylim = c(0,0.3),
+         type = 'l', lty = 1, las = 1, xlab = 'Species', ylim = c(0,0.33),
          ylab = 'Expected Spatiotemporal CV',
          col = 'black')
-abline(h = 0.1, col = 'darkgrey', lty = 'dashed')
+abline(h = 0.05, col = 'darkgrey', lty = 'dashed')
 text(x = 1:ns, y = t(spp_cv[[istrata]]$cv[,spp_order]), 
      rep(paste(1:nruns),each = ns ))
          
@@ -60,3 +61,4 @@ plot(samplesizes[[istrata]]$n[run_order], type = 'l', cex = 2,
 abline(h = c(280, 550, 820), col = 'darkgrey', lty = 'dashed')
 text(1:nruns, samplesizes[[istrata]]$n[run_order], paste(1:nruns))
 
+spp_cv[[istrata]]$cv[nruns,spp_order] * 0.95

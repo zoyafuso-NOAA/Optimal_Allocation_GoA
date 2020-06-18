@@ -23,81 +23,181 @@ PP_dir = paste0(c('/Users/zackoyafuso/',
 ################################
 load(paste0(github_dir, 'data/optimization_data.RData'))
 
-istrata = 2
-for(itype in 1:2){ #1: spatiotemporal, #2: flexible spatiotemporal
+{
+  png(file = paste0(PP_dir, paste0('Bias_Est.png')),
+      width = 190, height = 150, units = 'mm', res = 1000)
   
+  par(mar = c(0,4,0,0), oma = c(4,1,2,0.5), mfrow = c(5,3))
+  
+  for(itype in 2){
+    load(paste0(github_dir, 
+                c('Spatiotemporal_Optimization/', 
+                  'Spatiotemporal_Optimization_Scheme2/')[itype],
+                c('STRS_Sim_Res_Spatiotemporal.RData', 
+                  'STRS_Sim_Res_Spatiotemporal_Flexible.RData')[itype] ))
+    
+    if(itype == 1) stratas = c(1,2,3,4,7,8)
+    if(itype == 2) stratas = c(1:6)
+    
+    for(ispp in 1:ns){
+      
+      ylim_ = list(c(-60,60), c(-80,110), c(-60,70), 
+                   c(-70,70), c(-70,70), c(-30,30), 
+                   c(-80,110),c(-80,110),c(-130,130),
+                   c(-110,160),c(-110,210),c(-110,130),
+                   c(-110,160),c(-110,210),c(-110,110))[[ispp]]
+      
+      plot(1, type = 'n', xlim = c(-0.5,13.5), axes = F, ann = F, ylim=ylim_ )
+      box(); 
+      abline(v = seq(from = 1.75, by = 2.5, length = 5), lty = 'dashed', 
+             col = 'lightgrey')
+      abline(h = 0)
+      axis(side = 2, las = 1, at = pretty(ylim_, 4) )
+      if(ispp == 2) legend(x = -3, y = 190, legend = paste(1:3, 'Boat'),
+                           fill = c('red', 'blue', 'white'), x.intersp = .5,
+                           horiz = T, xpd = NA, cex = 1.5, bty = 'n')
+      
+      if(itype == 2) legend('bottom', sci_names[ispp], bty = 'n', 
+                            text.font = 3 )
+      if(ispp %in% c(13:15)) axis(side = 1, labels = c(5,10,15,20,30,60), 
+                                  at = seq(from=0.5, by=2.5, length=6))
+      offset = 0
+      for(istrata in stratas){
+        for(isample in 1:3){
+          abs_bias = sweep(x = STRS_sim_mean[,ispp,istrata,isample,], MARGIN=1,
+                           STATS = true_mean[,ispp],
+                           FUN = '-')
+          
+          rel_bias = 100*sweep(x = abs_bias, MARGIN = 1,
+                               STATS = true_mean[,ispp],
+                               FUN = '/')
+          
+          boxplot( as.vector(rel_bias), add = T, axes = F, at = offset, 
+                   col = c('red', 'blue', 'white')[isample],
+                   pch = 16, cex = 0.25)
+          offset = offset + 0.5
+        }
+        offset = offset + 1
+      }
+    }
+  }
+  
+  # plot(1, type = 'n', axes = F, ann = F)
+  # 
+  # plot(1, type = 'n', xlim = c(0,1), ylim = c(0,1), axes = F, ann = F)
+  # legend('bottom', legend = paste0(1:3, ' Boat'), horiz = T, cex = 1.5,
+  #        fill = c('red', 'blue', 'white'))
+  
+  mtext(side = 1, 'Number of Strata', outer = T, line = 2.5)
+  mtext(side = 2, 'Percent Relative Bias', outer = T, line = -1)
+  dev.off()
+}
+
+##############################
+## What proportion of surveys > 50% bias
+##############################
+rel_bias = array(dim = c(ns, 6, 3))
+for(itype in 2){
   load(paste0(github_dir, 
               c('Spatiotemporal_Optimization/', 
                 'Spatiotemporal_Optimization_Scheme2/')[itype],
               c('STRS_Sim_Res_Spatiotemporal.RData', 
                 'STRS_Sim_Res_Spatiotemporal_Flexible.RData')[itype] ))
   
-  png(file = paste0(PP_dir, paste0('Bias_', 
-                                   c('Spatiotemporal', 
-                                     'Spatiotemporal_Felxible')[itype], 
-                                   '.png')),
-      width = 190, height = 220, units = 'mm', res = 1000)
-  
-  layout(mat = matrix(1:(15*7), nrow = 15, byrow = T),
-         widths = c(1,1,1,0.4,1,1,1))
-  par(mar = c(0,0,0,0), oma = c(2,5,4,0.5))
+  if(itype == 1) stratas = c(1,2,3,4,7,8)
+  if(itype == 2) stratas = c(1:6)
   
   for(ispp in 1:ns){
-    for(itype in c('Est', 'CV')){
+    for(istrata in stratas){
       for(isample in 1:3){
+        abs_bias = sweep(x = STRS_sim_mean[,ispp,istrata,isample,], MARGIN = 1,
+                         STATS = true_mean[,ispp],
+                         FUN = '-')
         
-        if(itype == 'CV'){
-          abs_bias = sweep(x = STRS_sim_cv[,ispp,istrata, isample,], MARGIN = 1,
-                           STATS = STRS_true_cv_array[,ispp,istrata,isample],
-                           FUN = '-')
-          rel_bias = 100*sweep(x = abs_bias, MARGIN = 1,
-                               STATS = STRS_true_cv_array[,ispp,istrata,isample],
-                               FUN = '/')
-        }
+        temp_rel_bias = 100*sweep(x = abs_bias, MARGIN = 1,
+                                  STATS = true_mean[,ispp],
+                                  FUN = '/')
         
-        if(itype == 'Est'){
-          abs_bias = sweep(x = STRS_sim_mean[,ispp,istrata, isample,], MARGIN = 1,
-                           STATS = true_mean[,ispp], FUN = '-')
-          rel_bias = 100*sweep(x = abs_bias, MARGIN = 1,
-                               STATS = true_mean[,ispp], FUN = '/')
-        }
+        rel_bias[ispp,istrata,isample] = sum(as.vector(abs(temp_rel_bias))>50)
         
-        bias_box = apply(rel_bias, MARGIN = 1,
-                         FUN = function(x) quantile(x, 
-                                                    probs = c(0.05, 0.25, 0.5,
-                                                              0.75, 0.95)))
-        #ymax = bias_box
-        plot(1, type = 'n', ann = F, axes = F, 
-             ylim = c(-1.5,1.5)*max(max(bias_box),25), xlim = c(0,1))
-        box()
-        abline(h = 0, col = 'darkgrey', lty = 'dashed')
-        
-        if(ispp == 1) {
-          mtext(side = 3, paste(isample, 'Boat'), line = 0.5,
-                            font = 2, cex = 0.75)
-          if(isample == 2) mtext(side = 3, ifelse(itype == 'Est', 
-                                                  'Point Estimate', "CV"), 
-                                 line = 2, font = 2, cex = 0.75)
-          }
-        
-        
-        if(isample == 1) axis(side = 2, las = 1, at = seq(-50,50,by=25))
-        if(isample == 2) mtext(side = 3, sci_names[ispp], line = -1,
-                               font =3, cex = 0.5)
-        if(ispp %in% 15){
-          if(isample %in% c(1,3)) axis(side = 1, at = seq(0,1,length=11),
-                                       label = c('Year 1',rep(NA,9),'Year 11'))
-        }
-        lines(y = bias_box['50%',], x = seq(0,1,length = 11))
-        points(y = bias_box['50%',], x = seq(0,1,length = 11), pch = 16)
-        lines(y = bias_box['25%',], x = seq(0,1,length = 11))
-        lines(y = bias_box['75%',], x = seq(0,1,length = 11))
-        lines(y = bias_box['5%',], x = seq(0,1,length = 11), lty = 'dotted')
-        lines(y = bias_box['95%',], x = seq(0,1,length = 11), lty = 'dotted')
       }
-      if(itype == 'Est') plot(1, type = 'n', axes = F, ann = F)
     }
   }
-  mtext(side = 2, 'Relative Bias (%)', outer = T, line = 3)
+}
+rel_bias = round(rel_bias / (11000) * 100, 2)
+
+#########################
+
+{
+  png(file = paste0(PP_dir, paste0('Bias_CV.png')),
+      width = 190, height = 150, units = 'mm', res = 1000)
+  
+  layout(mat = matrix(c(1:4, 
+                        8:11,
+                        rep(16, 4),
+                        5:7,15,
+                        12:15), nrow = 4), 
+         widths = c(1,1,0.25,1,1))
+  par(mar = c(0,0,0,0), oma = c(4,4,3,1))
+  
+  for(itype in 1:2){
+    load(paste0(github_dir,
+                c('Spatiotemporal_Optimization/',
+                  'Spatiotemporal_Optimization_Scheme2/')[itype],
+                c('STRS_Sim_Res_Spatiotemporal.RData',
+                  'STRS_Sim_Res_Spatiotemporal_Flexible.RData')[itype] ))
+    
+    if(itype == 1) stratas = c(1,2,3,4,7,8)
+    if(itype == 2) stratas = c(1:6)
+    
+    for(ispp in c(1,3,11,13, 8,12,15) ){
+      
+      ylim_ = list(c(-80,150), c(-100,100), c(-80,120), 
+                   c(-100,100), c(-100,100), c(-100,100), 
+                   c(-100,100), c(-80,120), c(-100,100), 
+                   c(-100,100), c(-100,120), c(-110,120),
+                   c(-100,140), c(-100,100), c(-100,160) )[[ispp]]
+      
+      plot(1, type = 'n', xlim = c(-0.5,13.5), axes = F, ann = F, ylim=ylim_ )
+      box(); abline(h = 0, lty = 'dashed')
+      abline(v = seq(from = 1.75, by = 2.5, length = 5), lty = 'dashed', 
+             col = 'darkgrey')
+      if(itype == 1) axis(side = 2, las = 1, at = pretty(ylim_, 5) )
+      
+      if(itype == 2) legend('bottom', sci_names[ispp], bty = 'n', 
+                            text.font = 3  )
+      if(ispp %in% c(13,15)) axis(side = 1, at = seq(0.5, by=2.5, length=6),
+                                  labels = c(5,10,15,20,30,60))
+      if(ispp %in% c(1,8)) mtext(side = 3,c('Constrained\nSpatiotemporal',
+                                            'Flexible\nSpatiotemporal')[itype])
+      
+      offset = 0
+      for(istrata in stratas){
+        for(isample in 1:3){
+          abs_bias = sweep(x = STRS_sim_cv[,ispp,istrata,isample,], MARGIN = 1,
+                           STATS = STRS_true_cv_array[,ispp,istrata,isample],
+                           FUN = '-')
+          
+          rel_bias = sweep(x = abs_bias, MARGIN = 1,
+                           STATS=STRS_true_cv_array[,ispp,istrata,isample],
+                           FUN = '/') * 100
+          
+          boxplot( as.vector(rel_bias), add = T, axes = F, at = offset, 
+                   col = c('red', 'blue', 'white')[isample],
+                   pch = 16, cex = 0.25)
+          offset = offset + 0.5
+        }
+        offset = offset + 1
+      }
+    }
+  }
+  
+  plot(1, type = 'n', xlim = c(0,1), ylim = c(0,1), axes = F, ann = F)
+  legend('bottom', legend = paste0(1:3, ' Boat'), horiz = T, cex = 1.5,
+         fill = c('red', 'blue', 'white'))
+  plot(1, type = 'n', axes = F, ann = F)
+  
+  mtext(side = 1, 'Number of Strata', outer = T, line = 2.5)
+  mtext(side = 2, 'RRMSE of CV', outer = T, line = 2.5)
   dev.off()
 }
