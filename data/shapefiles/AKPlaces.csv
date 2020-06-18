@@ -1,0 +1,56 @@
+ID,LONGITUDE,LATITUDE,PLACE_NAME,type,survey,page,font,cex,col,pos,srt,pch,lty,lwd
+1,-169.8181,52.8447,Islands of Four Mountains,point,GOA,1,,0.5,black,,,19,,
+2,-166.5272,53.8889,Dutch Harbor,point,GOA,1,,0.5,black,,,19,,
+3,-160.4933,55.3367,Sand Point,point,GOA,1,,0.5,black,,,19,,
+4,-149.7621,61.1919,Anchorage,point,GOA,2,,0.5,black,,,19,,
+5,-151.5,59.63,Homer,point,GOA,2,,0.5,black,,,19,,
+6,-145.7022,60.5392,Cordova,point,GOA,2,,0.5,black,,,19,,
+7,-140.2712,59.7935,Yakutat,point,GOA,2,,0.5,black,,,19,,
+8,-135.3318,57.00799,Sitka,point,GOA,2,,0.5,black,,,19,,
+9,-162.3536,57.37132,Bering Sea,label,GOA,1,4,0.7,black,4,0,,,
+10,-157.066,54.24742,Gulf of Alaska,label,GOA,1,4,0.7,black,4,0,,,
+11,-159.9203,55.99777,Alaska Peninsula,label,GOA,1,2,0.7,black,4,40,,,
+12,-154,57.279,Kodiak Isl.,label,GOA,1,2,0.5,black,4,40,,,
+13,-144.2419,56.36164,Gulf of Alaska,label,GOA,2,4,0.7,black,4,0,,,
+14,-170.3646,53.77161,Islands of Four Mountains,label,GOA,1,2,0.5,black,4,0,,,
+15,-167.7035,54.5936,Dutch Harbor,label,GOA,1,2,0.5,black,4,0,,,
+16,-163.6874,56.09548,Sand Point,label,GOA,1,2,0.5,black,4,0,,,
+17,-149.8827,61.25967,Anchorage,label,GOA,2,2,0.5,black,4,0,,,
+18,-151.8376,60.05146,Homer,label,GOA,2,2,0.5,black,4,0,,,
+19,-145.7022,60.5392,Cordova,label,GOA,2,2,0.5,black,4,0,,,
+20,-138.5438,60.05675,Yakutat,label,GOA,2,2,0.5,black,4,0,,,
+21,-137.5492,56.53796,Sitka,label,GOA,2,2,0.5,black,4,0,,,
+22,-169.8181,52.8447,Islands of Four Mountains,line,AI,1,,,black,,,,1,1.5
+23,-169.3936,53.68089,Islands of Four Mountains,line,GOA,1,,,black,,,,1,1.5
+24,-166.5272,53.8889,Dutch Harbor,line,AI,1,,,black,,,,1,1.5
+25,-166.3546,54.5662,Dutch Harbor,line,GOA,1,,,black,,,,1,1.5
+26,-160.4933,55.3367,Sand Point,line,GOA,1,,,black,,,,1,1.5
+27,-162.0416,55.9926,Sand Point,line,AI,1,,,black,,,,1,1.5
+28,-149.7621,61.1919,Homer,line,GOA,2,,,black,,,,1,1.5
+29,-149.7621,61.1919,Homer,line,GOA,2,,,black,,,,1,1.5
+30,-140.2712,59.7935,Yakutat,line,GOA,2,,,black,,,,1,1.5
+31,-138.5562,60.03065,Yakutat,line,GOA,2,,,black,,,,1,1.5
+32,-135.9,58.1,Sitka,line,GOA,2,,,black,,,,1,1.5
+33,-136.8362,56.62175,Sitka,line,GOA,2,,,black,,,,1,1.5
+34,-158.95,53,Shumagin,line,GOA,1,,,red,,,,1,4
+35,-158.95,55.9,Shumagin,line,GOA,1,,,red,,,,1,4
+36,-154,53,Chirikof1,line,GOA,1,,,red,,,,1,4
+37,-154,56.5,Chirikof1,line,GOA,1,,,red,,,,1,4
+38,-154,56.6,Chirikof2,line,GOA,1,,,red,,,,1,4
+39,-154,56.75,Chirikof2,line,GOA,1,,,red,,,,1,4
+40,-154,56.85,Chirikof3,line,GOA,1,,,red,,,,1,4
+41,-154,57,Chirikof3,line,GOA,1,,,red,,,,1,4
+42,-154,57.6,Chirikof4,line,GOA,1,,,red,,,,1,4
+43,-154,58.35,Chirikof4,line,GOA,1,,,red,,,,1,4
+44,-154,58.4,Chirikof5,line,GOA,1,,,red,,,,1,4
+45,-154,58.5,Chirikof5,line,GOA,1,,,red,,,,1,4
+46,-147,50,Kodiak1,line,GOA,2,,,red,,,,1,4
+47,-147,60.2,Kodiak1,line,GOA,2,,,red,,,,1,4
+48,-137,50,SEAK,line,GOA,2,,,red,,,,1,4
+49,-137,58.4,SEAK,line,GOA,2,,,red,,,,1,4
+50,-147,60.36,Kodiak2,line,GOA,2,,,red,,,,1,4
+51,-147,60.9,Kodiak2,line,GOA,2,,,red,,,,1,4
+52,-149.5,60,Seward,point,GOA,2,,,black,,,,1,1.75
+53,-131.646,55.342,Ketchikan,point,GOA,2,,,black,,,,1,1.75
+54,-131.646,55.342,Ketchikan,line,GOA,2,,,black,,,,1,1.5
+55,-135,55,Ketchikan,line,GOA,2,,,black,,,,1,1.5
