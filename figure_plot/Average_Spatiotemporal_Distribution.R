@@ -9,11 +9,12 @@ rm(list = ls())
 #######################################
 library(sp); library(raster); library(RColorBrewer); library(rworldxtra)
 library(plotrix); library(rgdal); library(oce); library(ocedata)
+library(rnaturalearth)
 
 #######################################
 ## Set up directories
 #######################################
-which_machine = c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[1]
+which_machine = c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
 
 VAST_model = "6g"
 VAST_dir = paste0(c('/Users/zackoyafuso/Google Drive/', 
@@ -45,6 +46,9 @@ data(coastlineWorldFine, package="ocedata")
 data(countriesHigh)
 AK = sp::spTransform(countriesHigh[c(39,236),], 
                      crs('+proj=utm +zone=5 +units=km'))
+
+AK <- rnaturalearth::ne_countries(continent = "north america", scale = "medium", returnclass = "sp")
+AK <- sp::spTransform(AK, CRS = "+proj=utm +zone=5 +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs")
 
 #######################################
 ## Load Fit, spatial data
