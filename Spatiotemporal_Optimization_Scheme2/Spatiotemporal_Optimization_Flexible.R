@@ -44,14 +44,14 @@ load(paste0(github_dir, 'data/Extrapolation_depths.RData'))
 stratas = c(5,10,15,20,25,30,40,50,60)
 ns = 15
 creep_rate = 0.05
-threshold = 0.10
+threshold = 0.05
 
 ############################
 ## Optimizer
 ############################
 par(mfrow = c(6,6), mar = c(2,2,0,0))
 
-for(istrata in 6){  
+for(istrata in c(6,9)){  
   
   Run = 1
   CV_constraints = rep(.3, ns)
