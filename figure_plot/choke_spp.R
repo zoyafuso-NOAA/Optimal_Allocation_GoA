@@ -6,7 +6,7 @@ rm(list = ls())
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                       'C:/Users/Zack Oyafuso/Documents/',
@@ -88,13 +88,11 @@ png(filename = paste0(PP_dir, 'choke_spp.png'),
   
   boxplot(rel_diff, horizontal = TRUE, add = F, axes = F,
           pch = 16, cex = 0.5, ylim = c(-160,160),
-          main =  'Spatiotemporal\n(Flexible CV Constraints)')
+          main =  'Spatiotemporal\n(Flexible CV Constraints)',
+          border = ifelse(expected_cv == 0.1, 'blue', 'black' ))
   box()
   abline(v = 0, col = 'darkgrey', lty = 'dashed')
   axis(side = 1)
-  
-  points(rep(-125, sum(expected_cv == 0.1)), (1:ns)[expected_cv == 0.1], 
-         pch = '*', cex = 3, col = 'blue')
   
   dev.off()
   

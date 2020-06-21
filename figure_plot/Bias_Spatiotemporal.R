@@ -6,7 +6,7 @@ rm(list = ls())
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                       'C:/Users/Zack Oyafuso/Documents/',
@@ -198,6 +198,6 @@ rel_bias = round(rel_bias / (11000) * 100, 2)
   plot(1, type = 'n', axes = F, ann = F)
   
   mtext(side = 1, 'Number of Strata', outer = T, line = 2.5)
-  mtext(side = 2, 'RRMSE of CV', outer = T, line = 2.5)
+  mtext(side = 2, 'Percent Relative Bias', outer = T, line = 2.5)
   dev.off()
 }
