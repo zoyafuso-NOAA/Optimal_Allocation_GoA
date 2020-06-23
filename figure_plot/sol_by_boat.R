@@ -16,12 +16,12 @@ github_dir = paste0(c('/Users/zackoyafuso/Documents/',
                       'C:/Users/zack.oyafuso/Work/' )[which_machine], 
                     "GitHub/Optimal_Allocation_GoA/")
 
-# paper_dir = paste0(c('/Users/zackoyafuso/', 
-#                      'C:/Users/Zack Oyafuso/')[which_machine],
-#                    'Google Drive/MS_Optimizations/figure_plot/')
-# PP_dir = paste0(c('/Users/zackoyafuso/', 
-#                   'C:/Users/Zack Oyafuso/')[which_machine],
-#                 'Google Drive/MS_Optimizations/powerpoint_plot/')
+paper_dir = paste0(c('/Users/zackoyafuso/',
+                     'C:/Users/Zack Oyafuso/')[which_machine],
+                   'Google Drive/MS_Optimizations/figure_plot/')
+PP_dir = paste0(c('/Users/zackoyafuso/',
+                  'C:/Users/Zack Oyafuso/')[which_machine],
+                'Google Drive/MS_Optimizations/powerpoint_plot/')
 
 ########################
 ## Load Data
@@ -34,9 +34,10 @@ yrange = diff(range(Extrapolation_depths[,c('N_km')]))
 plot_random_sample = F
 load(paste0(github_dir, 'data/optimization_data.RData'))
 
-par(mfrow = c(2,3), mar = c(0,0,3,0))
 
-for(itype in 1:2){
+
+for(itype in 2){
+
   load(paste0(github_dir, 'Spatiotemporal_Optimization', 
               c('', '_Scheme2')[itype], '/spatiotemporal_', 
               c('', 'Flexible_')[itype], 'optimization_results.RData') )
@@ -44,11 +45,12 @@ for(itype in 1:2){
   settings$id = 1:nrow(settings)
   
   {
-    # png(file = paste0(PP_dir, 'sol_by_boat',
-    #                  ifelse(plot_random_sample == T, '_withsamples', ''),
-    #                  '_',optimization_type,
-    #                  '.png'),
-    # width = 240, height = 90, units = 'mm', res = 1000)
+    png(file = paste0(PP_dir, 'sol_by_boat',
+                     ifelse(plot_random_sample == T, '_withsamples', ''),
+                     '.png'),
+    width = 240, height = 100, units = 'mm', res = 1000)
+    
+    par(mfrow = c(1,3), mar = c(0,0,3,0))
     
     for(istrata in stratas){
       plot(1, type = 'n', axes = F, ann = F,
@@ -56,12 +58,6 @@ for(itype in 1:2){
            ylim = c(min(Extrapolation_depths[,c('N_km')])-1.5*yrange,
                     max(Extrapolation_depths[,c('N_km')]))
       )
-      
-      if(istrata==15) text(x = goa_ras@extent[1]+xrange*0.70,
-                           y = goa_ras@extent[3]+yrange*0.25,
-                           c('Spatiotemporal\nOptimization',
-                             'Spatiotemporal\nOptimization\n(Flexible)')[itype],
-                           cex = 1.5, font = 2)
       
       mtext(side = 3, paste(istrata, 'Strata'), font = 2) 
       offset = 0
@@ -113,12 +109,9 @@ for(itype in 1:2){
       
     }
     
-    # dev.off()
+    dev.off()
   }
 }
-
-
-
 
 # frame$X2 = round(frame$X2)
 # temp_df = strata_list[[isol]]

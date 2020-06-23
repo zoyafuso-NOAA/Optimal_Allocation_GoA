@@ -11,7 +11,7 @@ library(sp); library(RColorBrewer); library(raster); library(SamplingStrata)
 ###############################
 ## Set up directories
 ###############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents', 
                       'C:/Users/Zack Oyafuso/Documents',
@@ -28,14 +28,14 @@ rm(frame_raw)
 ############################
 ## Settings for optimizer
 ############################
-nstrata = c(5,10,15,20,25,30,40,50,60)
+nstrata = c(5,10,15,20,30,60)
 
 settings = data.frame()
 res_df = data.frame(id = 1:N)
 strata_list = list()
 
 par(mfrow = c(4,3), mar = c(0,0,0,0))
-for(istrata in nstrata){
+for(istrata in nstrata[-c(1:4)]){
  
  iseed = istrata
  current_n = 10000
