@@ -23,6 +23,7 @@ github_dir = paste0(c('/Users/zackoyafuso/Documents',
 ## Load Data
 ###########################
 load(paste0(github_dir, 'data/optimization_data.RData'))
+load(paste0(github_dir, 'data/Extrapolation_depths.RData'))
 rm(frame_raw)
 
 ############################
@@ -34,8 +35,8 @@ settings = data.frame()
 res_df = data.frame(id = 1:N)
 strata_list = list()
 
-par(mfrow = c(4,3), mar = c(0,0,0,0))
-for(istrata in nstrata[-c(1:4)]){
+par(mfrow = c(4,4), mar = c(0,0,0,0), oma = c(2,2,1,1))
+for(istrata in nstrata[-c(1:5)]){
  
  iseed = istrata
  current_n = 10000
@@ -60,7 +61,7 @@ for(istrata in nstrata[-c(1:4)]){
                           elitism_rate = 0.1,
                           mut_chance = 1 / (istrata + 1),
                           nStrata = istrata,
-                          showPlot = F,
+                          showPlot = T,
                           parallel = F)
   
   sum_stats = summaryStrata(solution$framenew,
