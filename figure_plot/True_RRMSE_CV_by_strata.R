@@ -7,7 +7,7 @@ rm(list = ls())
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                       'C:/Users/Zack Oyafuso/Documents/',
@@ -32,7 +32,7 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
 ## and species (plot panel) for the Flexible Optimization
 ################################
 {
-  png(file = paste0(PP_dir, paste0('True_CV.png')),
+  png(file = paste0(figure_dir, paste0('Fig6_True_CV.png')),
       width = 190, height = 150, units = 'mm', res = 1000)
 
   par(mar = c(0,4,0,0), oma = c(4,1,2,0.5), mfrow = c(5,3))
@@ -98,7 +98,7 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
 ##############################
 
 {
-  png(file = paste0(PP_dir, paste0('RRMSE_CV.png')),
+  png(file = paste0(figure_dir, paste0('Fig8_RRMSE_CV.png')),
       width = 190, height = 120, units = 'mm', res = 1000)
   
   layout(mat = matrix(c(1:4, 
