@@ -6,7 +6,7 @@ rm(list = ls())
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                       'C:/Users/Zack Oyafuso/Documents/',
@@ -28,7 +28,7 @@ figure_dir = paste0(c('/Users/zackoyafuso/',
 load(paste0(github_dir, 'data/optimization_data.RData'))
 
 {
-  png(file = paste0(PP_dir, paste0('Bias_Est.png')),
+  png(file = paste0(figure_dir, paste0('Fig7_Bias_Est.png')),
       width = 190, height = 150, units = 'mm', res = 1000)
   
   par(mar = c(0,4,0,0), oma = c(4,1,2,0.5), mfrow = c(5,3))
@@ -133,7 +133,7 @@ rel_bias = round(rel_bias / (11000) * 100, 2)
 #########################
 
 {
-  png(file = paste0(PP_dir, paste0('Bias_CV.png')),
+  png(file = paste0(figure_dir, paste0('Fig9_Bias_CV.png')),
       width = 190, height = 150, units = 'mm', res = 1000)
   
   layout(mat = matrix(c(1:4, 

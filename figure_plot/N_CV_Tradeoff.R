@@ -7,7 +7,7 @@ rm(list = ls())
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                       'C:/Users/Zack Oyafuso/Documents/',
@@ -36,7 +36,7 @@ plot_settings = data.frame(type = c('Spatial', 'Spatiotemporal'),
                            xlabel = c(0.18, 0.28))
 
 { 
-  png(paste0(figure_dir, 'Fig3_N_CV_Tradeoff.png'),
+  png(paste0(figure_dir, 'Fig4_N_CV_Tradeoff.png'),
       width = 90, height = 150, res = 500, units = 'mm')
   par(mfrow = c(2,1), mar = c(2,0,1,0.5), oma = c(2,4,0,0))
   for(irow in 1:2){

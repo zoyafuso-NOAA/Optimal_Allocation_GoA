@@ -6,7 +6,7 @@ rm(list = ls())
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                       'C:/Users/Zack Oyafuso/Documents/',
@@ -40,7 +40,7 @@ rockfish_cod_idx = c(2,3,11:15)
 flatfish_idx = (1:ns)[-rockfish_cod_idx]
 
 ####################
-{png(filename = paste0(figure_dir, 'Fig4_choke_spp.png'),
+{png(filename = paste0(figure_dir, 'Fig5_choke_spp.png'),
     width = 190, height = 120, units = 'mm', res =500)
   
   par(mfrow = c(1,3), mar = c(3,0,3,0), oma = c(1,11,0,1))

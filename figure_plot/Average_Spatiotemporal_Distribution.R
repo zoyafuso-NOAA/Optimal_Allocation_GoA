@@ -47,8 +47,13 @@ data(coastlineWorldFine, package="ocedata")
 # AK = sp::spTransform(countriesHigh[c(39,236),], 
 #                      crs('+proj=utm +zone=5 +units=km'))
 
-AK <- rnaturalearth::ne_countries(continent = "north america", scale = "medium", returnclass = "sp")
-AK <- sp::spTransform(AK, CRS = "+proj=utm +zone=5 +lat_1=55 +lat_2=65 +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=km +no_defs")
+AK <- rnaturalearth::ne_countries(continent = "north america", 
+                                  scale = "medium", returnclass = "sp")
+AK <- sp::spTransform(AK, 
+                      CRS = paste0("+proj=utm +zone=5 +lat_1=55 +lat_2=65",
+                                       ' +lat_0=50 +lon_0=-154 +x_0=0 +y_0=0',
+                                    ' +ellps=GRS80 +datum=NAD83 +units=km',
+                                   ' +no_defs'))
 
 #######################################
 ## Load Fit, spatial data
@@ -100,7 +105,7 @@ mean_density_gc = apply(density_gct, MARGIN = 1:2, mean)
 #######################################
 {
     #Set up file
-    png(paste0(figure_dir, 'Mean_CV.png'),
+    png(paste0(figure_dir, 'Fig2_Mean_CV.png'),
         width = 190, height = 190, units = 'mm', res = 500)
     
     #Panel Layout: 6 rows by 3 columns, first 5 rows are spatial distributions
@@ -207,9 +212,9 @@ mean_density_gc = apply(density_gct, MARGIN = 1:2, mean)
                                                                     NA, 7,NA, 
                                                                     9,NA)],
                 bottom = round(quantile(temp$mean[temp$mean > 1],
-                                          probs = seq(0,1,length=10)))[c(NA,2,NA,4,
-                                                                         NA,6,NA,8,
-                                                                         NA,10)])
+                                        probs = seq(0,1,length=10)))[c(NA,2,NA,4,
+                                                                       NA,6,NA,8,
+                                                                       NA,10)])
         }
         
         #Overlay Legend
