@@ -1,5 +1,5 @@
 ################################################
-## Spatiotemporal Survey Optimization
+## Spatiotemporal Constrained CV Survey Optimization
 ################################################
 rm(list = ls())
 
@@ -40,7 +40,6 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
 ## Settings for optimizer
 ############################
 nstrata = c(5,10,15,20,25,30,40,50,60)
-
 settings = data.frame()
 res_df = data.frame(id = 1:N)
 strata_list = list()
@@ -48,12 +47,11 @@ strata_list = list()
 par(mfrow = c(4,3), mar = c(0,0,0,0))
 for(istrata in nstrata){
   
-  iseed = istrata
+  #Initial Condition
   current_n = 10000
   current_CV = 0.08
   
   while(current_n > 280){
-    set.seed(iseed)
     
     #Create CV dataframe
     cv = list()
@@ -79,12 +77,9 @@ for(istrata in nstrata){
                               progress=FALSE) 
     
     #Update settings, res_df, and strata_list
-    settings = rbind(settings,
-                     data.frame(iseed = iseed,
-                                nstrata = istrata,
-                                cv = current_CV,
-                                n = sum(sum_stats$Allocation)))
-    
+    settings = rbind(settings, data.frame(nstrata = istrata,
+                                          cv = current_CV,
+                                          n = sum(sum_stats$Allocation)))
     strata_list = c(strata_list, sum_stats)
     res_df = cbind(res_df, solution$indices$X1)
     
@@ -93,24 +88,18 @@ for(istrata in nstrata){
     current_n = sum(sum_stats$Allocation)
     
     #Output the results of the optimzation to the console
-    plot(1, type = 'n', xlim=c(0,5), ylim = c(0,5), axes = F, ann = F);
-    box()
-    text(x = 2.5, y = 2.5, 
-         paste0("Just Saved:\n", istrata, ' strata,\n',
-                current_CV*100, '% CV,\n', current_n, 
-                ' sample size'))
+    plot(1, type = 'n', xlim=c(0,5), ylim = c(0,5), axes = F, ann = F); box()
+    text(x = 2.5, y = 2.5, paste0("Just Saved:\n", istrata, ' strata,\n',
+                                  current_CV*100, '% CV,\n', current_n, 
+                                  ' sample size'))
     
-    #Update the next CV level and iseed
+    #Update the next CV level
     current_CV = current_CV + 0.01
-    iseed = istrata*1000 + 1
     
     #Plot Solution
     goa = SpatialPointsDataFrame(
       coords = Extrapolation_depths[,c('E_km', 'N_km')],
-      data = cbind(solution$framenew[,paste0('Y',1:ns)],
-                   Str_no = solution$framenew$STRATO,
-                   depth = solution$framenew$X1,
-                   lon = solution$framenew$X2) )
+      data = data.frame(Str_no = solution$framenew$STRATO) )
     goa_ras = raster(goa, resolution = 5)
     goa_ras =rasterize(x = goa, y = goa_ras, field = 'Str_no')
     plot(goa_ras, col = terrain.colors(10)[-10], axes = F)
@@ -120,5 +109,4 @@ for(istrata in nstrata){
          file = paste0(github_dir, 'Spatiotemporal_Optimization/optimization_',
                        istrata,'_strata.RData'))
   }
-  
 }

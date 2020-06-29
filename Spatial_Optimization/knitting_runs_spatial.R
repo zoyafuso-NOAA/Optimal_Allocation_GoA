@@ -33,6 +33,9 @@ for(icol in 1:nruns ){
 
 strata_list = master_strata_list
 
+##########################
+## Save 
+##########################
 save(list = c('res_df', 'settings', 'strata_list'),
      file = paste0(output_wd, 'Spatial_Optimization/',
                    'spatial_only_optimization_results.RData'))

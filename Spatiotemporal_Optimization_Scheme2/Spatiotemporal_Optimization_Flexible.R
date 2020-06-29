@@ -1,5 +1,5 @@
 ################################################
-## Optimization Scheme Two: Flexible CV Constraints
+## Spatiotemporal Constrained CV Survey Optimization
 ################################################
 rm(list = ls())
 
@@ -40,8 +40,7 @@ load(paste0(github_dir, 'data/Extrapolation_depths.RData'))
 ###########################
 ## Load Current CV Simulation
 ###########################
-
-stratas = c(5,10,15,20,25,30,40,50,60)
+stratas = c(5,10,15,20,30,60)
 ns = 15
 creep_rate = 0.05
 threshold = 0.05
@@ -53,6 +52,7 @@ par(mfrow = c(6,6), mar = c(2,2,0,0))
 
 for(istrata in c(6,9)){  
   
+  #Initial Condition
   Run = 1
   CV_constraints = rep(.3, ns)
   current_n = 0
@@ -91,17 +91,13 @@ for(istrata in c(6,9)){
                               progress=FALSE) 
     
     #Plot Solution
-    goa = SpatialPointsDataFrame(coords = Extrapolation_depths[,c('E_km', 'N_km')],
-                                 data = cbind(solution$framenew[,paste0('Y',1:ns)],
-                                              Str_no = solution$framenew$STRATO,
-                                              depth = solution$framenew$X1,
-                                              lon = solution$framenew$X2) )
+    goa = SpatialPointsDataFrame(
+      coords = Extrapolation_depths[,c('E_km', 'N_km')],
+      data = data.frame(Str_no = solution$framenew$STRATO) )
     goa_ras = raster(goa, resolution = 5)
     goa_ras =rasterize(x = goa, y = goa_ras, field = 'Str_no')
-    plot(goa_ras, 
-		col = terrain.colors(stratas[istrata])[sample(stratas[istrata])], 
-		axes = F)
-    
+    plot(goa_ras, axes = F, 
+         col = terrain.colors(stratas[istrata])[sample(stratas[istrata])])
     
     #Save Output
     CV_constraints = expected_CV(strata = solution$aggr_strata)
@@ -109,11 +105,10 @@ for(istrata in c(6,9)){
     result_list = list(solution, sum_stats, CV_constraints, n = current_n)
     save(list = 'result_list', file = 'result_list.RData')
     
+    #Set up next run
     Run = Run + 1
     CV_constraints = CV_constraints * (1 - creep_rate) 
-    CV_constraints = ifelse(CV_constraints < threshold, 
-                            threshold, 
-                            CV_constraints)
+    CV_constraints=ifelse(CV_constraints<threshold, threshold, CV_constraints)
     
     #Create CV dataframe
     cv = list()

@@ -8,7 +8,7 @@ library(sp); library(raster); library(RColorBrewer)
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                       'C:/Users/Zack Oyafuso/Documents/',
@@ -16,9 +16,9 @@ github_dir = paste0(c('/Users/zackoyafuso/Documents/',
                       'C:/Users/zack.oyafuso/Work/' )[which_machine], 
                     "GitHub/Optimal_Allocation_GoA/")
 
-paper_dir = paste0(c('/Users/zackoyafuso/',
-                     'C:/Users/Zack Oyafuso/')[which_machine],
-                   'Google Drive/MS_Optimizations/figure_plot/')
+figure_dir = paste0(c('/Users/zackoyafuso/Google Drive/', 
+                      'C:/Users/Zack Oyafuso/Google Drive/')[which_machine],
+                    'MS_Optimizations/figure_plot/')
 PP_dir = paste0(c('/Users/zackoyafuso/',
                   'C:/Users/Zack Oyafuso/')[which_machine],
                 'Google Drive/MS_Optimizations/powerpoint_plot/')
@@ -27,91 +27,90 @@ PP_dir = paste0(c('/Users/zackoyafuso/',
 ## Load Data
 ########################
 load(paste0(github_dir, 'data/Extrapolation_depths.RData' ))
+load(paste0(github_dir, 'data/optimization_data.RData'))
+load(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/',
+            'spatiotemporal_Flexible_optimization_results.RData'))
+settings$id = 1:nrow(settings)
 
+########################
+## Constants
+########################
 samples = c(820, 550, 280)
 stratas = c(5,10,15)
 yrange = diff(range(Extrapolation_depths[,c('N_km')]))
 plot_random_sample = F
-load(paste0(github_dir, 'data/optimization_data.RData'))
 
-
-
-for(itype in 2){
-
-  load(paste0(github_dir, 'Spatiotemporal_Optimization', 
-              c('', '_Scheme2')[itype], '/spatiotemporal_', 
-              c('', 'Flexible_')[itype], 'optimization_results.RData') )
+{
+  png(file = paste0(figure_dir, 'Fig3_sol_by_boat',
+                    ifelse(plot_random_sample == T, '_withsamples', ''),
+                    '.png'),
+      width = 240, height = 100, units = 'mm', res = 1000)
   
-  settings$id = 1:nrow(settings)
-  
-  {
-    png(file = paste0(PP_dir, 'sol_by_boat',
-                     ifelse(plot_random_sample == T, '_withsamples', ''),
-                     '.png'),
-    width = 240, height = 100, units = 'mm', res = 1000)
+  ####################################
+  ## Plot Settings
+  ####################################
+  par(mfrow = c(1,3), mar = c(0,0,3,0))
+
+  for(istrata in stratas){
     
-    par(mfrow = c(1,3), mar = c(0,0,3,0))
+    ##################################
+    ## Empty Plot
+    ##################################
+    plot(1, type = 'n', axes = F, ann = F,
+         xlim = range(Extrapolation_depths[,c('E_km')]),
+         ylim = c(min(Extrapolation_depths[,c('N_km')])-1.5*yrange,
+                  max(Extrapolation_depths[,c('N_km')])))
     
-    for(istrata in stratas){
-      plot(1, type = 'n', axes = F, ann = F,
-           xlim = range(Extrapolation_depths[,c('E_km')]),
-           ylim = c(min(Extrapolation_depths[,c('N_km')])-1.5*yrange,
-                    max(Extrapolation_depths[,c('N_km')]))
-      )
+    mtext(side = 3, paste(istrata, 'Strata'), font = 2) 
+    
+    offset = 0
+    for(isample in samples){
+      sub_settings = subset(settings, nstrata == istrata)
       
-      mtext(side = 3, paste(istrata, 'Strata'), font = 2) 
-      offset = 0
+      isol = sub_settings$id[which.min(abs(sub_settings$n - isample))]
       
-      for(isample in samples){
-        sub_settings = subset(settings, nstrata == istrata)
+      #Sample based on the stratification allocations
+      sample_vec = c()
+      for(i in 1:istrata ){
+        available_cells = which(res_df[,isol+1] == i)
         
-        isol = sub_settings$id[which.min(abs(sub_settings$n - isample))]
-        
-        #Sample based on the stratification allocations
-        sample_vec = c()
-        for(i in 1:istrata ){
-          available_cells = which(res_df[,isol+1] == i)
-          
-          if(length(available_cells) > 0){
-            sample_cells = sample(x = available_cells, 
-                                  size = strata_list[[isol]]$Allocation[i], 
-                                  replace = F)
-            sample_vec = c(sample_vec, sample_cells)
-          }
-          
+        if(length(available_cells) > 0){
+          sample_cells = sample(x = available_cells, 
+                                size = strata_list[[isol]]$Allocation[i], 
+                                replace = F)
+          sample_vec = c(sample_vec, sample_cells)
         }
         
-        #Organize sample set and total number of samples
-        sample_vec = sort(sample_vec)
-        sample_pts = Extrapolation_depths[sample_vec, c('E_km', 'N_km')]
-        sample_pts[,'N_km'] = sample_pts[,'N_km'] + offset
-        
-        goa = SpatialPointsDataFrame(coords = Extrapolation_depths[,c('E_km', 'N_km')],
-                                     data = data.frame(stratum = res_df[,isol+1]) )
-        goa_ras = raster(goa, resolution = 10)
-        goa_ras =rasterize(x = goa, y = goa_ras, field = 'stratum')
-        
-        goa_ras = raster::shift(goa_ras, y = offset)
-        offset = offset - yrange*.75
-        
-        image(goa_ras, asp = 1, axes = F, add = T,
-              col = brewer.pal(n = istrata, name = 'Paired'))
-        xrange = diff(goa_ras@extent[1:2])
-        yrange = diff(goa_ras@extent[3:4])
-        text(x = goa_ras@extent[1]+xrange*0.70,
-             y = goa_ras@extent[3]+yrange*0.60,
-             paste0('n = ', isample, '\n'),
-             cex = 1.5)
-        
-        if(plot_random_sample) points(sample_pts, pch = 16, cex = 0.2)
-        offset = offset + 1
       }
       
+      #Organize sample set and total number of samples
+      sample_vec = sort(sample_vec)
+      sample_pts = Extrapolation_depths[sample_vec, c('E_km', 'N_km')]
+      sample_pts[,'N_km'] = sample_pts[,'N_km'] + offset
+      
+      goa = SpatialPointsDataFrame(
+        coords = Extrapolation_depths[,c('E_km', 'N_km')],
+        data = data.frame(stratum = res_df[,isol+1]) )
+      goa_ras = raster(goa, resolution = 5)
+      goa_ras =rasterize(x = goa, y = goa_ras, field = 'stratum')
+      
+      goa_ras = raster::shift(goa_ras, dy = offset)
+      offset = offset - yrange*.75
+      
+      image(goa_ras, asp = 1, axes = F, add = T,
+            col = brewer.pal(n = istrata, name = 'Paired'))
+      xrange = diff(goa_ras@extent[1:2])
+      yrange = diff(goa_ras@extent[3:4])
+      text(x = goa_ras@extent[1]+xrange*0.70, y = goa_ras@extent[3]+yrange*0.60,
+           paste0('n = ', isample, '\n'), cex = 1.5)
+      
+      if(plot_random_sample) points(sample_pts, pch = 16, cex = 0.2)
+      offset = offset + 1
     }
-    
-    dev.off()
   }
+  dev.off()
 }
+
 
 # frame$X2 = round(frame$X2)
 # temp_df = strata_list[[isol]]
