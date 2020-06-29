@@ -40,7 +40,8 @@ for(iyear in 1:NTime){
          sample_df = subset(frame_raw, year == iyear)[sample_vec,]
          
          test_sim_mean = colMeans(sample_df[,paste0('Y', 1:ns)])
-         test_sim_se= apply(sample_df[,paste0('Y', 1:ns)], MARGIN = 2, sd)/sqrt(samplesize)
+         test_sim_se= apply(sample_df[,paste0('Y', 1:ns)], MARGIN = 2, sd)
+         #/sqrt(samplesize)
          
          sim_mean[iyear,,isample,iter] = test_sim_mean
          sim_cv[iyear,,isample,iter] = test_sim_se / test_sim_mean
