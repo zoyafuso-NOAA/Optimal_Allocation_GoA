@@ -17,13 +17,11 @@ github_dir = paste0(c('/Users/zackoyafuso/Documents/',
 #########################
 ## Load predicted density and optimization results
 #########################
-load(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/',
-            'spatiotemporal_Flexible_optimization_results.RData'))
 load(paste0(github_dir, 'data/optimization_data.RData'))
 
 #Constants
 ids = as.numeric(rownames(frame))
-Niters = 1000
+Niters = 100
 
 ###########################
 ## Result Objects
@@ -32,7 +30,6 @@ sim_mean = sim_cv = array(dim = c(NTime, ns, 3, Niters),
                           dimnames = list(paste0('Year_', 1:NTime),
                                           sci_names, 
                                           NULL))
-
 #Do Runs
 set.seed(233)
 for(iyear in 1:NTime){
@@ -82,14 +79,13 @@ for(iyear in 1:NTime){
 #######################
 ## Save results
 #######################
-for(ivar in  c('cv_cv_array', 'rrmse_cv_array', 'true_cv_array', 
+for(ivar in  c('rrmse_cv_array', 'true_cv_array', 
                'sim_mean', 'sim_cv')){
    assign(x=paste0('SRS_', ivar), value = get(ivar))
 }
 
-save(file = paste0(github_dir, '/Simple_RS_Simulation_Results.RData'),
-     list = c(paste0('SRS_', c('cv_cv_array', 'rrmse_cv_array', 
+save(file = paste0(github_dir, 'Simulate_SRS_Survey/Simple_RS_Simulation_Results.RData'),
+     list = c(paste0('SRS_', c('rrmse_cv_array', 
                                'true_cv_array', 'sim_mean', 'sim_cv')),
-              'true_mean', 'sci_names', 'NTime', 'ns', 'Niters', 'N', 
-              'nsamples'))
+              "Niters"))
 
