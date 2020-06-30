@@ -21,7 +21,7 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
 
 #Constants
 ids = as.numeric(rownames(frame))
-Niters = 100
+Niters = 1000
 
 ###########################
 ## Result Objects
@@ -40,8 +40,7 @@ for(iyear in 1:NTime){
          sample_df = subset(frame_raw, year == iyear)[sample_vec,]
          
          test_sim_mean = colMeans(sample_df[,paste0('Y', 1:ns)])
-         test_sim_se= apply(sample_df[,paste0('Y', 1:ns)], MARGIN = 2, sd)
-         #/sqrt(samplesize)
+         test_sim_se= apply(sample_df[,paste0('Y', 1:ns)], MARGIN = 2, sd)/sqrt(samplesize)
          
          sim_mean[iyear,,isample,iter] = test_sim_mean
          sim_cv[iyear,,isample,iter] = test_sim_se / test_sim_mean
@@ -55,25 +54,19 @@ for(iyear in 1:NTime){
 ############################
 #True CV
 true_cv_array = cv_cv_array = rrmse_cv_array = 
-   array(dim = c(NTime, ns, 3), 
-         dimnames = list(NULL,
-                         sci_names, 
-                         NULL))
+   array(dim = c(NTime, ns, 3), dimnames = list(NULL,
+                                                sci_names, 
+                                                NULL))
 
 for(iyear in 1:NTime){
    for(isample in 1:3){
       for(spp in 1:ns){
-         
-         true_cv_array[iyear, spp, isample] = 
+         true_cv_array[iyear,spp,isample] = 
             sd(sim_mean[iyear,spp,isample,]) / true_mean[iyear,spp]
          
-         rrmse_cv_array[iyear, spp, isample] = 
-            (sum((sim_cv[iyear,spp,isample,] -  true_cv_array[iyear, spp, isample])^2) / 
-                Niters)^0.5 / mean(sim_cv[iyear, spp, isample,])
-         
-         
+         rrmse_cv_array[iyear,spp,isample] = 
+            (sum((sim_cv[iyear,spp,isample,]-true_cv_array[iyear,spp,isample])^2) / Niters)^0.5 / mean(sim_cv[iyear,spp,isample,])
       }
-      
    }
 }
 
