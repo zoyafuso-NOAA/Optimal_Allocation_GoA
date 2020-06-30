@@ -8,7 +8,7 @@ library(sp); library(RColorBrewer); library(raster)
 ###############################
 ## Set up directories
 ###############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents', 
                       'C:/Users/Zack Oyafuso/Documents',
@@ -20,7 +20,7 @@ github_dir = paste0(c('/Users/zackoyafuso/Documents',
 ## Load Data
 ###########################
 load(paste0(github_dir, 'data/optimization_data.RData'))
-stratas = c(5,10,15,20,30,40,50,60)
+stratas = c(10)
 NStrata = length(stratas)
 ns = 15
 threshold = 5
@@ -42,7 +42,7 @@ for(istrata in c(1)){
  }
 }
 
-istrata = 'Str_5'
+istrata = 'Str_10'
 nruns = length(samplesizes[[istrata]]$n)
 spp_order = order(spp_cv[[istrata]]$cv[nruns,])
 run_order = order(samplesizes[[istrata]]$n)

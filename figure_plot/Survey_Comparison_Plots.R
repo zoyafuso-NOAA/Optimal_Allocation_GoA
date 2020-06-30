@@ -79,8 +79,8 @@ for(ispp in 1:15){
 }
 
 {
-  # png(filename = paste0(figure_dir, 'Bias_Est.png'),
-  #     units = 'mm', width = 190, height = 150, res = 500)
+  png(filename = paste0(figure_dir, 'Bias_Est.png'),
+      units = 'mm', width = 190, height = 150, res = 500)
   par(mfrow = c(5,3), mar = c( 0.5,4,0.5,0), oma = c(2,1,2,0.5))
   for(ispp in 1:15){
     ymax = max(abs(temp_bias[,ispp,,]))
@@ -95,9 +95,10 @@ for(ispp in 1:15){
     axis(side = 2, las = 1)
     legend('topleft', sci_names[ispp], text.font = 3, bty = 'n')
     if(ispp %in% 13:15) 
-      axis(side = 1, at = c(2,6), labels = c('Current Design', 
-                                             'Optimized Design'), 
-           cex.axis = 0.95)
+      axis(side = 1, at = c(2,6,10), labels = c('Current\nDesign', 
+                                                'Optimized\nDesign',
+                                                'SRS\nDesign'), 
+           cex.axis = 0.85)
     
     boxplot(temp_bias[,ispp,,1], add = T, at = 1:3, axes = F, 
             border = c('red', 'blue', 'black'))
@@ -107,7 +108,7 @@ for(ispp in 1:15){
             border = c('red', 'blue', 'black'))
   }
   mtext(side = 2, 'Relative Percent Bias', outer = T, line = -.5)
-  # dev.off()
+  dev.off()
 }
 
 ####################################
@@ -150,8 +151,8 @@ for(ispp in 1:15){
 }
 
 {
-  # png(filename = paste0(figure_dir, 'Bias_CV.png'),
-  #     units = 'mm', width = 190, height = 150, res = 500)
+  png(filename = paste0(figure_dir, 'Bias_CV.png'),
+      units = 'mm', width = 190, height = 150, res = 500)
   par(mfrow = c(5,3), mar = c( 0.5,4,0.5,0), oma = c(2,1,2,0.5))
   for(ispp in 1:15){
     ymax = max(abs(temp_bias[,ispp,,]))
@@ -166,9 +167,10 @@ for(ispp in 1:15){
     axis(side = 2, las = 1)
     legend('bottom', sci_names[ispp], text.font = 3, bty = 'n')
     if(ispp %in% 13:15) 
-      axis(side = 1, at = c(2,6), labels = c('Current Design', 
-                                             'Optimized Design'), 
-           cex.axis = 0.95)
+      axis(side = 1, at = c(2,6,10), labels = c('Current\nDesign', 
+                                                'Optimized\nDesign',
+                                                'SRS\nDesign'), 
+           cex.axis = 0.85)
     
     boxplot(temp_bias[,ispp,,1], add = T, at = 1:3, axes = F, 
             border = c('red', 'blue', 'black'))
@@ -178,15 +180,15 @@ for(ispp in 1:15){
             border = c('red', 'blue', 'black'))
   }
   mtext(side = 2, 'Relative Percent Bias', outer = T, line = -.5)
-  # dev.off()
+  dev.off()
 }
 
 ####################################
 ## True CV
 ####################################
 {
-  # png(filename = paste0(figure_dir, 'True_CV.png'),
-  #     units = 'mm', width = 190, height = 150, res = 500)
+  png(filename = paste0(figure_dir, 'True_CV.png'),
+      units = 'mm', width = 190, height = 150, res = 500)
   par(mfrow = c(5,3), mar = c( 0.5,4,0.5,0), oma = c(2,1,2,0.5))
   for(ispp in 1:15){
     ymax = max(c(Survey_true_cv_array[,ispp,],
@@ -202,9 +204,10 @@ for(ispp in 1:15){
     
     axis(side = 2, las = 1)
     if(ispp %in% 13:15) 
-      axis(side = 1, at = c(2,6), labels = c('Current Design', 
-                                             'Optimized Design'), 
-           cex.axis = 0.95)
+      axis(side = 1, at = c(2,6,10), labels = c('Current\nDesign', 
+                                                'Optimized\nDesign',
+                                                'SRS\nDesign'), 
+           cex.axis = 0.85)
     legend('bottom', sci_names[ispp], bty = 'n', text.font = 3)
     box()
     axis(side = 2, las = 1)
@@ -224,7 +227,7 @@ for(ispp in 1:15){
     }
   }
   mtext(side = 2, 'True CV', outer = T, line = -.5)
-  # dev.off()
+  dev.off()
 }
 
 ####################################
@@ -232,8 +235,8 @@ for(ispp in 1:15){
 ####################################
 
 {
-  # png(filename = paste0(figure_dir, 'RRMSE_CV.png'),
-  #     units = 'mm', width = 190, height = 150, res = 500)
+  png(filename = paste0(figure_dir, 'RRMSE_CV.png'),
+      units = 'mm', width = 190, height = 150, res = 500)
   par(mfrow = c(5,3), mar = c( 0.5,4,0.5,0), oma = c(2,1,2,0.5))
   for(ispp in 1:15){
     ymax = max(c(Survey_rrmse_cv_array[,ispp,],
@@ -249,9 +252,10 @@ for(ispp in 1:15){
     
     axis(side = 2, las = 1)
     if(ispp %in% 13:15) 
-      axis(side = 1, at = c(2,6), labels = c('Current Design', 
-                                             'Optimized Design'), 
-           cex.axis = 0.95)
+      axis(side = 1, at = c(2,6,10), labels = c('Current\nDesign', 
+                                                'Optimized\nDesign',
+                                                'SRS\nDesign'), 
+           cex.axis = 0.85)
     legend('topright', sci_names[ispp], bty = 'n', text.font = 3)
     box()
     axis(side = 2, las = 1)
@@ -269,5 +273,5 @@ for(ispp in 1:15){
     }
   }
   mtext(side = 2, 'RRMSE of CV', outer = T, line = -.5)
-  # dev.off()
+  dev.off()
 }
