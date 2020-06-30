@@ -52,7 +52,7 @@ master_frame_raw = frame_raw
 ############################
 ## Optimizer
 ############################
-ispp = 7
+ispp = 15
 frame = master_frame[,c('id', 'X1', 'X2', paste0('Y',ispp), 'domainvalue')]
 frame_raw = master_frame_raw[,c('id', 'X1', 'X2', 
                                 paste0('Y',ispp), 'domainvalue')]
@@ -60,7 +60,7 @@ frame_raw = master_frame_raw[,c('id', 'X1', 'X2',
 names(frame) = names(frame_raw) = c('id', 'X1', 'X2', 'Y1', 'domainvalue')
 #Initial Condition
 Run = 1
-CV_constraints = 0.03
+CV_constraints = 0.045
 current_n = 0
 
 #Create CV dataframe
@@ -83,8 +83,8 @@ while(current_n <= 820){
   solution <- optimStrata(method = "continuous",
                           errors = cv, 
                           framesamp = frame,
-                          iter = 50,
-                          pops = 20,
+                          iter = 100,
+                          pops = 30,
                           elitism_rate = 0.1,
                           mut_chance = 1 / (10 + 1),
                           nStrata = 10,
