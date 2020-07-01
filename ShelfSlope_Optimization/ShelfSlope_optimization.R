@@ -42,7 +42,7 @@ load(paste0(github_dir, 'data/Extrapolation_depths.RData'))
 ## Load Current CV Simulation
 ###########################
 # stratas = c(5,10,15,20,30,60)
-ns = 15
+
 creep_rate = 0.05
 threshold = 0.05
 
@@ -52,20 +52,24 @@ master_frame_raw = frame_raw
 ############################
 ## Optimizer
 ############################
-ispp = 7
+ispp = c(1:8, 10, 11, 13, 14)
+ns = length(ispp)
 frame = master_frame[,c('id', 'X1', 'X2', paste0('Y',ispp), 'domainvalue')]
 frame_raw = master_frame_raw[,c('id', 'X1', 'X2', 
                                 paste0('Y',ispp), 'domainvalue')]
 
-names(frame) = names(frame_raw) = c('id', 'X1', 'X2', 'Y1', 'domainvalue')
+names(frame) = names(frame_raw) = c('id', 'X1', 'X2', 
+                                    paste0('Y', 1:ns), 'domainvalue')
 #Initial Condition
+
 Run = 1
-CV_constraints = 0.06
+CV_constraints = rep(.3, ns)
 current_n = 0
 
 #Create CV dataframe
 cv = list()
-cv[[paste0('CV',1)]] = CV_constraints
+for(spp in 1:ns) 
+  cv[[paste0('CV',spp)]] = as.numeric(CV_constraints[spp])
 cv[['DOM']] = 1
 cv[['domainvalue']] = 1
 cv <- as.data.frame(cv)
@@ -74,8 +78,8 @@ par(mfrow = c(6,6), mar = c(2,2,0,0))
 while(current_n <= 280){
   
   #Set wd for output files
-  temp_dir = paste0(github_dir, 'Single_Species_Optimization/', 
-                    'Spp', ispp,'Run',Run)
+  temp_dir = paste0(github_dir, 'ShelfSlope_Optimization/', 
+                    'Run',Run)
   if(!dir.exists(temp_dir)) dir.create(temp_dir)
   setwd(temp_dir)
   
@@ -83,7 +87,7 @@ while(current_n <= 280){
   solution <- optimStrata(method = "continuous",
                           errors = cv, 
                           framesamp = frame,
-                          iter = 100,
+                          iter = 50,
                           pops = 30,
                           elitism_rate = 0.1,
                           mut_chance = 1 / (10 + 1),
@@ -117,8 +121,8 @@ while(current_n <= 280){
   
   #Create CV dataframe
   cv = list()
-  for(spp in 1:1) 
-    cv[[paste0('CV',1)]] = as.numeric(CV_constraints)
+  for(spp in 1:ns) 
+    cv[[paste0('CV',spp)]] = as.numeric(CV_constraints[spp])
   cv[['DOM']] = 1
   cv[['domainvalue']] = 1
   cv <- as.data.frame(cv)
