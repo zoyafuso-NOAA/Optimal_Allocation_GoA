@@ -38,21 +38,20 @@ source(paste0(github_dir, 'modified_functions/buildStrataDF_Zack.R'))
 load(paste0(github_dir, 'data/optimization_data.RData'))
 load(paste0(github_dir, 'data/Extrapolation_depths.RData'))
 
+master_frame = frame
+master_frame_raw = frame_raw
+
 ###########################
-## Load Current CV Simulation
+## Constants
 ###########################
-# stratas = c(5,10,15,20,30,60)
 ns = 15
 creep_rate = 0.05
 threshold = 0.05
 
-master_frame = frame
-master_frame_raw = frame_raw
-
 ############################
 ## Optimizer
 ############################
-ispp = 7
+ispp = 1
 frame = master_frame[,c('id', 'X1', 'X2', paste0('Y',ispp), 'domainvalue')]
 frame_raw = master_frame_raw[,c('id', 'X1', 'X2', 
                                 paste0('Y',ispp), 'domainvalue')]
@@ -71,7 +70,7 @@ cv[['domainvalue']] = 1
 cv <- as.data.frame(cv)
 
 par(mfrow = c(6,6), mar = c(2,2,0,0))
-while(current_n <= 280){
+while((current_n <= 550) | (CV_constraints > 0.02) ){
   
   #Set wd for output files
   temp_dir = paste0(github_dir, 'Single_Species_Optimization/', 
