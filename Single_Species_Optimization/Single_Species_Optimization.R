@@ -12,14 +12,14 @@ library(sp); library(RColorBrewer); library(raster)
 ###############################
 ## Set up directories
 ###############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
 
 SamplingStrata_dir = paste0(c('/Users/zackoyafuso/',
                               'C:/Users/Zack Oyafuso/',
                               'C:/Users/zack.oyafuso/')[which_machine],
                             'Downloads/SamplingStrata-master/R')
 
-github_dir = paste0(c('/Users/zack.oyafuso/Documents', 
+github_dir = paste0(c('/Users/zackoyafuso/Documents', 
                       'C:/Users/Zack Oyafuso/Documents',
                       'C:/Users/zack.oyafuso/Work',
                       'C:/Users/zack.oyafuso/Work')[which_machine],
@@ -46,12 +46,12 @@ master_frame_raw = frame_raw
 ###########################
 ns = 15
 creep_rate = 0.05
-threshold = 0.05
+threshold = 0.02
 
 ############################
 ## Optimizer
 ############################
-ispp = 1
+ispp = 15
 frame = master_frame[,c('id', 'X1', 'X2', paste0('Y',ispp), 'domainvalue')]
 frame_raw = master_frame_raw[,c('id', 'X1', 'X2', 
                                 paste0('Y',ispp), 'domainvalue')]
@@ -70,7 +70,7 @@ cv[['domainvalue']] = 1
 cv <- as.data.frame(cv)
 
 par(mfrow = c(6,6), mar = c(2,2,0,0))
-while((current_n <= 550) | (CV_constraints > 0.02) ){
+while((current_n <= 820) & (CV_constraints > threshold) ){
   
   #Set wd for output files
   temp_dir = paste0(github_dir, 'Single_Species_Optimization/', 
