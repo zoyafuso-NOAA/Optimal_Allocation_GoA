@@ -51,6 +51,7 @@ creep_rate = 0.1
 ## Optimizer
 ############################
 ispp = 12
+
 frame = master_frame[,c('id', 'X1', 'X2', paste0('Y',ispp), 'domainvalue')]
 frame_raw = master_frame_raw[,c('id', 'X1', 'X2', 
                                 paste0('Y',ispp), 'domainvalue')]
@@ -69,7 +70,7 @@ cv[['domainvalue']] = 1
 cv <- as.data.frame(cv)
 
 par(mfrow = c(6,6), mar = c(2,2,0,0))
-while((current_n <= 820) & (CV_constraints > threshold) ){
+while((current_n <= 820)){
   
   #Set wd for output files
   temp_dir = paste0(github_dir, 'Single_Species_Optimization/', 
