@@ -12,7 +12,7 @@ library(sp); library(RColorBrewer); library(raster)
 ###############################
 ## Set up directories
 ###############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
 
 SamplingStrata_dir = paste0(c('/Users/zackoyafuso/',
                               'C:/Users/Zack Oyafuso/',
@@ -45,13 +45,12 @@ master_frame_raw = frame_raw
 ## Constants
 ###########################
 ns = 15
-creep_rate = 0.05
-threshold = 0.02
+creep_rate = 0.1
 
 ############################
 ## Optimizer
 ############################
-ispp = 15
+ispp = 12
 frame = master_frame[,c('id', 'X1', 'X2', paste0('Y',ispp), 'domainvalue')]
 frame_raw = master_frame_raw[,c('id', 'X1', 'X2', 
                                 paste0('Y',ispp), 'domainvalue')]
@@ -59,7 +58,7 @@ frame_raw = master_frame_raw[,c('id', 'X1', 'X2',
 names(frame) = names(frame_raw) = c('id', 'X1', 'X2', 'Y1', 'domainvalue')
 #Initial Condition
 Run = 1
-CV_constraints = 0.06
+CV_constraints = 0.1
 current_n = 0
 
 #Create CV dataframe
