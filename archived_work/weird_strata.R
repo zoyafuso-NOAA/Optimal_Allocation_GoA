@@ -9,28 +9,23 @@ library(sp); library(raster); library(RColorBrewer)
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3, 'VM' = 4)[2]
-optimization_type = c('_spatial', '_spatiotemporal')[2]
-VAST_model = '6g'
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3, 'VM' = 4)[3]
 
-output_wd = paste0(c('/Users/zackoyafuso/Documents/', 
-                     'C:/Users/Zack Oyafuso/Documents/',
-                     'C:/Users/zack.oyafuso/Work/', 
-                     'C:/Users/zack.oyafuso/Work/' )[which_machine], 
-                   "GitHub/MS_OM_GoA/Optimum_Allocation/model_", VAST_model,
-                   optimization_type)
+VAST_model = "6g"
+VAST_dir = paste0(c('/Users/zackoyafuso/Google Drive/', 
+                    'C:/Users/Zack Oyafuso/Google Drive/',
+                    'C:/Users/zack.oyafuso/Desktop/')[which_machine],
+                  'VAST_Runs/VAST_output', VAST_model, '/')
 
-paper_dir = paste0(c('/Users/zackoyafuso/', 
-                     'C:/Users/Zack Oyafuso/')[which_machine],
-                   'Google Drive/MS_Optimizations/figure_plot/')
-PP_dir = paste0(c('/Users/zackoyafuso/', 
-                  'C:/Users/Zack Oyafuso/')[which_machine],
-                'Google Drive/MS_Optimizations/powerpoint_plot/')
+github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
+                      'C:/Users/Zack Oyafuso/Documents/',
+                      'C:/Users/zack.oyafuso/Work/')[which_machine],
+                    'GitHub/Optimal_Allocation_GoA/')
 
-load(paste0(dirname(dirname(output_wd)), '/Extrapolation_depths.RData' ))
-load(paste0(output_wd, '/Stratified_RS_Simulation_Results.RData'))
-load(paste0(output_wd, '/optimization_results.RData'))
-load(paste0(output_wd, '/optimization_data_model_', VAST_model, '.RData'))
+
+load(paste0(github_dir, 'data/Extrapolation_depths.RData' ))
+load(paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/spatiotemporal_Flexible_optimization_results.RData'))
+load(paste0(github_dir, 'data/optimization_data.RData'))
 
 settings$id = 1:nrow(settings)
 
@@ -60,5 +55,5 @@ goa_ras = raster(goa, resolution = 5)
 goa_ras =rasterize(x = goa, y = goa_ras, field = 'stratum')
 
 plot(goa_ras, col =  brewer.pal(n = istrata, name = 'Paired'))
-values(goa_ras) = ifelse(values(goa_ras) == 4, 1, NA) 
+values(goa_ras) = ifelse(values(goa_ras) %in% 4:7, 1, NA) 
 plot(goa_ras, col = 'black', add = T, legend = F)
