@@ -31,6 +31,8 @@ load( paste0(github_dir, 'Simulate_Current_Survey/',
              'Survey_Simulation_Results.RData') )
 load( paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/',
              'STRS_Sim_Res_Spatiotemporal_Flexible.RData') )
+load( paste0(github_dir, 'Single_Species_Optimization/',
+             'STRS_Sim_Res_Spatiotemporal_Flexible.RData') )
 load( paste0(github_dir, 'Simulate_SRS_Survey/',
              'Simple_RS_Simulation_Results.RData') )
 
@@ -43,7 +45,7 @@ istrata = 2
 ## Bias in Estimate
 ####################################
 
-temp_bias = array(dim = c(11,15,3,3))
+temp_bias = array(dim = c(11,15,3,4))
 for(ispp in 1:15){
   # plot(1, type = 'n', ylim = c(-100,100), xlim = c(0,8), las = 1)
   for(isample in 1:3){
@@ -74,6 +76,14 @@ for(ispp in 1:15){
                          FUN = '/')
     temp_bias[,ispp,isample,3] = apply(rel_bias, MARGIN = 1, FUN = mean)
     
+    #Single Species Stratified Random Survey
+    abs_bias = sweep(x = SS_STRS_sim_mean[,ispp,isample,], MARGIN = 1,
+                     STATS = true_mean[,ispp], 
+                     FUN = '-')
+    rel_bias = 100*sweep(x = abs_bias, MARGIN = 1,
+                         STATS = true_mean[,ispp], 
+                         FUN = '/')
+    temp_bias[,ispp,isample,4] = apply(rel_bias, MARGIN = 1, FUN = mean)
   }
   
 }
@@ -84,16 +94,16 @@ for(ispp in 1:15){
   par(mfrow = c(5,3), mar = c( 0.5,4,0.5,0), oma = c(2,1,2,0.5))
   for(ispp in 1:15){
     ymax = max(abs(temp_bias[,ispp,,]))
-    plot(1, type = 'n', ylim = c(-ymax,ymax), xlim = c(0,12), las = 1, 
+    plot(1, type = 'n', ylim = c(-ymax,ymax), xlim = c(0,16), las = 1, 
          axes = F, ann = F)
-    if(ispp == 2) legend(x = -2, y = 8, col = c('red','blue','black'),xpd = NA,
-                         pch = 0, legend = paste(1:3, 'Boat'), horiz = T, 
-                         bty = 'n', cex = 1.5, lty = 1, x.intersp = 0.25,
-                         text.col = c('red','blue','black'))
+    if(ispp == 2) legend(x = -2, y = 130, col = c('red','blue','black'),
+                         xpd = NA, pch = 0, legend = paste(1:3, 'Boat'), 
+                         horiz = T, bty = 'n', cex = 1.5, lty = 1, 
+                         x.intersp = 0.25, text.col = c('red','blue','black'))
     abline(h=0, lty = 'dotted')
     box()
     axis(side = 2, las = 1)
-    legend('topleft', sci_names[ispp], text.font = 3, bty = 'n')
+    legend('topright', sci_names[ispp], text.font = 3, bty = 'n')
     if(ispp %in% 13:15) 
       axis(side = 1, at = c(2,6,10), labels = c('Current\nDesign', 
                                                 'Optimized\nDesign',
@@ -106,6 +116,8 @@ for(ispp in 1:15){
             border = c('red', 'blue', 'black'))
     boxplot(temp_bias[,ispp,,3], add = T, at = 9:11, axes = F,
             border = c('red', 'blue', 'black'))
+    boxplot(temp_bias[,ispp,,4], add = T, at = 13:15, axes = F,
+            border = c('red', 'blue', 'black'))
   }
   mtext(side = 2, 'Relative Percent Bias', outer = T, line = -.5)
   dev.off()
@@ -114,7 +126,7 @@ for(ispp in 1:15){
 ####################################
 ## Bias in CV
 ####################################
-temp_bias = array(dim = c(11,15,3,3))
+temp_bias = array(dim = c(11,15,3,4))
 
 for(ispp in 1:15){
   # plot(1, type = 'n', ylim = c(-100,100), xlim = c(0,8), las = 1)
@@ -146,6 +158,14 @@ for(ispp in 1:15){
                          FUN = '/')
     temp_bias[,ispp,isample,3] = apply(rel_bias, MARGIN = 1, FUN = mean)
     
+    #Single Species Stratified Random Survey
+    abs_bias = sweep(x = SS_STRS_sim_cv[,ispp,isample,], MARGIN = 1,
+                     STATS = SS_STRS_true_cv_array[,ispp,isample], 
+                     FUN = '-')
+    rel_bias = 100*sweep(x = abs_bias, MARGIN = 1,
+                         STATS = SS_STRS_true_cv_array[,ispp,isample], 
+                         FUN = '/')
+    temp_bias[,ispp,isample,4] = apply(rel_bias, MARGIN = 1, FUN = mean)
   }
   
 }
@@ -156,16 +176,16 @@ for(ispp in 1:15){
   par(mfrow = c(5,3), mar = c( 0.5,4,0.5,0), oma = c(2,1,2,0.5))
   for(ispp in 1:15){
     ymax = max(abs(temp_bias[,ispp,,]))
-    plot(1, type = 'n', ylim = c(-ymax,ymax), xlim = c(0,12), las = 1, 
+    plot(1, type = 'n', ylim = c(-ymax,ymax), xlim = c(0,16), las = 1, 
          axes = F, ann = F)
-    if(ispp == 2) legend(x = -2, y = 70, col = c('red','blue','black'), xpd = NA,
-                         pch = 0, legend = paste(1:3, 'Boat'), horiz = T, 
-                         bty = 'n', cex = 1.5, lty = 1, x.intersp = 0.25,
-                         text.col = c('red', 'blue', 'black'))
+    if(ispp == 2) legend(x = -2, y = 130, col = c('red','blue','black'), 
+                         xpd = NA, pch = 0, legend = paste(1:3, 'Boat'), 
+                         horiz = T, bty = 'n', cex = 1.5, lty = 1, 
+                         x.intersp = 0.25, text.col = c('red','blue','black'))
     abline(h=0, lty = 'dotted')
     box()
     axis(side = 2, las = 1)
-    legend('bottom', sci_names[ispp], text.font = 3, bty = 'n')
+    legend('topright', sci_names[ispp], text.font = 3, bty = 'n')
     if(ispp %in% 13:15) 
       axis(side = 1, at = c(2,6,10), labels = c('Current\nDesign', 
                                                 'Optimized\nDesign',
@@ -178,6 +198,8 @@ for(ispp in 1:15){
             border = c('red', 'blue', 'black'))
     boxplot(temp_bias[,ispp,,3], add = T, at = 9:11, axes = F,
             border = c('red', 'blue', 'black'))
+    boxplot(temp_bias[,ispp,,4], add = T, at = 13:15, axes = F,
+            border = c('red', 'blue', 'black'))
   }
   mtext(side = 2, 'Relative Percent Bias', outer = T, line = -.5)
   dev.off()
@@ -188,19 +210,19 @@ for(ispp in 1:15){
 ####################################
 {
   png(filename = paste0(figure_dir, 'True_CV.png'),
-      units = 'mm', width = 190, height = 150, res = 500)
+      units = 'mm', width = 200, height = 150, res = 500)
   par(mfrow = c(5,3), mar = c( 0.5,4,0.5,0), oma = c(2,1,2,0.5))
   for(ispp in 1:15){
     ymax = max(c(Survey_true_cv_array[,ispp,],
                  STRS_true_cv_array[,ispp,istrata,],
                  SRS_true_cv_array[,ispp,]))
     
-    plot(1, type = 'n', ylim = c(0,ymax), xlim = c(0,12), las = 1,
+    plot(1, type = 'n', ylim = c(0,ymax), xlim = c(0,16), las = 1,
          axes = F, ann = F)
-    if(ispp == 2) legend(x = -2, y = 0.35, col = c('red','blue','black'), xpd = NA,
-                         pch = 0, legend = paste(1:3, 'Boat'), horiz = T, 
-                         bty = 'n', cex = 1.5, lty = 1, x.intersp = 0.25,
-                         text.col = c('red', 'blue', 'black'))
+    if(ispp == 2) legend(x = -2, y = 0.7, col = c('red','blue','black'), 
+                         xpd = NA, pch = 0, legend = paste(1:3, 'Boat'), 
+                         horiz = T, bty = 'n', cex = 1.5, lty = 1, 
+                         x.intersp = 0.25, text.col = c('red','blue','black'))
     
     axis(side = 2, las = 1)
     if(ispp %in% 13:15) 
@@ -208,7 +230,7 @@ for(ispp in 1:15){
                                                 'Optimized\nDesign',
                                                 'SRS\nDesign'), 
            cex.axis = 0.85)
-    legend('bottom', sci_names[ispp], bty = 'n', text.font = 3)
+    legend('topright', sci_names[ispp], bty = 'n', text.font = 3)
     box()
     axis(side = 2, las = 1)
     
@@ -223,6 +245,9 @@ for(ispp in 1:15){
       
       boxplot(SRS_true_cv_array[,ispp,isample], add = T, 
               at = 8+isample, axes = F, 
+              border = c('red', 'blue', 'black')[isample])
+      boxplot(SS_STRS_true_cv_array[,ispp,isample], add = T, 
+              at = 12+isample, axes = F, 
               border = c('red', 'blue', 'black')[isample])
     }
   }
@@ -243,9 +268,9 @@ for(ispp in 1:15){
                  STRS_rrmse_cv_array[,ispp,istrata,],
                  SRS_rrmse_cv_array[,ispp,]))
     
-    plot(1, type = 'n', ylim = c(0,ymax), xlim = c(0,12), las = 1,
+    plot(1, type = 'n', ylim = c(0,ymax), xlim = c(0,16), las = 1,
          axes = F, ann = F)
-    if(ispp == 2) legend(x = -2, y = 1.2, col = c('red','blue','black'), 
+    if(ispp == 2) legend(x = -2, y = 3, col = c('red','blue','black'), 
                          pch = 0, legend = paste(1:3, 'Boat'), horiz = T, 
                          bty = 'n', cex = 1.5, lty = 1, x.intersp = 0.25,
                          text.col = c('red', 'blue', 'black'), xpd = NA)
@@ -270,8 +295,12 @@ for(ispp in 1:15){
       boxplot(SRS_rrmse_cv_array[,ispp,isample], add = T, 
               at = 8+isample, axes = F, 
               border = c('red', 'blue', 'black')[isample])
+      boxplot(SS_STRS_rrmse_cv_array[,ispp,isample], add = T, 
+              at = 12+isample, axes = F, 
+              border = c('red', 'blue', 'black')[isample])
     }
   }
   mtext(side = 2, 'RRMSE of CV', outer = T, line = -.5)
   dev.off()
 }
+
