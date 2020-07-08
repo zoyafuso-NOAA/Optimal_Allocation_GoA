@@ -8,7 +8,7 @@ library(sp); library(RColorBrewer); library(raster)
 ###############################
 ## Set up directories
 ###############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents', 
                       'C:/Users/Zack Oyafuso/Documents',
@@ -61,4 +61,6 @@ plot(samplesizes[[istrata]]$n[run_order], type = 'l', cex = 2,
 abline(h = c(280, 550, 820), col = 'darkgrey', lty = 'dashed')
 text(1:nruns, samplesizes[[istrata]]$n[run_order], paste(1:nruns))
 
-spp_cv[[istrata]]$cv[nruns,spp_order] * 0.95
+spp_cv[[istrata]]$cv[4,spp_order]
+
+
