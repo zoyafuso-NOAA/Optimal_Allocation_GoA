@@ -7,7 +7,7 @@ rm(list = ls())
 ###############################
 ## Set up directories
 ###############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[3]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                      'C:/Users/Zack Oyafuso/Documents/',
@@ -23,7 +23,7 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
 
 #Constants
 ids = as.numeric(rownames(frame))
-stratas = c(5,10,15,20)
+stratas = c(5,10,15,20,30,60)
 Nstrata = length(stratas)
 Niters = 1000
 
