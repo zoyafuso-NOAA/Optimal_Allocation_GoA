@@ -7,7 +7,7 @@ rm(list = ls())
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                       'C:/Users/Zack Oyafuso/Documents/',
@@ -290,7 +290,7 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
   }
   
   plot(1, type = 'n', xlim = c(0,1), ylim = c(0,1), axes = F, ann = F)
-  legend('center', legend = paste0(1:3, ' Boat'), horiz = T, cex = 1.5,
+  legend('bottom', legend = paste0(1:3, ' Boat'), horiz = T, cex = 1.5,
          fill = c('red', 'blue', 'white'))
   plot(1, type = 'n', axes = F, ann = F)
   
