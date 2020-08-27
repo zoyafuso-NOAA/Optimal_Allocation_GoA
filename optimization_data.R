@@ -21,7 +21,7 @@ library(SamplingStrata)
 rm(list = ls())
 
 which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
-VAST_model = "6g" 
+VAST_model = "10d" 
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents', 
                       'C:/Users/Zack Oyafuso/Documents',
@@ -35,8 +35,15 @@ VAST_dir = paste0(c('/Users/zackoyafuso/Google Drive/',
                     'C:/Users/zack.oyafuso/Desktop/')[which_machine],
                   'GOA_VAST_Runs/VAST_output', VAST_model, '/')
 
+##################################################
+####   Set up Result Directories
+##################################################
 if(!dir.exists(paste0(github_dir, 'model_', VAST_model))){
   dir.create(paste0(github_dir, 'model_', VAST_model))
+  dir.create(paste0(github_dir, 'model_', VAST_model, 
+                    '/Survey_Comparison_Simulations/'))
+  dir.create(paste0(github_dir, 'model_', VAST_model, 
+                    '/Spatiotemporal_Optimization/'))
 }
 
 ##################################################
@@ -56,23 +63,28 @@ Year_Set = seq(min(fit$data_frame[,'t_i']),
 Years2Include = which( Year_Set %in% sort(unique(fit$data_frame[,'t_i'])))
 NTime = length(Years2Include)
 
+#Number of sampling grids
 N = nrow(Extrapolation_depths)
 
-sci_names = c("Atheresthes stomias", "Gadus chalcogrammus", 
-              "Gadus macrocephalus", "Glyptocephalus zachirus" , 
-              "Hippoglossoides elassodon", "Hippoglossus stenolepis", 
-              "Lepidopsetta bilineata", "Lepidopsetta polyxystra",
-              "Sebastes brevispinis", "Microstomus pacificus", 
-              "Sebastes alutus", "Sebastes B_R", "Sebastes polyspinis", 
-              "Sebastes variabilis", "Sebastolobus alascanus" )
+#Species names
+which_spp_idx = unlist(spp_df[VAST_model,])
+sci_names = sort( names(spp_df)[which_spp_idx] )
 
-common_names = c('arrowtooth flounder', 'walleye pollock', 'Pacific cod',
-                 'rex sole', 'flathead sole', 'Pacific halibut', 
-                 'southern rock sole', 'northern rock sole', 'yellowfin sole',
-                 'Dover sole', 'Pacific ocean perch', 
-                 'blackspotted/rougheye\nrockfishes',
-                 'northern rockfish', 'dusky rockfish', 'shortspine thornyhead')
+# common_names = c('arrowtooth flounder', 'walleye pollock', 'Pacific cod',
+#                  'rex sole', 'flathead sole', 'Pacific halibut', 
+#                  'southern rock sole', 'northern rock sole', 'yellowfin sole',
+#                  'Dover sole', 'Pacific ocean perch', 
+#                  'blackspotted/rougheye\nrockfishes',
+#                  'northern rockfish', 'dusky rockfish', 
+#                  'shortspine thornyhead')
 ns = length(sci_names)
+
+#Sample sizes
+samples = c(280, 550, 820)
+nboats = 3
+
+#Number of times to simulate survey
+Niters = 1000
 
 ##################################################
 ####   Create the data inputs to SamplingStrata
@@ -138,6 +150,6 @@ colnames(true_mean) = sci_names
 ####   Save Data
 ##################################################
 save(list = c('frame', 'frame_raw', 'true_mean', 'ns', 'NTime', 'N',
-              'sci_names', 'common_names'),
+              'sci_names', 'samples', 'nboats', 'Niters'),
      file = paste0(github_dir, 'model_', VAST_model, 
                    '/optimization_data.RData'))
