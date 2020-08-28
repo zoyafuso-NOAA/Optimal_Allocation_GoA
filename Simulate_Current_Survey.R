@@ -13,8 +13,8 @@ library(readxl)
 ##################################
 ## Set up directories
 ##################################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
-VAST_model = "10d" 
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[3]
+VAST_model = "11" 
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
                       'C:/Users/Zack Oyafuso/Documents/',
@@ -145,9 +145,9 @@ for(isample in 1:nboats){
       rel_bias_est[iyear,ispp,isample] = 
         100*mean(abs_bias / true_mean[iyear,ispp])
       
-      abs_bias = iter_cv - temp_true_cv
+      abs_bias = iter_cv - true_cv
       rel_bias_cv[iyear,ispp,isample] = 
-        100*mean(abs_bias / temp_true_cv)
+        100*mean(abs_bias / true_cv)
     }
   }
 }

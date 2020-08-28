@@ -15,7 +15,7 @@ library(sp); library(RColorBrewer); library(raster)
 ##################################################
 rm(list = ls())
 which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[3]
-VAST_model = "10d" 
+VAST_model = "11" 
 
 SamplingStrata_dir = paste0(c('/Users/zackoyafuso/',
                               'C:/Users/Zack Oyafuso/',
@@ -34,14 +34,14 @@ github_dir = paste0(c('/Users/zack.oyafuso/Documents',
 ####   stratum variance
 ##################################################
 for(ifile in dir(SamplingStrata_dir, full.names = T)) source(ifile)
-source(paste0(github_dir, 'modified_functions/buildStrataDF_Zack.R'))
+source(paste0(dirname(github_dir), '/modified_functions/buildStrataDF_Zack.R'))
 
 ##################################################
 ####   Load Data
 ##################################################
-load(paste0(github_dir, 'data/optimization_data.RData'))
-load(paste0(github_dir, 'data/Extrapolation_depths.RData'))
-load(paste0(github_dir, 'Simulate_Current_Survey/',
+load(paste0(github_dir, 'optimization_data.RData'))
+load(paste0(dirname(github_dir), '/data/Extrapolation_depths.RData'))
+load(paste0(github_dir, 'Survey_Comparison_Simulations/',
             'Survey_Simulation_Results.RData'))
 
 ##################################################
