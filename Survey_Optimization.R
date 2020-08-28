@@ -192,3 +192,4 @@ for(istrata in 2){
     cv <- as.data.frame(cv)
   }
 }
+
