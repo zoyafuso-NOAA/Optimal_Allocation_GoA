@@ -20,7 +20,7 @@ library(SamplingStrata)
 ##################################################
 rm(list = ls())
 
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[3]
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
 VAST_model = "11" 
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents', 
@@ -61,6 +61,7 @@ Year_Set = seq(min(fit$data_frame[,'t_i']),
 Years2Include = which( Year_Set %in% sort(unique(fit$data_frame[,'t_i'])))
 
 Year_Set = 1996:2019
+
 Years2Include = c(1,  4,  8, 10, 12, 14, 16, 18, 20, 22, 24)
 
 NTime = length(Years2Include)
