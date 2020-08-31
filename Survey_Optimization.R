@@ -163,7 +163,7 @@ for (istrata in 2) {
     solution <- optimStrata(method = "continuous",
                             errors = cv, 
                             framesamp = frame,
-                            iter = 300,
+                            iter = 200,
                             pops = 30,
                             elitism_rate = 0.1,
                             mut_chance = 1 / (temp_strata + 1),
