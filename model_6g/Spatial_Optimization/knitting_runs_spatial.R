@@ -7,15 +7,15 @@ rm(list = ls())
 ############################
 ## Set up directories
 #############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[3]
-
+which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+VAST_model = "6g"
 output_wd = paste0(c('/Users/zackoyafuso/Documents/', 
                      'C:/Users/Zack Oyafuso/Documents/',
                      'C:/Users/zack.oyafuso/Work/', 
                      'C:/Users/zack.oyafuso/Work/' )[which_machine], 
-                   "GitHub/Optimal_Allocation_GoA/")
+                   "GitHub/Optimal_Allocation_GoA/model_", VAST_model, '/')
 
-load(paste0(output_wd, 'data/optimization_data.RData'))
+load(paste0(output_wd, 'optimization_data.RData'))
 
 ####################
 ## Result lIst
