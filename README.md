@@ -1,2 +1,2 @@
 # Optimal_Allocation_GoA
-Gulf of Alaska Groundfish Fishery: Multi-Species Stratified Random Sampling Design
+Gulf of Alaska Bottom Trawl Survey: Multi-Species Optimization of Stratified Random Sampling Design
