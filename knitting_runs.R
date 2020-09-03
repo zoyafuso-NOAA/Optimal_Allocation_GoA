@@ -9,18 +9,18 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 VAST_model <- "6g" 
 
-github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
-                       'C:/Users/Zack Oyafuso/Documents/',
-                       'C:/Users/zack.oyafuso/Work/')[which_machine], 
+github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
+                       "C:/Users/Zack Oyafuso/Documents/",
+                       "C:/Users/zack.oyafuso/Work/")[which_machine], 
                      "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/")
 
 ##################################################
 ####   Load Data
 ##################################################
-load(paste0(github_dir, 'optimization_data.RData'))
+load(paste0(github_dir, "optimization_data.RData"))
 
 ##################################################
 ####   Define which optimization settings is being worked on
@@ -33,10 +33,10 @@ load(paste0(github_dir, 'optimization_data.RData'))
 ####   one_CV: One CV constraint applied to all species
 ####   "": species specific CV constraints, assumed to be the default
 ##################################################
-which_variance = paste0(c('Spatiotemporal', 
-                          'Spatiotemporal_One_CV', 
-                          'Spatial')[3],
-                        '_Optimization/')
+which_variance <- paste0(c("Spatiotemporal", 
+                          "Spatiotemporal_One_CV", 
+                          "Spatial")[3],
+                        "_Optimization/")
 
 result_dir <- paste0(github_dir, which_variance)
 
@@ -57,11 +57,11 @@ for (istrata in 1:NStratas) {
    temp_strata <- stratas[istrata]
    
    runs <- grep(x = dir(result_dir), 
-                pattern = paste0('Str', temp_strata, 'Run'), 
+                pattern = paste0("Str", temp_strata, "Run"), 
                 value = T )
    
    for (irun in runs) {
-      temp_dir <- paste0(result_dir,  irun, '/result_list.RData')
+      temp_dir <- paste0(result_dir,  irun, "/result_list.RData")
       
       if (file.exists(temp_dir)) {
          load(temp_dir)
@@ -81,8 +81,8 @@ for (istrata in 1:NStratas) {
          
          #High-level settings: total sample size and expected CV across species
          species_cv <- result_list[[3]]
-         attributes(species_cv)$dimnames[[1]] <- ''
-         attributes(species_cv)$dimnames[[2]] <- paste0('CV_', 1:ns)
+         attributes(species_cv)$dimnames[[1]] <- ""
+         attributes(species_cv)$dimnames[[2]] <- paste0("CV_", 1:ns)
          cv <- max(as.numeric(species_cv))
          n <- result_list$n
          
@@ -92,11 +92,11 @@ for (istrata in 1:NStratas) {
    }
 }
 
-settings$id = 1:nrow(settings)
-names(res_df)[-1] <- paste0('sol_', 1:(ncol(res_df)-1))
+settings$id <- 1:nrow(settings)
+names(res_df)[-1] <- paste0("sol_", 1:(ncol(res_df)-1))
 
 ##################################################
 ####   Save Objects
 ##################################################
-save(list = c('res_df', 'settings', 'strata_list', 'strata_stats_list'),
-     file = paste0(result_dir, 'optimization_knitted_results.RData'))
+save(list = c("res_df", "settings", "strata_list", "strata_stats_list"),
+     file = paste0(result_dir, "optimization_knitted_results.RData"))

@@ -36,7 +36,6 @@ which_method = c("Flexible" = 1,
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
-                       "C:/Users/zack.oyafuso/Work",
                        "C:/Users/zack.oyafuso/Work")[which_machine],
                      "/GitHub/Optimal_Allocation_GoA/model_", 
                      VAST_model, "/", 
