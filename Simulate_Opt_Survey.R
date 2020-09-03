@@ -8,8 +8,8 @@ rm(list = ls())
 ##################################################
 ####  Set up directories  
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
-VAST_model <- "11" 
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
+VAST_model <- "6g" 
 
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
                        'C:/Users/Zack Oyafuso/Documents/',
@@ -17,11 +17,28 @@ github_dir <- paste0(c('/Users/zackoyafuso/Documents/',
                      "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/")
 
 ##################################################
+####   Define which optimization settings is being worked on
+####
+####   which_variance:
+####   Spatial: spatial variance for stratum variance
+####   Spatiotemporal: spatiotemporal variance for stratum variance
+####
+####   which_constraint: 
+####   one_CV: One CV constraint applied to all species
+####   "": species specific CV constraints, assumed to be the default
+##################################################
+which_variance = paste0(c('Spatiotemporal', 
+                          'Spatiotemporal_One_CV', 
+                          'Spatial')[3],
+                        '_Optimization/')
+
+result_dir <- paste0(github_dir, which_variance)
+
+##################################################
 ####    Load predicted density and optimization results
 ##################################################
 load(paste0(github_dir, 'optimization_data.RData'))
-load(paste0(github_dir, 'Spatiotemporal_Optimization/',
-            'optimization_knitted_results.RData'))
+load(paste0(result_dir, 'optimization_knitted_results.RData'))
 
 ##################################################
 ####   Result Objects
@@ -39,7 +56,7 @@ true_cv_array <- rrmse_cv_array <- rel_bias_est <- rel_bias_cv <-
 ##################################################
 ####   Simulating surveys from each optimized solution
 ##################################################
-for (istrata in c(1:2)) {
+for (istrata in c(1:NStratas)) {
   for (isample in 1:nboats) {
     
     #Load optimization data

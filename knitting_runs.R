@@ -9,8 +9,8 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
-VAST_model <- "11" 
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
+VAST_model <- "6g" 
 
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
                        'C:/Users/Zack Oyafuso/Documents/',
@@ -31,19 +31,14 @@ load(paste0(github_dir, 'optimization_data.RData'))
 ####
 ####   which_constraint: 
 ####   one_CV: One CV constraint applied to all species
-####   spp_spec_CV: species specific CV constraints
+####   "": species specific CV constraints, assumed to be the default
 ##################################################
-# opt_settings = data.frame(which_variance = c('spatial', 
-#                                              'spatiotemporal', 
-#                                              'spatiotemporal'),
-#                           which_constraint = c('one_cv','one_cv','spp_spec_cv'),
-#                           stringsAsFactors = F)
-# 
-# irow = 3
-# result_dir = paste0(github_dir, opt_settings$which_variance[irow], '_',
-#                     opt_settings$which_constraint[irow], '/')
+which_variance = paste0(c('Spatiotemporal', 
+                          'Spatiotemporal_One_CV', 
+                          'Spatial')[3],
+                        '_Optimization/')
 
-result_dir <- paste0(github_dir, "Spatiotemporal_Optimization/")
+result_dir <- paste0(github_dir, which_variance)
 
 ##################################################
 ####   Empty Result Objects
@@ -52,12 +47,13 @@ res_df <- data.frame(id = 1:N)
 settings <- data.frame()
 strata_stats_list <- strata_list <- list()
 stratas <- c(5,10,15,20,30,60)
+NStratas = length(stratas)
 
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
 # for (istrata in 1:length(stratas)) {
-for (istrata in 1:3) {
+for (istrata in 1:NStratas) {
    temp_strata <- stratas[istrata]
    
    runs <- grep(x = dir(result_dir), 
