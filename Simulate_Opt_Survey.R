@@ -8,7 +8,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories  
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
 VAST_model <- "6g" 
 
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
@@ -27,10 +27,9 @@ github_dir <- paste0(c('/Users/zackoyafuso/Documents/',
 ####   one_CV: One CV constraint applied to all species
 ####   "": species specific CV constraints, assumed to be the default
 ##################################################
-which_variance = paste0(c('Spatiotemporal', 
-                          'Spatiotemporal_One_CV', 
-                          'Spatial')[3],
-                        '_Optimization/')
+which_variance = c('Spatiotemporal_Optimization/', 
+                   'Spatiotemporal_Optimization_Scheme2/', 
+                   'Spatial_Optimization/')[1]
 
 result_dir <- paste0(github_dir, which_variance)
 
