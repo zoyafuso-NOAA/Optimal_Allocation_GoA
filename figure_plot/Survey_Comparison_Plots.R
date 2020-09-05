@@ -7,7 +7,7 @@ rm(list = ls())
 ## Set up directories
 #######################################
 
-which_machine = c('Zack_MAC' = 1, 'Zack_PC' = 2)[2]
+which_machine = c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
 VAST_model = "11" 
 
 github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
