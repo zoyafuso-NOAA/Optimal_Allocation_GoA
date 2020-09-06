@@ -17,56 +17,58 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' = 2, 'Zack_GI_PC'=3)[2]
+which_machine = c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 VAST_model <- "6g"
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
                      "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/")
 
-figure_dir <- paste0(c('/Users/zackoyafuso/', 
-                       'C:/Users/Zack Oyafuso/')[which_machine],
-                     'Google Drive/MS_Optimizations/figure_plot/')
+figure_dir <- paste0(c("/Users/zackoyafuso/", 
+                       "C:/Users/Zack Oyafuso/")[which_machine],
+                     "Google Drive/MS_Optimizations/figure_plot/")
 
 ##########################
 ## Settings for Spatial or Spatiotemporal Plot
 ##########################
 samples <- c(280, 550, 820)
 plot_settings <- 
-  data.frame(type = c('Spatial', 'Spatiotemporal'),
-             data_filename = c('optimization_knitted_results', 
-                               'spatiotemporal_optimization_results'),
+  data.frame(type = c("Spatial", "Spatiotemporal"),
+             data_filename = c("optimization_knitted_results", 
+                               "optimization_knitted_results"),
              ymax = c(1100, 1100),
              xmin = c(0.09, 0.15),
              xmax = c(0.24, 0.30),
              xlabel = c(0.22, 0.28))
 
 { 
-  png(filename = paste0(figure_dir, 'Fig4_N_CV_Tradeoff.png'),
+  png(filename = paste0(figure_dir, "Fig4_N_CV_Tradeoff.png"),
       width = 90, 
       height = 150, 
       res = 500, 
-      units = 'mm')
+      units = "mm")
   
-  par(mfrow = c(2,1), 
-      mar = c(2,0,1,0.5), 
-      oma = c(2,4,0,0))
+  par(mfrow = c(2, 1), 
+      mar = c(2, 0, 1, 0.5), 
+      oma = c(2, 4, 0, 0))
   
   for (irow in 1:2) {
     
     ##########################
     ## Load Data
     ##########################
-    load(paste0(github_dir, plot_settings$type[irow], '_Optimization/',
-                plot_settings$data_filename[irow], 
-                'optimization_results.RData'))
+    load(paste0(github_dir, plot_settings$type[irow], "_Optimization/",
+                plot_settings$data_filename[irow], ".RData"))
     
     #############################
     ## Plot
     #############################
+    subsettings = subset(settings, 
+                         strata == 5)
+    subsettings = subsettings[order(subsettings$cv),]
+    
     plot(n ~ cv, 
-         data = settings, 
-         subset = nstrata == 5, 
+         data = subsettings, 
          las = 1, 
          pch = 16,
          ylim = c(0, plot_settings$ymax[irow]),
@@ -74,32 +76,31 @@ plot_settings <-
          cex.axis = 0.85)
     
     lines(n ~ cv, 
-          data = settings, 
-          subset = nstrata == 5)
+          data = subsettings)
     
     abline(h = samples, 
-           col = 'grey', 
-           lty = 'dashed')
+           col = "grey", 
+           lty = "dashed")
     
     text(x = plot_settings$xlabel[irow], 
          y = samples, 
-         labels = paste(1:3, 'Boat'), 
+         labels = paste(1:3, "Boat"), 
          pos = 1)
     
-    legend('top', 
-           legend = paste(plot_settings$type[irow], 'Optimization'), 
-           bty = 'n')
+    legend("top", 
+           legend = paste(plot_settings$type[irow], "Optimization"), 
+           bty = "n")
     
   }
   
   
   mtext(side = 1, 
-        text = 'Upper CV Constraint', 
+        text = "Upper CV Constraint", 
         outer = T, 
         line = 0.5)
   
   mtext(side = 2, 
-        text = 'Total Optimized Sample Size', 
+        text = "Total Optimized Sample Size", 
         outer = T, 
         line = 3)
   
@@ -111,11 +112,11 @@ plot_settings <-
 ## Supplemental Figure
 #####################################################
 {
-  png(paste0(figure_dir, 'Supplemental_Figures/SFig2_N_CV_Tradeoff.png'),
+  png(paste0(figure_dir, "Supplemental_Figures/SFig2_N_CV_Tradeoff.png"),
       width = 140, 
       height = 180, 
       res = 500, 
-      units = 'mm')
+      units = "mm")
   
   par(mfcol = c(6, 2), 
       mar = c(0, 0, 0, 0), 
@@ -127,15 +128,16 @@ plot_settings <-
     ## Load Data
     ##########################
     load(paste0(github_dir, 
-                plot_settings$type[irow], '_Optimization/',
-                plot_settings$data_filename[irow], '.RData'))
+                plot_settings$type[irow], "_Optimization/",
+                plot_settings$data_filename[irow], ".RData"))
     for (istrata in c(5, 10, 15, 20, 30, 60)) {
       
       #############################
       ## Plot
       #############################
       if (irow == 1) {
-        sub_settings = subset(settings, strata == istrata)
+        sub_settings = subset(settings, 
+                              strata == istrata)
         sub_settings = sub_settings[order(sub_settings$cv, decreasing = T), ] 
         
         plot(n ~ cv, 
@@ -158,8 +160,9 @@ plot_settings <-
       }
       
       if (irow == 2) {
-        plot(n ~ cv, data = settings, 
-             subset = nstrata == istrata, 
+        plot(n ~ cv, 
+             data = settings, 
+             subset = strata == istrata, 
              las = 1, 
              pch = 16,
              ylim = c(0, plot_settings$ymax[irow]), 
@@ -172,37 +175,38 @@ plot_settings <-
         
         lines(n ~ cv, 
               data = settings, 
-              subset = nstrata == istrata)}
+              subset = strata == istrata)
+        }
       
       abline(h = samples, 
-             col = 'grey', 
-             lty = 'dashed')
+             col = "grey", 
+             lty = "dashed")
       
       text(x = plot_settings$xlabel[irow], 
            y = samples, 
-           labels = paste(1:3, 'Boat'), 
+           labels = paste(1:3, "Boat"), 
            pos = 1)
       
       text(x = plot_settings$xlabel[irow],
            y = plot_settings$ymax[irow],
-           labels = paste(istrata, 'Strata'), 
+           labels = paste(istrata, "Strata"), 
            font = 2, 
            pos = 1, 
            cex = 1.25)
       
       if (istrata == 5) mtext(side = 3, 
                               text = paste(plot_settings$type[irow], 
-                                           'Optimization'),
+                                           "Optimization"),
                               line = 1)
     }
   }
   
   mtext(side = 1, 
-        text = 'Upper CV Constraint', 
+        text = "Upper CV Constraint", 
         outer = T, 
         line = 3)
   mtext(side = 2, 
-        text = 'Total Sample Size', 
+        text = "Total Sample Size", 
         outer = T, 
         line = 4)
   dev.off()

@@ -10,7 +10,7 @@ rm(list = ls())
 ####   Set up directories
 ##################################################
 which_machine <- c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
-VAST_model <- "10b" 
+VAST_model <- "11" 
 
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
                        'C:/Users/Zack Oyafuso/Documents/',
@@ -49,7 +49,7 @@ for (iyear in 1:NTime) {
       temp_sim_var <- apply(sample_df[, paste0('Y', 1:ns)], 
                             MARGIN = 2, 
                             FUN = var)
-      temp_sim_se <- sqrt(temp_sim_var / sample_size)
+      temp_sim_se <- sqrt(temp_sim_var / samplesize)
       
       #Save Mean and CV
       sim_mean[iyear, ,isample, iter] <- temp_sim_mean
