@@ -22,8 +22,8 @@ library(raster)
 ####   Single_Species: Spatiotemporal Variance, univariate optimization, 
 ####                   one CV constraint
 ##################################################
-which_machine <- c("Zack_MAC"=1, "Zack_PC" =2, "Zack_GI_PC"=3)[1]
-VAST_model <- "6g" 
+which_machine <- c("Zack_MAC"=1, "Zack_PC" =2, "Zack_GI_PC"=3)[3]
+VAST_model <- "11" 
 
 SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
                                "C:/Users/Zack Oyafuso/",
@@ -32,7 +32,7 @@ SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
 
 which_method = c("Flexible" = 1,
                  "Spatial" = 2,
-                 "Single_Species" = 3)[2]
+                 "Single_Species" = 3)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -50,7 +50,7 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
 ##################################################
 if (which_method %in% c(1,3)) { 
   for (ifile in dir(SamplingStrata_dir, full.names = T)) source(ifile)
-  source(paste0(dirname(github_dir), 
+  source(paste0(dirname(dirname(github_dir)), 
                 "/modified_functions/buildStrataDF_Zack.R"))
 }
 
@@ -69,7 +69,7 @@ load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
 ####   Load Simulated Survey metrics for use in threshold levels
 ##################################################
 if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
-  load(paste0(github_dir, "Survey_Comparison_Simulations/",
+  load(paste0(dirname(github_dir), "/Survey_Comparison_Simulations/",
               "Survey_Simulation_Results.RData"))
 }
 
