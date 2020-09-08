@@ -13,17 +13,17 @@ library(sp); library(RColorBrewer); library(raster)
 ## Set up directories
 ###############################
 which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[2]
+VAST_model <- "6g" 
 
-github_dir = paste0(c('/Users/zackoyafuso/Documents', 
-                      'C:/Users/Zack Oyafuso/Documents',
-                      'C:/Users/zack.oyafuso/Work',
-                      'C:/Users/zack.oyafuso/Work')[which_machine],
-                    '/GitHub/Optimal_Allocation_GoA/')
+github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
+                       'C:/Users/Zack Oyafuso/Documents/',
+                       'C:/Users/zack.oyafuso/Work/')[which_machine], 
+                     "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/")
 
 ###########################
 ## Load Data
 ###########################
-load(paste0(github_dir, 'data/optimization_data.RData'))
+load(paste0(github_dir, 'optimization_data.RData'))
 
 ######
 stratas = c(5,10,15,20,30,60)
@@ -52,7 +52,7 @@ for(istrata in c(1:Nstrata)){
          colnames(spp_cvs) = paste0('CV_', 1:ns)
          rownames(spp_cvs) = NULL
          
-         settings = rbind(settings, cbind(data.frame(nstrata = stratas[istrata], 
+         settings = rbind(settings, cbind(data.frame(strata = stratas[istrata], 
                                                      n = result_list$n), 
                                           spp_cvs))
          
@@ -64,6 +64,8 @@ for(istrata in c(1:Nstrata)){
 }
 
 settings$id = 1:nrow(settings)
+settings$cv = apply(settings[, paste0('CV_', 1:ns)],
+                    MARGIN = 1, FUN = max)
 names(res_df)[-1] = paste0('sol_', 1:nrow(settings))
 
 ########################
@@ -71,4 +73,4 @@ names(res_df)[-1] = paste0('sol_', 1:nrow(settings))
 ########################
 save(list = c('res_df', 'settings', 'strata_list'),
      file = paste0(github_dir, 'Spatiotemporal_Optimization_Scheme2/',
-                   'spatiotemporal_Flexible_optimization_results.RData'))
+                   'optimization_knitted_results.RData'))

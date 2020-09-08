@@ -7,45 +7,45 @@ rm(list = ls())
 ###############################
 ## Set up directories
 ###############################
-which_machine = c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
+VAST_model <- "6g" 
 
-github_dir = paste0(c('/Users/zackoyafuso/Documents/', 
-                      'C:/Users/Zack Oyafuso/Documents/',
-                      'C:/Users/zack.oyafuso/Work/', 
-                      'C:/Users/zack.oyafuso/Work/' )[which_machine], 
-                    "GitHub/Optimal_Allocation_GoA/")
+github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
+                       'C:/Users/Zack Oyafuso/Documents/',
+                       'C:/Users/zack.oyafuso/Work/')[which_machine], 
+                     "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/")
 
 #########################
 ## Load predicted density and optimization results
 #########################
 load(paste0(github_dir, 'Spatiotemporal_Optimization/',
-            'spatiotemporal_optimization_results.RData'))
-load(paste0(github_dir, 'data/optimization_data.RData'))
+            'optimization_knitted_results.RData'))
+load(paste0(github_dir, 'optimization_data.RData'))
 
 #Constants
 ids = as.numeric(rownames(frame))
-stratas = c(5,10,15,20,30,40,50,60)
+stratas = c(5, 10, 15, 20, 30, 60)
 Nstrata = length(stratas)
 Niters = 1000
 
 ###########################
 ## Result Objects
 ###########################
-sim_mean = sim_cv = array(dim = c(NTime, ns, Nstrata, 3, Niters), 
-                          dimnames = list(paste0('Year_', 1:NTime),
-                                          sci_names, 
-                                          NULL, 
-                                          NULL))
+sim_mean <- sim_cv <- array(dim = c(NTime, ns, nboats, NStratas, Niters), 
+                            dimnames = list(NULL, sci_names, NULL))
+
+true_cv_array <- rrmse_cv_array <- rel_bias_est <- rel_bias_cv <- 
+  array(dim = c(NTime, ns, nboats, NStratas), 
+        dimnames = list(NULL, sci_names, NULL, NULL ))
+
 ##########################
 ## Simulating each optimization
 ##########################
-settings$id = 1:nrow(settings)
-
 for(istrata in 1:Nstrata){
  for(isample in 1:3) {
   
   #Load optimization data
-  sub_settings = subset(settings, nstrata == stratas[istrata])
+  sub_settings = subset(settings, strata == stratas[istrata])
   
   temp_run = sub_settings$id[which.min(abs(sub_settings$n-
                                             c(280,550,820)[isample]))]
@@ -92,7 +92,7 @@ for(istrata in 1:Nstrata){
     
     #Calculate Total Abundance and Variance, calculate CV
     SRS_var = colSums(sweep(x = sample_var, MARGIN = 1, 
-                            STATS = (Wh)^2*(1-wh)/
+                            STATS = (Wh)^2 * (1 - wh)/
                              strata_allocation[str_idx],
                             FUN = '*'))
     
@@ -103,8 +103,8 @@ for(istrata in 1:Nstrata){
     strata_cv = sqrt(SRS_var) / SRS_mean 
     
     #Record mean and CV values
-    sim_mean[paste0('Year_',iyear),,istrata,isample,iter] = SRS_mean
-    sim_cv[paste0('Year_',iyear),,istrata,isample,iter] = strata_cv
+    sim_mean[iyear, , istrata, isample, iter] = SRS_mean
+    sim_cv[iyear, , istrata, isample, iter] = strata_cv
     
     if(iter%%100 == 0){
      print(paste0('Finished with: Iteration ', iter, ', ', 'Year ', iyear, 
@@ -120,39 +120,37 @@ for(istrata in 1:Nstrata){
 #################################
 ## Simulation Metrics
 #################################
-#True CV, Cv of Cv, Rrmse of Cv
-true_cv_array = rrmse_est_array = rrmse_cv_array = 
- array(dim = c(NTime, ns, Nstrata, 3), 
-       dimnames = list(paste0('Year_', 1:NTime), sci_names, NULL, NULL ))
-
-for(iyear in 1:NTime){
- for(istrata in 1:Nstrata){
-  for(isample in 1:3){
-   for(spp in sci_names){
+for (iyear in 1:NTime){
+ for (istrata in 1:Nstrata){
+  for (isample in 1:nboats){
+   for (ispp in sci_names){
     
-    iter_est = sim_mean[paste0('Year_', iyear),spp,istrata,isample,]
-    iter_cv = sim_cv[paste0('Year_', iyear), spp, istrata,isample, ]
-    true_cv = sd(iter_est) / true_mean[iyear, spp]
+    iter_est <- sim_mean[iyear, ispp, istrata, isample,]
+    iter_cv <- sim_cv[iyear, ispp, istrata, isample, ]
+    true_cv <- sd(iter_est) / true_mean[iyear, ispp]
     
-    true_cv_array[paste0('Year_', iyear),spp,istrata,isample] = true_cv
+    true_cv_array[iyear, ispp, istrata, isample] <- true_cv
     
-    rrmse_cv_array[paste0('Year_', iyear), spp, istrata,isample] = 
-     sqrt(mean((iter_cv-true_cv)^2)) / mean(iter_cv)
+    rrmse_cv_array[iyear, ispp, istrata, isample] <- 
+     sqrt(mean((iter_cv - true_cv)^2)) / mean(iter_cv)
     
-    rrmse_est_array[paste0('Year_', iyear), spp, istrata,isample] = 
-     sqrt(mean((iter_est-true_mean[iyear,spp])^2))/
-     true_mean[iyear,spp]
+    abs_bias <- iter_est - true_mean[iyear, ispp]
+    rel_bias_est[iyear, ispp, isample, istrata] <- 
+      mean(100* abs_bias / true_mean[iyear, ispp])
+    
+    abs_bias <- iter_cv - true_cv
+    rel_bias_cv[iyear, ispp, isample, istrata] <- 
+      mean(100 * abs_bias / true_cv)
    }
   }
  }
- 
 }
 
 #######################
 ## Save results
 #######################
-for(ivar in  c('rrmse_est_array', 'rrmse_cv_array', 'true_cv_array', 
-               'sim_mean', 'sim_cv')){
+for(ivar in  c('rrmse_cv_array', 'true_cv_array', 
+               'sim_mean', 'sim_cv', 'rel_bias_est', 'rel_bias_cv')){
  assign(x=paste0('STRS_', ivar), value = get(ivar))
 }
 
@@ -160,6 +158,7 @@ save(file=paste0(github_dir,
                  'Spatiotemporal_Optimization/',
                  'STRS_Sim_Res_Spatiotemporal.RData'),
      list = c(paste0('STRS_', c('rrmse_est_array', 'rrmse_cv_array', 
-                                'true_cv_array', 'sim_mean', 'sim_cv')),
+                                'true_cv_array', 'sim_mean', 'sim_cv',
+                                'rel_bias_est', 'rel_bias_cv')),
               'Niters'))
 

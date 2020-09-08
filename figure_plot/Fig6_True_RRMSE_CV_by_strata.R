@@ -27,6 +27,8 @@ figure_dir = paste0(c("/Users/zackoyafuso/",
 ####   Load Data
 ##################################################
 load(paste0(github_dir, "optimization_data.RData"))
+stratas = c(5, 10, 15, 20, 30, 60)
+NStrata = length(stratas)
 
 ##################################################
 ####   True CV across years (boxplot), sample size (color), strata (x-axis),
@@ -93,13 +95,13 @@ load(paste0(github_dir, "optimization_data.RData"))
                              bty = "n", 
                              text.font = 3 )
       if (ispp %in% c(13:15)) axis(side = 1, 
-                                   labels = c(5, 10, 15, 20, 30, 60), 
+                                   labels = stratas, 
                                    at = seq(from = 0.5, 
                                             by = 2.5, 
                                             length = 6))
       
       offset = 0
-      for (istrata in stratas) {
+      for (istrata in 1:NStrata) {
         for (isample in 1:3) {
           boxplot( STRS_true_cv_array[, ispp, istrata, isample], 
                    add = T,
@@ -129,55 +131,76 @@ load(paste0(github_dir, "optimization_data.RData"))
 ##############################
 
 {
-  png(file = paste0(figure_dir, paste0("Fig8_RRMSE_CV.png")),
-      width = 190, height = 120, units = "mm", res = 1000)
+  png(file = paste0(figure_dir, "Fig8_RRMSE_CV.png"),
+      width = 190, 
+      height = 120, 
+      units = "mm", 
+      res = 1000)
   
   layout(mat = matrix(c(1:4, 
                         8:11,
                         rep(16, 4),
                         5:7,15,
                         12:15), nrow = 4), 
-         widths = c(1,1,0.25,1,1))
-  par(mar = c(0,0,0,0), oma = c(4,4,3,1))
+         widths = c(1, 1, 0.25, 1, 1))
   
-  for(itype in 1:2){
+  par(mar = c(0, 0, 0, 0), 
+      oma = c(4, 4, 3, 1))
+  
+  for (itype in 1:2) {
     load(paste0(github_dir,
                 c("Spatiotemporal_Optimization/",
-                  "Spatiotemporal_Optimization_Scheme2/")[itype],
-                c("STRS_Sim_Res_Spatiotemporal.RData",
-                  "STRS_Sim_Res_Spatiotemporal_Flexible.RData")[itype] ))
+                  "Spatiotemporal_Optimization_Scheme2/")[itype], 
+                "STRS_Sim_Res_spatiotemporal.RData" ))
     
-    if(itype == 1) stratas = c(1,2,3,4,7,8)
-    if(itype == 2) stratas = c(1:6)
-    
-    for(ispp in c(1,3,11,13, 8,12,15)){
+    for (ispp in c(1,3,11,13, 8,12,15)) {
       
-      max_val = c(0.6, 0.75, 0.5, 0.55,
-                  0.25, 0.50, 0.5, 0.43,
-                  0.35, 0.80, 0.75, 0.75,
+      max_val = c(0.60, 0.75, 0.50, 
+                  0.55, 0.25, 0.50, 
+                  0.50, 0.43, 0.35,
+                  0.80, 0.75, 0.85,
                   0.55, 1.10, 0.55)[ispp]
       
-      plot(1, type = "n", xlim = c(-0.5,13.5), axes = F, ann = F, 
-           ylim = c(0, max_val) )
+      plot(1, 
+           type = "n", 
+           xlim = c(-0.5,13.5), 
+           ylim = c(0, max_val),
+           axes = F, 
+           ann = F )
       
       box()
-      abline(v = seq(from = 1.75, by = 2.5, length = 5), lty = "dashed", 
+      abline(v = seq(from = 1.75, 
+                     by = 2.5, 
+                     length = 5), 
+             lty = "dashed", 
              col = "darkgrey")
-      if(itype == 1) axis(side = 2, las = 1, at = pretty(c(0, max_val), 3))
+      if (itype == 1) axis(side = 2, 
+                           las = 1, 
+                           at = pretty(c(0, max_val), 3))
       
-      if(itype == 2) legend("topright", sci_names[ispp], bty = "n", 
-                            text.font = 3 )
-      if(ispp %in% c(13,15)) axis(side = 1, at = seq(0.5, by = 2.5, length = 6),
-                                  labels = c(5,10,15,20,30,60))
-      if(ispp %in% c(1,8)) mtext(side = 3, c("Constrained\nSpatiotemporal",
-                                             "Flexible\nSpatiotemporal")[itype])
+      if (itype == 2) legend("topright", 
+                             legend = sci_names[ispp], 
+                             bty = "n", 
+                             text.font = 3 )
+      if (ispp %in% c(13, 15)) axis(side = 1, 
+                                    at = seq(from = 0.5, 
+                                             by = 2.5, 
+                                             length = 6),
+                                    labels = stratas)
+      if (ispp %in% c(1, 8)) mtext(side = 3, 
+                                   text = c("Constrained\nSpatiotemporal",
+                                            "Flexible\nSpatiotemporal")[itype])
       
       offset = 0
-      for(istrata in stratas){
+      for(istrata in 1:NStrata){
         for(isample in 1:3){
-          boxplot( STRS_rrmse_cv_array[,ispp,istrata,isample], add = T,
-                   axes = F, at = offset, pch = 16, cex = 0.5,
-                   col = c("red", "blue", "white")[isample] )
+          boxplot( STRS_rrmse_cv_array[, ispp, isample, istrata], 
+                   add = T,
+                   axes = F, 
+                   at = offset, 
+                   pch = 16, 
+                   cex = 0.5,
+                   col = c("red", "cyan", "white")[isample] )
           offset = offset + 0.5
         }
         offset = offset + 1
@@ -185,13 +208,30 @@ load(paste0(github_dir, "optimization_data.RData"))
     }
   }
   
-  plot(1, type = "n", xlim = c(0,1), ylim = c(0,1), axes = F, ann = F)
-  legend("bottom", legend = paste0(1:3, " Boat"), horiz = T, cex = 1.5,
-         fill = c("red", "blue", "white"))
-  plot(1, type = "n", axes = F, ann = F)
+  plot(1, 
+       type = "n", 
+       xlim = c(0,1), 
+       ylim = c(0,1), 
+       axes = F, 
+       ann = F)
+  legend("bottom", 
+         legend = paste0(1:3, " Boat"), 
+         horiz = T, 
+         cex = 1.5,
+         fill = c("red", "cyan", "white"))
+  plot(1, 
+       type = "n", 
+       axes = F, 
+       ann = F)
   
-  mtext(side = 1, "Number of Strata", outer = T, line = 2.5)
-  mtext(side = 2, "RRMSE of CV", outer = T, line = 2.5)
+  mtext(side = 1, 
+        text = "Number of Strata", 
+        outer = T, 
+        line = 2.5)
+  mtext(side = 2, 
+        text = "RRMSE of CV", 
+        outer = T, 
+        line = 2.5)
   dev.off()
 }
 
@@ -200,21 +240,26 @@ load(paste0(github_dir, "optimization_data.RData"))
 ################################
 {
   png(file = paste0(figure_dir, "Supplemental_Figures/SFig4_True_CV.png"),
-      width = 190, height = 150, units = "mm", res = 1000)
+      width = 190, 
+      height = 150, 
+      units = "mm", 
+      res = 1000)
   
-  par(mar = c(0,4,0,0), oma = c(4,1,2,0.5), mfrow = c(5,3))
+  par(mar = c(0, 4, 0, 0), 
+      oma = c(4, 1, 2, 0.5), 
+      mfrow = c(5, 3))
   
-  for(itype in 1){
+  for (itype in 1){
     load(paste0(github_dir, 
                 c("Spatiotemporal_Optimization/", 
                   "Spatiotemporal_Optimization_Scheme2/")[itype],
                 c("STRS_Sim_Res_Spatiotemporal.RData", 
                   "STRS_Sim_Res_Spatiotemporal_Flexible.RData")[itype] ))
     
-    if(itype == 1) stratas = c(1,2,3,4,7,8)
-    if(itype == 2) stratas = c(1:6)
+    if (itype == 1) stratas = c(1:6)
+    if (itype == 2) stratas = c(1:6)
     
-    for(ispp in 1:ns){
+    for (ispp in 1:ns){
       
       max_val = c(0.12, 0.32, 0.12, 
                   0.17, 0.17, 0.09, 
@@ -222,97 +267,145 @@ load(paste0(github_dir, "optimization_data.RData"))
                   0.32, 0.44, 0.34,
                   0.35, 0.475, 0.34)[ispp]
       
-      plot(1, type = "n", xlim = c(-0.5,13.5), axes = F, ann = F, 
+      plot(1, 
+           type = "n", 
+           xlim = c(-0.5,13.5), 
+           axes = F, 
+           ann = F, 
            ylim = c(0, max_val) )
-      box(); 
-      abline(v = seq(from = 1.75, by = 2.5, length = 5), lty = "dashed", 
+      box() 
+      abline(v = seq(from = 1.75, 
+                     by = 2.5, 
+                     length = 5), 
+             lty = "dashed", 
              col = "lightgrey")
-      axis(side = 2, las = 1, at = pretty(c(0,max_val), 3) )
+      axis(side = 2, 
+           las = 1, 
+           at = pretty(c(0,max_val), 3) )
       
-      if(ispp == 2) legend(x = -3, y = 0.45, legend = paste(1:3, "Boat"),
-                           fill = c("red", "blue", "white"), x.intersp = .5,
-                           horiz = T, xpd = NA, cex = 1.5, bty = "n")
+      if (ispp == 2) legend(x = -3, 
+                            y = 0.45, 
+                            legend = paste(1:3, "Boat"),
+                            fill = c("red", "cyan", "white"), 
+                            x.intersp = 0.5,
+                            horiz = T, 
+                            xpd = NA, 
+                            cex = 1.5, 
+                            bty = "n")
       
-      legend("bottom", sci_names[ispp], bty = "n", 
+      legend("bottom", 
+             legend = sci_names[ispp], 
+             bty = "n", 
              text.font = 3 )
-      if(ispp %in% c(13:15)) axis(side = 1, labels = c(5,10,15,20,30,60), 
-                                  at = seq(from=0.5, by=2.5, length=6))
+      if (ispp %in% c(13:15)) axis(side = 1, 
+                                   labels = c(5, 10, 15, 20, 30, 60), 
+                                   at = seq(from = 0.5, 
+                                            by = 2.5, 
+                                            length = 6))
       
       offset = 0
-      for(istrata in stratas){
-        for(isample in 1:3){
-          boxplot( STRS_true_cv_array[,ispp,istrata,isample], add = T,
-                   axes = F, at = offset, pch = 16, cex = 0.5, 
-                   col = c("red", "blue", "white")[isample] )
+      for (istrata in stratas) {
+        for (isample in 1:3) {
+          boxplot( STRS_true_cv_array[, ispp, istrata, isample], 
+                   add = T,
+                   axes = F, 
+                   at = offset, 
+                   pch = 16, 
+                   cex = 0.5, 
+                   col = c("red", "cyan", "white")[isample] )
           offset = offset + 0.5
         }
         offset = offset + 1
       }
     }
   }
-  
-  # plot(1, type = "n", axes = F, ann = F)
-  # 
-  # plot(1, type = "n", xlim = c(0,1), ylim = c(0,1), axes = F, ann = F)
-  # legend("bottom", legend = paste0(1:3, " Boat"), horiz = T, cex = 1.5,
-  #        fill = c("red", "blue", "white"))
-  
-  mtext(side = 1, "Number of Strata", outer = T, line = 2.5)
-  mtext(side = 2, "True CV", outer = T, line = -1)
+  mtext(side = 1, 
+        text = "Number of Strata", 
+        outer = T, 
+        line = 2.5)
+  mtext(side = 2, 
+        text = "True CV", 
+        outer = T, 
+        line = -1)
   dev.off()
 }
 
 
 {
   png(file = paste0(figure_dir, "Supplemental_Figures/SFig5_RRMSE_CV.png"),
-      width = 190, height = 190, units = "mm", res = 1000)
+      width = 190, 
+      height = 190, 
+      units = "mm", 
+      res = 1000)
   
   layout(mat = matrix(c(1:8, 
                         16:23,
                         rep(32, 8),
                         9:15, 31,
                         24:30,31), nrow = 8), 
-         widths = c(1,1,0.25,1,1))
-  par(mar = c(0,0,0,0), oma = c(4,4,3,1))
+         widths = c(1, 1, 0.25, 1, 1))
   
-  for(itype in 1:2){
+  par(mar = c(0, 0, 0, 0), 
+      oma = c(4, 4, 3, 1))
+  
+  for (itype in 1:2) {
     load(paste0(github_dir,
                 c("Spatiotemporal_Optimization/",
                   "Spatiotemporal_Optimization_Scheme2/")[itype],
                 c("STRS_Sim_Res_Spatiotemporal.RData",
                   "STRS_Sim_Res_Spatiotemporal_Flexible.RData")[itype] ))
     
-    if(itype == 1) stratas = c(1,2,3,4,7,8)
-    if(itype == 2) stratas = c(1:6)
+    if (itype == 1) stratas = c(1:6)
+    if (itype == 2) stratas = c(1:6)
     
-    for(ispp in 1:ns){
+    for (ispp in 1:ns) {
       
-      max_val = c(0.6, 0.75, 0.5, 0.55,
-                  0.25, 0.50, 0.5, 0.43,
-                  0.35, 0.80, 0.75, 0.75,
+      max_val = c(0.60, 0.75, 0.50, 
+                  0.55, 0.25, 0.50, 
+                  0.50, 0.43, 0.35, 
+                  0.80, 0.75, 0.75,
                   0.55, 1.10, 0.55)[ispp]
       
-      plot(1, type = "n", xlim = c(-0.5,13.5), axes = F, ann = F, 
+      plot(1, 
+           type = "n", 
+           xlim = c(-0.5,13.5), 
+           axes = F, 
+           ann = F, 
            ylim = c(0, max_val) )
       
       box()
-      abline(v = seq(from = 1.75, by = 2.5, length = 5), lty = "dashed", 
+      abline(v = seq(from = 1.75, 
+                     by = 2.5, 
+                     length = 5), 
+             lty = "dashed", 
              col = "darkgrey")
-      if(itype == 1) axis(side = 2, las = 1, at = pretty(c(0, max_val), 3))
+      if (itype == 1) axis(side = 2, 
+                           las = 1, 
+                           at = pretty(c(0, max_val), 3))
       
-      if(itype == 2) legend("topright", sci_names[ispp], bty = "n", 
-                            text.font = 3 )
-      if(ispp %in% c(8,15)) axis(side = 1, at = seq(0.5, by = 2.5, length = 6),
-                                 labels = c(5,10,15,20,30,60))
-      if(ispp %in% c(1,9)) mtext(side = 3, c("Constrained\nSpatiotemporal",
-                                             "Flexible\nSpatiotemporal")[itype])
+      if (itype == 2) legend("topright", 
+                             legend = sci_names[ispp], 
+                             bty = "n", 
+                             text.font = 3 )
+      if (ispp %in% c(8,15)) axis(side = 1, 
+                                  at = seq(from = 0.5, 
+                                           by = 2.5, 
+                                           length = 6),
+                                  labels = c(5, 10, 15, 20, 30, 60))
+      if (ispp %in% c(1,9)) mtext(side = 3, 
+                                  text = c("Constrained\nSpatiotemporal",
+                                           "Flexible\nSpatiotemporal")[itype])
       
       offset = 0
-      for(istrata in stratas){
-        for(isample in 1:3){
-          boxplot( STRS_rrmse_cv_array[,ispp,istrata,isample], add = T,
-                   axes = F, at = offset, pch = 16, cex = 0.5,
-                   col = c("red", "blue", "white")[isample] )
+      for (istrata in stratas) {
+        for (isample in 1:3) {
+          boxplot( STRS_rrmse_cv_array[, ispp, istrata, isample], 
+                   add = T,
+                   axes = F, 
+                   at = offset, 
+                   pch = 16, 
+                   cex = 0.5,
+                   col = c("red", "cyan", "white")[isample] )
           offset = offset + 0.5
         }
         offset = offset + 1
@@ -320,12 +413,29 @@ load(paste0(github_dir, "optimization_data.RData"))
     }
   }
   
-  plot(1, type = "n", xlim = c(0,1), ylim = c(0,1), axes = F, ann = F)
-  legend("bottom", legend = paste0(1:3, " Boat"), horiz = T, cex = 1.5,
-         fill = c("red", "blue", "white"))
-  plot(1, type = "n", axes = F, ann = F)
+  plot(1, 
+       type = "n", 
+       xlim = c(0, 1), 
+       ylim = c(0, 1), 
+       axes = F, 
+       ann = F)
+  legend("bottom", 
+         legend = paste0(1:3, " Boat"), 
+         horiz = T, 
+         cex = 1.5,
+         fill = c("red", "cyan", "white"))
+  plot(1, 
+       type = "n", 
+       axes = F, 
+       ann = F)
   
-  mtext(side = 1, "Number of Strata", outer = T, line = 2.5)
-  mtext(side = 2, "RRMSE of CV", outer = T, line = 2.5)
+  mtext(side = 1, 
+        text = "Number of Strata", 
+        outer = T, 
+        line = 2.5)
+  mtext(side = 2, 
+        text = "RRMSE of CV", 
+        outer = T, 
+        line = 2.5)
   dev.off()
 }

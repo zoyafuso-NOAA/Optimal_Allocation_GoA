@@ -11,6 +11,8 @@
 ##               approach where all species have the same upper CV constraint 
 ##               in the optimization. Horizontal dotted grey lines indicate the
 ##               sampling levels for one, two, and three boats.
+##
+##               SFigure 
 ###############################################################################
 rm(list = ls())
 
@@ -28,18 +30,19 @@ figure_dir <- paste0(c("/Users/zackoyafuso/",
                        "C:/Users/Zack Oyafuso/")[which_machine],
                      "Google Drive/MS_Optimizations/figure_plot/")
 
-##########################
-## Settings for Spatial or Spatiotemporal Plot
-##########################
+##################################################
+####   Plot Settings
+##################################################
 samples <- c(280, 550, 820)
 plot_settings <- 
   data.frame(type = c("Spatial", "Spatiotemporal"),
-             data_filename = c("optimization_knitted_results", 
-                               "optimization_knitted_results"),
-             ymax = c(1100, 1100),
              xmin = c(0.09, 0.15),
              xmax = c(0.24, 0.30),
-             xlabel = c(0.22, 0.28))
+             xlabel = c(0.19, 0.2775))
+
+##################################################
+####   Figure 4
+##################################################
 
 { 
   png(filename = paste0(figure_dir, "Fig4_N_CV_Tradeoff.png"),
@@ -57,11 +60,11 @@ plot_settings <-
     ##########################
     ## Load Data
     ##########################
-    load(paste0(github_dir, plot_settings$type[irow], "_Optimization/",
-                plot_settings$data_filename[irow], ".RData"))
+    load(paste0(github_dir, plot_settings$type[irow], 
+                "_Optimization/optimization_knitted_results.RData"))
     
     #############################
-    ## Plot
+    ## Main Plot
     #############################
     subsettings = subset(settings, 
                          strata == 5)
@@ -71,29 +74,32 @@ plot_settings <-
          data = subsettings, 
          las = 1, 
          pch = 16,
-         ylim = c(0, plot_settings$ymax[irow]),
+         ylim = c(0, 1100),
          ann = F, 
          cex.axis = 0.85)
     
     lines(n ~ cv, 
           data = subsettings)
     
+    #1, 2, and 3-boat sample size lines
     abline(h = samples, 
            col = "grey", 
            lty = "dashed")
     
+    #Boat labels
     text(x = plot_settings$xlabel[irow], 
          y = samples, 
          labels = paste(1:3, "Boat"), 
          pos = 1)
     
+    #Plot subtitle
     legend("top", 
            legend = paste(plot_settings$type[irow], "Optimization"), 
            bty = "n")
     
   }
   
-  
+  #Plot Axes Names
   mtext(side = 1, 
         text = "Upper CV Constraint", 
         outer = T, 
@@ -109,10 +115,15 @@ plot_settings <-
 
 
 #####################################################
-## Supplemental Figure
+## Supplemental Figure 4
 #####################################################
+plot_settings <- 
+  data.frame(type = c("Spatial", "Spatiotemporal"),
+             xmin = c(0.09, 0.15),
+             xmax = c(0.24, 0.30),
+             xlabel = c(0.22, 0.2775))
 {
-  png(paste0(figure_dir, "Supplemental_Figures/SFig2_N_CV_Tradeoff.png"),
+  png(paste0(figure_dir, "Supplemental_Figures/SFig4_N_CV_Tradeoff.png"),
       width = 140, 
       height = 180, 
       res = 500, 
@@ -127,9 +138,9 @@ plot_settings <-
     ##########################
     ## Load Data
     ##########################
-    load(paste0(github_dir, 
-                plot_settings$type[irow], "_Optimization/",
-                plot_settings$data_filename[irow], ".RData"))
+    load(paste0(github_dir, plot_settings$type[irow], 
+                "_Optimization/optimization_knitted_results.RData"))
+    
     for (istrata in c(5, 10, 15, 20, 30, 60)) {
       
       #############################
@@ -144,7 +155,7 @@ plot_settings <-
              data = sub_settings, 
              las = 1, 
              pch = 16,
-             ylim = c(0, plot_settings$ymax[irow]), 
+             ylim = c(0, 1100), 
              xlim = c(plot_settings$xmin[irow], 
                       plot_settings$xmax[irow]),
              ann = F, 
@@ -165,7 +176,7 @@ plot_settings <-
              subset = strata == istrata, 
              las = 1, 
              pch = 16,
-             ylim = c(0, plot_settings$ymax[irow]), 
+             ylim = c(0, 1100), 
              xlim = c(plot_settings$xmin[irow], 
                       plot_settings$xmax[irow]),
              ann = F,
