@@ -22,7 +22,7 @@ library(raster)
 ####   Single_Species: Spatiotemporal Variance, univariate optimization, 
 ####                   one CV constraint
 ##################################################
-which_machine <- c("Zack_MAC"=1, "Zack_PC" =2, "Zack_GI_PC"=3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 VAST_model <- "11" 
 
 SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
@@ -32,7 +32,7 @@ SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
 
 which_method = c("Flexible" = 1,
                  "Spatial" = 2,
-                 "Single_Species" = 3)[1]
+                 "Single_Species" = 3)[3]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -79,7 +79,7 @@ ns <- c(15, 15, 1)[which_method]
 ##################################################
 ####   If Single_Species: subset just the one species
 ##################################################
-SS_which_species <- 1 #which species are we doing?
+SS_which_species <- 2 #which species are we doing?
 if (which_method == 3) {
   SS_which_species <- 1 #which species are we doing?
   frame <- frame[,c("id", "X1", "X2", paste0("Y", SS_which_species),
@@ -90,6 +90,11 @@ if (which_method == 3) {
                             "domainvalue", "year")]
   
   names(frame)[4] <- names(frame_raw)[4] <- "Y1"
+  
+  github_dir = paste0(github_dir, gsub(x = sci_names[SS_which_species], 
+                                       pattern = ' ', 
+                                       replacement = '_'), '/')
+  if(!dir.exists(github_dir)) dir.create(github_dir)
 }
 
 ##################################################
