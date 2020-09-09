@@ -12,7 +12,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine = c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
+which_machine = c("Zack_MAC" = 1, "Zack_PC" = 2)[1]
 
 VAST_model <- "6g"
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
@@ -49,12 +49,14 @@ NStrata = length(stratas)
   
   for (ispp in 1:ns) {
     
+    #Species-Specific y-limits
     ylim_ = list(c(-60,60), c(-80,125), c(-50, 50),
                  c(-70,70), c(-70,70), c(-30,30),
                  c(-80,110),c(-80,110),c(-130,130),
                  c(-110,160),c(-110,210),c(-110,130),
                  c(-110,160),c(-110,175),c(-120,120))[[ispp]]
     
+    #Base Plot
     plot(1, 
          type = "n", 
          xlim = c(0, 20), 
@@ -87,15 +89,17 @@ NStrata = length(stratas)
            text.font = 3 )
     
     if (ispp %in% c(13:15)) axis(side = 1, 
-                                 labels = c(5, 10, 15, 20, 30, 60), 
-                                 at = seq(from = 1, by = 3.5, length = 6))
+                                 labels = stratas, 
+                                 at = seq(from = 1, 
+                                          by = 3.5, 
+                                          length = NStrata))
     
     for (istrata in 1:NStrata) {
       
       temp_bias = array(dim = c(NTime, nboats, Niters))
-      for(iyear in 1:NTime){
+      for (iyear in 1:NTime) {
         temp_bias[iyear, , ] <-
-          100 * (STRS_sim_mean[iyear, ispp, istrata, ,] -
+          100 * (STRS_sim_mean[iyear, ispp, , istrata, ] -
                    true_mean[iyear, ispp]) /
           true_mean[iyear, ispp]
       }
@@ -114,8 +118,15 @@ NStrata = length(stratas)
     }
   }
   
-  mtext(side = 1, "Number of Strata", outer = T, line = 2.5)
-  mtext(side = 2, "Percent Relative Bias", outer = T, line = -1)
+  #Axes Labels
+  mtext(side = 1, 
+        text = "Number of Strata", 
+        outer = T, 
+        line = 2.5)
+  mtext(side = 2, 
+        text = "Percent Relative Bias", 
+        outer = T, 
+        line = -1)
   dev.off()
 }
 
@@ -152,7 +163,10 @@ for(itype in 2){
 }
 
 
-#########################
+#######################################
+##  Figure 9:
+##  Bias in CV for a subset of species
+#######################################
 
 {
   png(file = paste0(figure_dir, paste0("Fig9_Bias_CV.png")),
@@ -168,34 +182,34 @@ for(itype in 2){
                         12:15), nrow = 4), 
          widths = c(1, 1, 0.25, 1, 1))
   
-  par(mar = c(0, 0, 0, 0), oma = c(4, 4, 3, 1))
+  par(mar = c(0, 0, 0, 0), 
+      oma = c(4, 4, 3, 1))
   
   for (itype in 1:2) {
     
     load(paste0(github_dir,
                 c("Spatiotemporal_Optimization/",
                   "Spatiotemporal_Optimization_Scheme2/")[itype],
-                c("STRS_Sim_Res_Spatiotemporal.RData",
-                  "STRS_Sim_Res_Spatiotemporal.RData")[itype] ))
+                "STRS_Sim_Res_Spatiotemporal.RData"))
     
-    if (itype == 1) stratas = 1:6
-    if (itype == 2) stratas = c(1:6)
     
-    for(ispp in c(1,3,11,13, 8,12,15) ){
+    for (ispp in c(1, 3, 11, 13, 
+                   8, 12, 15)) {
       
+      #Species-specific y-limits
       ylim_ = list(c(-80,150), c(-100,100), c(-80,130), 
                    c(-100,100), c(-100,100), c(-100,100), 
                    c(-100,100), c(-80,120), c(-100,100), 
                    c(-100,100), c(-100,140), c(-110,160),
                    c(-100,160), c(-100,100), c(-100,175) )[[ispp]]
       
+      #Base Plot
       plot(1, 
            type = "n", 
            xlim = c(-0.5, 13.5), 
+           ylim = ylim_, 
            axes = F, 
-           ann = F, 
-           ylim = ylim_ )
-      
+           ann = F)
       box()
       abline(h = 0, 
              lty = "dashed")
@@ -204,34 +218,36 @@ for(itype in 2){
                      length = 5), 
              lty = "dashed", 
              col = "darkgrey")
+      
       if (itype == 1) axis(side = 2, 
                            las = 1, 
                            at = pretty(ylim_, 5) )
-      
       if (itype == 2) legend("bottom", 
                              legend = sci_names[ispp], 
                              bty = "n", 
                              text.font = 3  )
       if (ispp %in% c(13,15)) axis(side = 1, 
-                                   at = seq(0.5, by = 2.5, length = 6),
-                                   labels = c(5, 10, 15, 20, 30, 60))
+                                   at = seq(from = 0.5, 
+                                            by = 2.5, 
+                                            length = NStrata),
+                                   labels = stratas)
       if (ispp %in% c(1,8)) mtext(side = 3, 
                                   text = c("Constrained\nSpatiotemporal",
                                            "Flexible\nSpatiotemporal")[itype])
       
       offset <- 0
-      for (istrata in stratas) {
-        for (isample in 1:3) {
+      for (istrata in 1:NStrata) {
+        for (isample in 1:nboats) {
           
-          abs_bias = sweep(x = STRS_sim_cv[, ispp, isample, istrata, ], 
-                           MARGIN = 1,
-                           STATS = STRS_true_cv_array[, ispp, isample, istrata],
-                           FUN = "-")
+          abs_bias <- sweep(x = STRS_sim_cv[, ispp, isample, istrata, ], 
+                            MARGIN = 1,
+                            STATS = STRS_true_cv_array[, ispp, isample, istrata],
+                            FUN = "-")
           
-          rel_bias = sweep(x = abs_bias, 
-                           MARGIN = 1,
-                           STATS = STRS_true_cv_array[, ispp, isample, istrata],
-                           FUN = "/") * 100
+          rel_bias <- sweep(x = abs_bias, 
+                            MARGIN = 1,
+                            STATS = STRS_true_cv_array[, ispp, isample, istrata],
+                            FUN = "/") * 100
           
           boxplot( as.vector(rel_bias), 
                    add = T, 
@@ -247,116 +263,169 @@ for(itype in 2){
     }
   }
   
-  plot(1, type = "n", xlim = c(0,1), ylim = c(0,1), axes = F, ann = F)
-  legend("bottom", legend = paste0(1:3, " Boat"), horiz = T, cex = 1.5,
+  #Legend
+  plot(1, 
+       type = "n", 
+       xlim = c(0,1), 
+       ylim = c(0,1), 
+       axes = F, 
+       ann = F)
+  legend("bottom", 
+         legend = paste0(1:3, " Boat"), 
+         horiz = T, 
+         cex = 1.5,
          fill = c("red", "cyan", "white"))
-  plot(1, type = "n", axes = F, ann = F)
+  plot(1, 
+       type = "n", 
+       axes = F, 
+       ann = F)
   
-  mtext(side = 1, "Number of Strata", outer = T, line = 2.5)
-  mtext(side = 2, "Percent Relative Bias", outer = T, line = 2.5)
+  #Axes Labels
+  mtext(side = 1, 
+        text = "Number of Strata", 
+        outer = T, 
+        line = 2.5)
+  mtext(side = 2, 
+        text = "Percent Relative Bias", 
+        outer = T, 
+        line = 2.5)
   dev.off()
 }
 
 ###############################################3
-## SUpplementary Figuers
+## Supplemental Figure 8
+## Bias in Mean Density Estimates
 ##############################################
-
 {
-  png(file = paste0(figure_dir, "Supplemental_Figures/SFig6_Bias_Est.png"),
-      width = 190, height = 190, units = "mm", res = 1000)
+  png(file = paste0(figure_dir, 
+                    "Supplemental_Figures/SFig8_Bias_Est.png"),
+      width = 190, 
+      height = 190, 
+      units = "mm", 
+      res = 1000)
   
-  par(mar = c(0,4,0,0), oma = c(4,1,3,0.5), mfrow = c(5,3))
+  par(mar = c(0, 4, 0, 0), 
+      oma = c(4, 1, 3, 0.5), 
+      mfrow = c(5, 3))
   
-  for(itype in 1){
-    load(paste0(github_dir, 
-                c("Spatiotemporal_Optimization/", 
-                  "Spatiotemporal_Optimization_Scheme2/")[itype],
-                c("STRS_Sim_Res_Spatiotemporal.RData", 
-                  "STRS_Sim_Res_Spatiotemporal_Flexible.RData")[itype] ))
+  load(paste0(github_dir, 
+              "Spatiotemporal_Optimization/STRS_Sim_Res_Spatiotemporal.RData"))
+  
+  for (ispp in 1:ns){
     
-    if(itype == 1) stratas = c(1,2,3,4,7,8)
-    if(itype == 2) stratas = c(1:6)
+    #Species specific y-limits for plots
+    ylim_ = list(c(-60,60), c(-80,110), c(-60,70), 
+                 c(-70,70), c(-70,70), c(-30,30), 
+                 c(-80,110), c(-80,110), c(-130,130),
+                 c(-110,160), c(-110,210), c(-110,130),
+                 c(-110,160), c(-110,210), c(-110,110))[[ispp]]
     
-    for(ispp in 1:ns){
-      
-      ylim_ = list(c(-60,60), c(-80,110), c(-60,70), 
-                   c(-70,70), c(-70,70), c(-30,30), 
-                   c(-80,110),c(-80,110),c(-130,130),
-                   c(-110,160),c(-110,210),c(-110,130),
-                   c(-110,160),c(-110,210),c(-110,110))[[ispp]]
-      
-      plot(1, type = "n", xlim = c(-0.5,13.5), axes = F, ann = F, ylim=ylim_ )
-      box(); 
-      abline(v = seq(from = 1.75, by = 2.5, length = 5), lty = "dashed", 
-             col = "lightgrey")
-      abline(h = 0)
-      axis(side = 2, las = 1, at = pretty(ylim_, 4) )
-      if(ispp == 2) legend(x = -3, y = 190, legend = paste(1:3, "Boat"),
-                           fill = c("red", "cyan", "white"), x.intersp = .5,
-                           horiz = T, xpd = NA, cex = 1.5, bty = "n")
-      
-      if(itype == 1) legend("bottom", sci_names[ispp], bty = "n", 
-                            text.font = 3 )
-      if(ispp %in% c(13:15)) axis(side = 1, labels = c(5,10,15,20,30,60), 
-                                  at = seq(from=0.5, by=2.5, length=6))
-      offset = 0
-      for(istrata in stratas){
-        for(isample in 1:3){
-          abs_bias = sweep(x = STRS_sim_mean[,ispp,istrata,isample,], MARGIN=1,
-                           STATS = true_mean[,ispp],
-                           FUN = "-")
-          
-          rel_bias = 100*sweep(x = abs_bias, MARGIN = 1,
-                               STATS = true_mean[,ispp],
-                               FUN = "/")
-          
-          boxplot( as.vector(rel_bias), add = T, axes = F, at = offset, 
-                   col = c("red", "cyan", "white")[isample],
-                   pch = 16, cex = 0.25)
-          offset = offset + 0.5
-        }
-        offset = offset + 1
+    #Base plot
+    plot(1, 
+         type = "n", 
+         xlim = c(-0.5, 13.5), 
+         ylim=ylim_ , 
+         axes = F, 
+         ann = F)
+    box()
+    abline(v = seq(from = 1.75, 
+                   by = 2.5, 
+                   length = 5), 
+           lty = "dashed", 
+           col = "lightgrey")
+    abline(h = 0)
+    axis(side = 2, 
+         las = 1, 
+         at = pretty(ylim_, 4) )
+    
+    if(ispp == 2) legend(x = -3, 
+                         y = 190, 
+                         legend = paste(1:3, "Boat"),
+                         fill = c("red", "cyan", "white"), 
+                         x.intersp = .5,
+                         horiz = T, 
+                         xpd = NA, 
+                         cex = 1.5, 
+                         bty = "n")
+    
+    if (itype == 1) legend("bottom", 
+                           legend = sci_names[ispp], 
+                           bty = "n", 
+                           text.font = 3 )
+    if (ispp %in% c(13:15)) axis(side = 1, 
+                                 labels = stratas, 
+                                 at = seq(from = 0.5, 
+                                          by = 2.5, 
+                                          length = NStrata))
+    offset = 0
+    for (istrata in 1:NStrata) {
+      for (isample in 1:nboats) {
+        abs_bias = sweep(x = STRS_sim_mean[, ispp, isample, istrata, ], 
+                         MARGIN = 1,
+                         STATS = true_mean[, ispp],
+                         FUN = "-")
+        
+        rel_bias = sweep(x = abs_bias, 
+                         MARGIN = 1,
+                         STATS = true_mean[, ispp],
+                         FUN = "/") * 100
+        
+        boxplot( as.vector(rel_bias), 
+                 add = T, 
+                 axes = F, 
+                 at = offset, 
+                 col = c("red", "cyan", "white")[isample],
+                 pch = 16, 
+                 cex = 0.25)
+        offset = offset + 0.5
       }
+      offset = offset + 1
     }
   }
   
-  # plot(1, type = "n", axes = F, ann = F)
-  # 
-  # plot(1, type = "n", xlim = c(0,1), ylim = c(0,1), axes = F, ann = F)
-  # legend("bottom", legend = paste0(1:3, " Boat"), horiz = T, cex = 1.5,
-  #        fill = c("red", "cyan", "white"))
-  
-  mtext(side = 1, "Number of Strata", outer = T, line = 2.5)
-  mtext(side = 2, "Percent Relative Bias", outer = T, line = -1)
+  #Axes Label
+  mtext(side = 1, 
+        text = "Number of Strata", 
+        outer = T, 
+        line = 2.5)
+  mtext(side = 2, 
+        text = "Percent Relative Bias", 
+        outer = T, 
+        line = -1)
   dev.off()
 }
 
-
-#########################
+###################################
+## Supplemental Figure 9 
+## Bias in CV Estimate relative to True CV
+###################################
 
 {
-  png(file = paste0(figure_dir,  "Supplemental_Figures/SFig7_Bias_CV.png"),
-      width = 190, height = 200, units = "mm", res = 1000)
+  png(file = paste0(figure_dir,  
+                    "Supplemental_Figures/SFig9_Bias_CV.png"),
+      width = 190, 
+      height = 200, 
+      units = "mm", 
+      res = 1000)
   
   layout(mat = matrix(c(1:8, 
                         16:23,
                         rep(32, 8),
                         9:15, 31,
                         24:30,31), nrow = 8), 
-         widths = c(1,1,0.25,1,1))
-  par(mar = c(0,0,0,0), oma = c(4,4,3,1))
+         widths = c(1, 1, 0.25, 1, 1))
   
-  for(itype in 1:2){
+  par(mar = c(0, 0, 0, 0), 
+      oma = c(4, 4, 3, 1))
+  
+  for (itype in 1:2) {
+    
     load(paste0(github_dir,
                 c("Spatiotemporal_Optimization/",
                   "Spatiotemporal_Optimization_Scheme2/")[itype],
-                c("STRS_Sim_Res_Spatiotemporal.RData",
-                  "STRS_Sim_Res_Spatiotemporal_Flexible.RData")[itype] ))
+                "STRS_Sim_Res_Spatiotemporal.RData"))
     
-    if(itype == 1) stratas = c(1,2,3,4,7,8)
-    if(itype == 2) stratas = c(1:6)
-    
-    for(ispp in 1:15 ){
+    for (ispp in 1:15 ){
       
       ylim_ = list(c(-80,150), c(-110,110), c(-80,120), 
                    c(-110,170), c(-110,110), c(-110,110), 
@@ -364,31 +433,58 @@ for(itype in 2){
                    c(-110,170), c(-110,120), c(-110,170),
                    c(-110,170), c(-110,110), c(-110,170) )[[ispp]]
       
-      plot(1, type = "n", xlim = c(-0.5,13.5), axes = F, ann = F, ylim=ylim_ )
-      box(); abline(h = 0, lty = "dashed")
-      abline(v = seq(from = 1.75, by = 2.5, length = 5), lty = "dashed", 
+      #Base plot
+      plot(1, 
+           type = "n", 
+           xlim = c(-0.5, 13.5), 
+           ylim=ylim_, 
+           axes = F, 
+           ann = F)
+      box()
+      abline(h = 0, 
+             lty = "dashed")
+      abline(v = seq(from = 1.75, 
+                     by = 2.5, 
+                     length = 5), 
+             lty = "dashed", 
              col = "darkgrey")
-      if(itype == 1) axis(side = 2, las = 1, at = pretty(ylim_, 5) )
       
-      if(itype == 2) legend("bottom", sci_names[ispp], bty = "n", 
-                            text.font = 3  )
-      if(ispp %in% c(8,15)) axis(side = 1, at = seq(0.5, by=2.5, length=6),
-                                 labels = c(5,10,15,20,30,60))
-      if(ispp %in% c(1,9)) mtext(side = 3,c("Constrained\nSpatiotemporal",
+      if (itype == 1) axis(side = 2, 
+                           las = 1, 
+                           at = pretty(ylim_, 5) )
+      
+      if (itype == 2) legend("bottom", 
+                             legend = sci_names[ispp], 
+                             bty = "n", 
+                             text.font = 3)
+      
+      if (ispp %in% c(8, 15)) axis(side = 1, 
+                                   at = seq(from = 0.5, 
+                                            by = 2.5, 
+                                            length = 6),
+                                   labels = stratas)
+      
+      if (ispp %in% c(1, 9)) mtext(side = 3,
+                                   text = c("Constrained\nSpatiotemporal",
                                             "Flexible\nSpatiotemporal")[itype])
       
       offset = 0
-      for(istrata in stratas){
-        for(isample in 1:3){
-          abs_bias = sweep(x = STRS_sim_cv[,ispp,istrata,isample,], MARGIN = 1,
-                           STATS = STRS_true_cv_array[,ispp,istrata,isample],
+      for(istrata in 1:NStrata){
+        for(isample in 1:nboats){
+          abs_bias = sweep(x = STRS_sim_cv[, ispp, isample, istrata, ], 
+                           MARGIN = 1,
+                           STATS = STRS_true_cv_array[, ispp, isample, istrata],
                            FUN = "-")
           
-          rel_bias = sweep(x = abs_bias, MARGIN = 1,
-                           STATS=STRS_true_cv_array[,ispp,istrata,isample],
+          rel_bias = sweep(x = abs_bias, 
+                           MARGIN = 1,
+                           STATS = STRS_true_cv_array[, ispp, isample, istrata],
                            FUN = "/") * 100
           
-          boxplot( as.vector(rel_bias), add = T, axes = F, at = offset, 
+          boxplot( as.vector(rel_bias), 
+                   add = T, 
+                   axes = F, 
+                   at = offset, 
                    col = c("red", "cyan", "white")[isample],
                    pch = 16, cex = 0.25)
           offset = offset + 0.5
@@ -398,13 +494,35 @@ for(itype in 2){
     }
   }
   
-  plot(1, type = "n", xlim = c(0,1), ylim = c(0,1), axes = F, ann = F)
-  legend("bottom", legend = paste0(1:3, " Boat"), horiz = T, cex = 1.5,
-         fill = c("red", "cyan", "white"))
-  plot(1, type = "n", axes = F, ann = F)
+  #Legend Plot
+  plot(1, 
+       type = "n", 
+       xlim = c(0, 1), 
+       ylim = c(0, 1), 
+       axes = F, 
+       ann = F)
   
-  mtext(side = 1, "Number of Strata", outer = T, line = 2.5)
-  mtext(side = 2, "Percent Relative Bias", outer = T, line = 2.5)
+  legend("bottom", 
+         legend = paste0(1:3, " Boat"), 
+         horiz = T, 
+         cex = 1.5,
+         fill = c("red", "cyan", "white"))
+  
+  plot(1, 
+       type = "n", 
+       axes = F, 
+       ann = F)
+  
+  #Axes Labels
+  mtext(side = 1, 
+        text = "Number of Strata", 
+        outer = T, 
+        line = 2.5)
+  mtext(side = 2, 
+        text = "Percent Relative Bias", 
+        outer = T, 
+        line = 2.5)
+  
   dev.off()
 }
 
