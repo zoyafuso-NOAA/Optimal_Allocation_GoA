@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
 VAST_model <- "11" 
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
@@ -45,7 +45,7 @@ result_dir <- paste0(github_dir, which_variance)
 res_df <- data.frame(id = 1:N)
 settings <- data.frame()
 strata_stats_list <- strata_list <- list()
-stratas <- c(5,10,15,20,30,60)
+stratas <- c(5, 10, 15, 20, 30, 60)
 NStratas = length(stratas)
 
 ##################################################

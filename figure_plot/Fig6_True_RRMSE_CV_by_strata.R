@@ -6,13 +6,19 @@
 ##                variation (CV) across observed years for each species, level 
 ##                of sampling effort (color) and number of strata for the 
 ##                species-specific CV constraint approach. 
+##
+##                Figure 8: Distribution of average relative root mean square 
+##                error (RRMSE) of the coefficient of variation (CV) across 
+##                years for a subset of species (see Supplementary S7 for a 
+##                full version), level of sampling effort (color) and number 
+##                of strata for the species-specific CV constraint approach.
 ###############################################################################
 rm(list = ls())
 
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine = c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
+which_machine = c("Zack_MAC" = 1, "Zack_PC" = 2)[1]
 
 VAST_model <- "6g"
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
@@ -31,8 +37,9 @@ stratas = c(5, 10, 15, 20, 30, 60)
 NStrata = length(stratas)
 
 ##################################################
-####   True CV across years (boxplot), sample size (color), strata (x-axis),
-####   and species (plot panel) for the Flexible Optimization
+##  Figure 6: Distribution of average true coefficient of variation (CV) across
+##  observed years for each species, level of sampling effort (color) and 
+##  number of strata for the species-specific CV constraint approach. 
 ##################################################
 {
   png(file = paste0(figure_dir, "Fig6_True_CV.png"),
@@ -128,8 +135,12 @@ NStrata = length(stratas)
   dev.off()
 }
 
-##############################
-
+#################################
+##  Figure 8: Distribution of average relative root mean square error (RRMSE) 
+##  of the coefficient of variation (CV) across years for a subset of species 
+##  (see Supplementary S7 for a full version), level of sampling effort (color) 
+## and number of strata for the species-specific CV constraint approach.
+#################################
 {
   png(file = paste0(figure_dir, "Fig8_RRMSE_CV.png"),
       width = 190, 
@@ -236,10 +247,12 @@ NStrata = length(stratas)
 }
 
 ################################
-## Supplementary Figure
+## Supplemental S6: Distribution of average true coefficient of variation (CV)
+## across observed years for each species, level of sampling effort (color) and
+## number of strata for the one-CV constraint approach.
 ################################
 {
-  png(file = paste0(figure_dir, "Supplemental_Figures/SFig4_True_CV.png"),
+  png(file = paste0(figure_dir, "Supplemental_Figures/SFig6_True_CV.png"),
       width = 190, 
       height = 150, 
       units = "mm", 
@@ -249,76 +262,74 @@ NStrata = length(stratas)
       oma = c(4, 1, 2, 0.5), 
       mfrow = c(5, 3))
   
-  for (itype in 1){
-    load(paste0(github_dir, 
-                c("Spatiotemporal_Optimization/", 
-                  "Spatiotemporal_Optimization_Scheme2/")[itype],
-                c("STRS_Sim_Res_Spatiotemporal.RData", 
-                  "STRS_Sim_Res_Spatiotemporal_Flexible.RData")[itype] ))
+  load(paste0(github_dir, 
+              "Spatiotemporal_Optimization/STRS_Sim_Res_Spatiotemporal.RData"))
+  
+  for (ispp in 1:ns) {
     
-    if (itype == 1) stratas = c(1:6)
-    if (itype == 2) stratas = c(1:6)
+    #Species-specific y-limits
+    max_val <- c(0.12, 0.32, 0.12, 
+                0.17, 0.17, 0.09, 
+                0.23, 0.22, 0.35, 
+                0.32, 0.44, 0.34,
+                0.35, 0.475, 0.34)[ispp]
     
-    for (ispp in 1:ns){
-      
-      max_val = c(0.12, 0.32, 0.12, 
-                  0.17, 0.17, 0.09, 
-                  0.23, 0.22, 0.35, 
-                  0.32, 0.44, 0.34,
-                  0.35, 0.475, 0.34)[ispp]
-      
-      plot(1, 
-           type = "n", 
-           xlim = c(-0.5,13.5), 
-           axes = F, 
-           ann = F, 
-           ylim = c(0, max_val) )
-      box() 
-      abline(v = seq(from = 1.75, 
-                     by = 2.5, 
-                     length = 5), 
-             lty = "dashed", 
-             col = "lightgrey")
-      axis(side = 2, 
-           las = 1, 
-           at = pretty(c(0,max_val), 3) )
-      
-      if (ispp == 2) legend(x = -3, 
-                            y = 0.45, 
-                            legend = paste(1:3, "Boat"),
-                            fill = c("red", "cyan", "white"), 
-                            x.intersp = 0.5,
-                            horiz = T, 
-                            xpd = NA, 
-                            cex = 1.5, 
-                            bty = "n")
-      
-      legend("bottom", 
-             legend = sci_names[ispp], 
-             bty = "n", 
-             text.font = 3 )
-      if (ispp %in% c(13:15)) axis(side = 1, 
-                                   labels = c(5, 10, 15, 20, 30, 60), 
-                                   at = seq(from = 0.5, 
-                                            by = 2.5, 
-                                            length = 6))
-      
-      offset = 0
-      for (istrata in stratas) {
-        for (isample in 1:3) {
-          boxplot( STRS_true_cv_array[, ispp, istrata, isample], 
-                   add = T,
-                   axes = F, 
-                   at = offset, 
-                   pch = 16, 
-                   cex = 0.5, 
-                   col = c("red", "cyan", "white")[isample] )
-          offset = offset + 0.5
-        }
-        offset = offset + 1
+    #Base Plot
+    plot(1, 
+         type = "n", 
+         xlim = c(-0.5,13.5), 
+         ylim = c(0, max_val), 
+         axes = F, 
+         ann = F )
+    box() 
+    abline(v = seq(from = 1.75, 
+                   by = 2.5, 
+                   length = 5), 
+           lty = "dashed", 
+           col = "lightgrey")
+    axis(side = 2, 
+         las = 1, 
+         at = pretty(c(0,max_val), 3) )
+    
+    if (ispp == 2) legend(x = -3, 
+                          y = 0.45, 
+                          legend = paste(1:3, "Boat"),
+                          fill = c("red", "cyan", "white"), 
+                          x.intersp = 0.5,
+                          horiz = T, 
+                          xpd = NA, 
+                          cex = 1.5, 
+                          bty = "n")
+    
+    #Species label
+    legend("bottom", 
+           legend = sci_names[ispp], 
+           bty = "n", 
+           text.font = 3 )
+    
+    if (ispp %in% c(13:15)) axis(side = 1, 
+                                 labels = stratas, 
+                                 at = seq(from = 0.5, 
+                                          by = 2.5, 
+                                          length = NStrata))
+    
+    offset = 0
+    for (istrata in 1:NStrata) {
+      for (isample in 1:nboats) {
+        boxplot( STRS_true_cv_array[, ispp, isample, istrata], 
+                 add = T,
+                 axes = F, 
+                 at = offset, 
+                 pch = 16, 
+                 cex = 0.5, 
+                 col = c("red", "cyan", "white")[isample] )
+        offset = offset + 0.5
       }
+      offset = offset + 1
     }
   }
+  
+  #Axes Labels
   mtext(side = 1, 
         text = "Number of Strata", 
         outer = T, 
@@ -330,9 +341,14 @@ NStrata = length(stratas)
   dev.off()
 }
 
-
+################################
+## Supplemental S7: Distribution of average relative root mean square error 
+## (RRMSE) of the coefficient of variation (CV) across observed years for each
+## species, level of sampling effort (color) and number of strata for the 
+## species-specific CV constraint approach.
+################################
 {
-  png(file = paste0(figure_dir, "Supplemental_Figures/SFig5_RRMSE_CV.png"),
+  png(file = paste0(figure_dir, "Supplemental_Figures/SFig7_RRMSE_CV.png"),
       width = 190, 
       height = 190, 
       units = "mm", 
@@ -352,20 +368,17 @@ NStrata = length(stratas)
     load(paste0(github_dir,
                 c("Spatiotemporal_Optimization/",
                   "Spatiotemporal_Optimization_Scheme2/")[itype],
-                c("STRS_Sim_Res_Spatiotemporal.RData",
-                  "STRS_Sim_Res_Spatiotemporal_Flexible.RData")[itype] ))
-    
-    if (itype == 1) stratas = c(1:6)
-    if (itype == 2) stratas = c(1:6)
+                "STRS_Sim_Res_Spatiotemporal.RData"))
     
     for (ispp in 1:ns) {
-      
+      #Species-specific y-limits
       max_val = c(0.60, 0.75, 0.50, 
                   0.55, 0.25, 0.50, 
                   0.50, 0.43, 0.35, 
                   0.80, 0.75, 0.75,
                   0.55, 1.10, 0.55)[ispp]
       
+      #Base plots
       plot(1, 
            type = "n", 
            xlim = c(-0.5,13.5), 
@@ -390,16 +403,16 @@ NStrata = length(stratas)
       if (ispp %in% c(8,15)) axis(side = 1, 
                                   at = seq(from = 0.5, 
                                            by = 2.5, 
-                                           length = 6),
-                                  labels = c(5, 10, 15, 20, 30, 60))
+                                           length = NStrata),
+                                  labels = stratas)
       if (ispp %in% c(1,9)) mtext(side = 3, 
                                   text = c("Constrained\nSpatiotemporal",
                                            "Flexible\nSpatiotemporal")[itype])
       
       offset = 0
-      for (istrata in stratas) {
+      for (istrata in 1:NStrata) {
         for (isample in 1:3) {
-          boxplot( STRS_rrmse_cv_array[, ispp, istrata, isample], 
+          boxplot( STRS_rrmse_cv_array[, ispp, isample, istrata], 
                    add = T,
                    axes = F, 
                    at = offset, 
@@ -413,6 +426,7 @@ NStrata = length(stratas)
     }
   }
   
+  #Legend
   plot(1, 
        type = "n", 
        xlim = c(0, 1), 
@@ -429,6 +443,7 @@ NStrata = length(stratas)
        axes = F, 
        ann = F)
   
+  #Axes Labels
   mtext(side = 1, 
         text = "Number of Strata", 
         outer = T, 
