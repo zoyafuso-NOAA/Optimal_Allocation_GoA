@@ -231,11 +231,11 @@ istrata = 2
   # png(filename = paste0(figure_dir, 'RRMSE_CV.png'),
   #     units = 'mm', width = 200, height = 150, res = 500)
   par(mfrow = c(5, 3), mar = c(0.5, 4, 0.5, 0), oma = c(2, 1, 2, 0.5))
-  for (ispp in c(1,  3,  5,
-                 6,  7,  8,
-                 13, 14, 9,
-                 2,  4,  11,
-                 10, 12, 15)) {
+  for (ispp in c(10,  3,  5,
+                 2,  7,  8,
+                 14, 11, 9,
+                 6,  4,  13,
+                 1, 12, 15)) {
     ymax = max(
       c(Survey_rrmse_cv_array[,ispp,], 
         STRS_rrmse_cv_array[,ispp,,]
