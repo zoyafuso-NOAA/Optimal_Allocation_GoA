@@ -9,8 +9,13 @@ rm(list = ls())
 ## Set up directories
 #######################################
 
+<<<<<<< Updated upstream
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 VAST_model <- "11" 
+=======
+which_machine = c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
+VAST_model = "11" 
+>>>>>>> Stashed changes
 
 github_dir = paste0(c("/Users/zackoyafuso/Documents/", 
                       "C:/Users/Zack Oyafuso/Documents/",
@@ -35,6 +40,7 @@ load( paste0(github_dir, "Spatiotemporal_Optimization/",
 ##################################################
 istrata <- 2 #10 strata index
 
+<<<<<<< Updated upstream
 common_names <- 
   c("arrowtooth flounder", "walleye pollock", "Pacific cod",
     "rex sole", "flathead sole", "Pacific halibut",
@@ -43,6 +49,21 @@ common_names <-
     "BlkSpt/Rougheye rockfishes",
     "northern rockfish", "dusky rockfish",
     "shortspine thornyhead")
+=======
+common_names <- c("arrowtooth flounder", "walleye pollock", "Pacific cod",
+                  "rex sole", "flathead sole", "Pacific halibut",
+                  "southern rock sole", "northern rock sole", "yellowfin sole",
+                  "Dover sole", "Pacific ocean perch",
+                  "blackspotted/rougheye\nrockfishes",
+                  "northern rockfish", "dusky rockfish",
+                  "shortspine thornyhead")
+
+spp_order = c(1,  3,  5,
+              6,  7,  8,
+              13, 14, 2,
+              4,  9,  10,
+              12, 11, 15)
+>>>>>>> Stashed changes
 
 # spp_order <- c(8,  3,  5, 7, 6,
 #                1, 2, 14, 4, 13, 
@@ -58,6 +79,7 @@ spp_order <- order(
 ####   Bias in Estimate
 ##################################################
 {
+<<<<<<< Updated upstream
   png(filename = paste0(figure_dir, "Bias_Est.png"),
       units = "in", 
       width = 11, 
@@ -67,6 +89,11 @@ spp_order <- order(
   par(mfrow = c(3, 5), 
       mar = c(0.5, 4, 0.5, 0), 
       oma = c(2, 1, 2, 0.5))
+=======
+  # png(filename = paste0(figure_dir, 'Bias_Est.png'),
+  # units = 'mm', width = 200, height = 150, res = 500)
+  par(mfrow = c(5, 3), mar = c(0.5, 4, 0.5, 0), oma = c(2, 1, 2, 0.5))
+>>>>>>> Stashed changes
   for (ispp in spp_order) {
     
     ymax <- 1.1 * max(abs(Survey_rel_bias_est[,ispp,]), 
@@ -81,6 +108,7 @@ spp_order <- order(
          axes = F, 
          ann = F)
     
+<<<<<<< Updated upstream
     if(ispp == spp_order[3]) 
       legend(x = -3, 
              y = 9, 
@@ -94,6 +122,19 @@ spp_order <- order(
              cex = 1.5, 
              lty = 1, 
              x.intersp = 0.25)
+=======
+    if(ispp == spp_order[2]) legend(x = -2, y = 10, 
+                                    col = c('red','blue','black'), 
+                                    text.col = c('red','blue','black'),
+                                    legend = paste(1:3, 'Boat'),
+                                    xpd = NA, 
+                                    pch = 0,  
+                                    horiz = T, 
+                                    bty = 'n', 
+                                    cex = 1.5, 
+                                    lty = 1, 
+                                    x.intersp = 0.25)
+>>>>>>> Stashed changes
     
     abline(h = 0, 
            lty = "dotted")
@@ -105,11 +146,18 @@ spp_order <- order(
            legend = common_names[ispp], 
            bty = "n")
     
+<<<<<<< Updated upstream
     #Survey Type X-axis label for bottom row
     if (ispp %in% spp_order[ns:(ns-4)])  
       axis(side = 1, 
            at = c(2, 6), 
            labels = c("Current", "Optimized"),
+=======
+    if (ispp %in% spp_order[length(spp_order):(length(spp_order)-2)])
+      axis(side = 1, 
+           at = c(2,6), 
+           labels = c('Current', 'Optimized'),
+>>>>>>> Stashed changes
            cex.axis = 1)
     
     #Plot Relative Biases
