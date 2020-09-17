@@ -83,6 +83,9 @@ nboats <- length(samples)
 #Number of times to simulate survey
 Niters <- 1000
 
+stratas <- c(5, 10, 15, 20, 30, 60)
+NStrata <- length(stratas)
+
 ##################################################
 ####   Create the data inputs to SamplingStrata
 ##################################################
@@ -151,6 +154,6 @@ colnames(true_mean) <- sci_names
 ####   Save Data
 ##################################################
 save(list = c("frame", "frame_raw", "true_mean", "ns", "NTime", "N",
-              "sci_names", "samples", "nboats", "Niters"),
+              "sci_names", "samples", "nboats", "Niters", "stratas", 'NStrata'),
      file = paste0(github_dir, "model_", VAST_model, 
                    "/optimization_data.RData"))

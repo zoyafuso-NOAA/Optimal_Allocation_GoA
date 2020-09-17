@@ -8,36 +8,21 @@ rm(list = ls())
 ##################################################
 ####  Set up directories  
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
-VAST_model <- "6g" 
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
+VAST_model <- "11" 
 
-github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
-                       'C:/Users/Zack Oyafuso/Documents/',
-                       'C:/Users/zack.oyafuso/Work/')[which_machine], 
+github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
+                       "C:/Users/Zack Oyafuso/Documents/",
+                       "C:/Users/zack.oyafuso/Work/")[which_machine], 
                      "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/")
 
-##################################################
-####   Define which optimization settings is being worked on
-####
-####   which_variance:
-####   Spatial: spatial variance for stratum variance
-####   Spatiotemporal: spatiotemporal variance for stratum variance
-####
-####   which_constraint: 
-####   one_CV: One CV constraint applied to all species
-####   "": species specific CV constraints, assumed to be the default
-##################################################
-which_variance = c('Spatiotemporal_Optimization/', 
-                   'Spatiotemporal_Optimization_Scheme2/', 
-                   'Spatial_Optimization/')[1]
-
-result_dir <- paste0(github_dir, which_variance)
+result_dir <- paste0(github_dir, "Spatiotemporal_Optimization")
 
 ##################################################
 ####    Load predicted density and optimization results
 ##################################################
-load(paste0(github_dir, 'optimization_data.RData'))
-load(paste0(result_dir, 'optimization_knitted_results.RData'))
+load(paste0(github_dir, "optimization_data.RData"))
+load(paste0(result_dir, "optimization_knitted_results.RData"))
 
 ##################################################
 ####   Result Objects
@@ -55,7 +40,8 @@ true_cv_array <- rrmse_cv_array <- rel_bias_est <- rel_bias_cv <-
 ##################################################
 ####   Simulating surveys from each optimized solution
 ##################################################
-for (istrata in c(1:NStratas)) {
+# for (istrata in c(1:NStratas)) {
+for (istrata in 2) {
   for (isample in 1:nboats) {
     
     #Load optimization data
@@ -63,7 +49,7 @@ for (istrata in c(1:NStratas)) {
     # sub_settings = settings
     
     which_run <- which.min(abs(sub_settings$n - samples[isample]))
-    temp_run = sub_settings$id[which_run]
+    temp_run <- sub_settings$id[which_run]
     
     strata_allocation <- strata_list[[temp_run]]$Allocation
     stratapop <- strata_list[[temp_run]]$Population
@@ -91,12 +77,12 @@ for (istrata in c(1:NStratas)) {
         sample_df <- subset(frame_raw, year == iyear)[sample_vec, ]
         
         #Calculate Stratum Mean Density and Variance
-        stmt <- paste0('aggregate(cbind(',
-                       paste0('Y', 1:(ns-1), sep=',', collapse=''),'Y',ns, 
+        stmt <- paste0("aggregate(cbind(",
+                       paste0("Y", 1:(ns-1), sep=",", collapse=""),"Y",ns, 
                        ") ~ stratano_samp, data = sample_df, FUN = mean)")
         sample_mean <- eval(parse(text = stmt))[, -1]
-        stmt <- paste0('aggregate(cbind(',
-                       paste0('Y', 1:(ns-1), sep=',', collapse=''), 'Y',ns, 
+        stmt <- paste0("aggregate(cbind(",
+                       paste0("Y", 1:(ns-1), sep=",", collapse=""), "Y",ns, 
                        ") ~ stratano_samp, data = sample_df, FUN = var)")
         sample_var <- eval(parse(text = stmt))[, -1]
         
@@ -110,14 +96,14 @@ for (istrata in c(1:NStratas)) {
           sweep(x = sample_var, 
                 MARGIN = 1, 
                 STATS = Wh^2 * (1-wh)/ strata_allocation[str_idx],
-                FUN = '*')
+                FUN = "*")
         )
         
         SRS_mean <- colSums(
           sweep(x = sample_mean, 
                 MARGIN = 1, 
                 STATS = Wh,
-                FUN = '*')
+                FUN = "*")
         )
         
         strata_cv <- sqrt(SRS_var) / SRS_mean 
@@ -127,8 +113,8 @@ for (istrata in c(1:NStratas)) {
         sim_cv[iyear, , isample, istrata, iter] <- strata_cv
         
         if (iter%%100 == 0) {
-          print(paste0('Finished with: Iteration ', iter, ', ', 'Year ', iyear, 
-                       ', and ', isample, ' Boat'))
+          print(paste0("Finished with: Iteration ", iter, ", ", "Year ", iyear, 
+                       ", and ", isample, " Boat"))
         }
       }
     }
@@ -138,10 +124,10 @@ for (istrata in c(1:NStratas)) {
 ##################################################
 ####   Simulation Metrics
 ##################################################
-for(iyear in 1:NTime){
-  for(istrata in 1:NStratas){
-    for(isample in 1:3){
-      for(ispp in sci_names){
+for (iyear in 1:NTime) {
+  for (istrata in 1:NStratas) {
+    for (isample in 1:3) {
+      for (ispp in sci_names) { 
         
         iter_est <- sim_mean[iyear, ispp, isample, istrata, ]
         iter_cv <- sim_cv[iyear, ispp, isample, istrata, ]
@@ -167,14 +153,14 @@ for(iyear in 1:NTime){
 ##################################################
 ####   Save results
 ##################################################
-for(ivar in  c('rrmse_cv_array', 'true_cv_array', 
-               'sim_mean', 'sim_cv', 'rel_bias_est', 'rel_bias_cv')){
-  assign(x = paste0('STRS_', ivar), value = get(ivar))
+for(ivar in  c("rrmse_cv_array", "true_cv_array", 
+               "sim_mean", "sim_cv", "rel_bias_est", "rel_bias_cv")){
+  assign(x = paste0("STRS_", ivar), value = get(ivar))
 }
 
-save(file = paste0(github_dir, 'Spatiotemporal_Optimization/',
-                   'STRS_Sim_Res_spatiotemporal.RData'),
-     list = c(paste0('STRS_', 
-                     c('rrmse_cv_array', 'true_cv_array', 'sim_mean', 'sim_cv', 
-                       'rel_bias_est', 'rel_bias_cv'))))
+save(file = paste0(github_dir, "Spatiotemporal_Optimization/",
+                   "STRS_Sim_Res_spatiotemporal.RData"),
+     list = c(paste0("STRS_", 
+                     c("rrmse_cv_array", "true_cv_array", "sim_mean", "sim_cv", 
+                       "rel_bias_est", "rel_bias_cv"))))
 

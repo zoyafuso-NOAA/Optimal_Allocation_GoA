@@ -105,9 +105,10 @@ for (ispp in 1:ns) {
 ## Save
 ####################################
 settings <- master_settings
+settings$id = 1:nrow(settings)
 res_df <- master_res_df
 strata_list <- master_strata_list
 
 save(list = c("res_df", "settings", "strata_list"),
-     file = paste0(github_dir, "spatiotemporal_optimization_results.RData"))
+     file = paste0(github_dir, "optimization_knitted_results.RData"))
 
