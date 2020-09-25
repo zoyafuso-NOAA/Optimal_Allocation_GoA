@@ -30,6 +30,8 @@ load( paste0(github_dir, "Survey_Comparison_Simulations/",
              "Simple_RS_Simulation_Results.RData") )
 load( paste0(github_dir, "Spatiotemporal_Optimization/",
              "STRS_Sim_Res_spatiotemporal.RData") )
+load( paste0(github_dir, "Single_Species_Optimization/",
+             "SS_Sim_Res_spatiotemporal.RData") )
 
 ##################################################
 ####   Constants
@@ -229,7 +231,7 @@ spp_order = c(1,  3,  5,
     #Base Plot
     plot(1, 
          type = "n", 
-         xlim = c(0, 12),
+         xlim = c(0, 16),
          ylim = c(0, ymax),  
          las = 1,
          axes = F, 
@@ -255,8 +257,8 @@ spp_order = c(1,  3,  5,
     
     if (ispp %in% spp_order[ns:(ns-4)]) 
       axis(side = 1, 
-           at = c(2, 6, 10), 
-           labels = c("Current", "Optimized", "SRS"),
+           at = c(2, 6, 10, 14), 
+           labels = c("Curr.", "Opti.", "SRS", "SS_STRS"),
            cex.axis =1)
     
     legend("topright", 
@@ -284,6 +286,13 @@ spp_order = c(1,  3,  5,
     boxplot(SRS_true_cv_array[, ispp, ], 
             add = T, 
             at = 9:11, 
+            axes = F, 
+            border = c("red", "blue", "black"), 
+            pch = 16)
+    
+    boxplot(SS_true_cv_array[, ispp, ], 
+            add = T, 
+            at = 13:15, 
             axes = F, 
             border = c("red", "blue", "black"), 
             pch = 16)
