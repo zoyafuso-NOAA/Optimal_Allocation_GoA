@@ -20,7 +20,7 @@ library(SamplingStrata)
 ##################################################
 rm(list = ls())
 
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 VAST_model <- "11" 
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
@@ -42,6 +42,7 @@ if(!dir.exists(result_dir)){
   dir.create(result_dir)
   dir.create(paste0(result_dir, "Survey_Comparison_Simulations/"))
   dir.create(paste0(result_dir, "Spatiotemporal_Optimization/"))
+  dir.create(paste0(result_dir, "Single_Species_Optimization/"))
 }
 
 ##################################################
