@@ -9,6 +9,7 @@
 ##
 ##                Set up other constants used in downstream processes
 ###############################################################################
+rm(list = ls())
 
 ##################################################
 ####  Import required packages   
@@ -18,8 +19,6 @@ library(SamplingStrata)
 ##################################################
 ####    Set up directories
 ##################################################
-rm(list = ls())
-
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 VAST_model <- "11" 
 
@@ -30,8 +29,8 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
 
 VAST_dir <- paste0(c("/Users/zackoyafuso/Google Drive/GOA_", 
                     "C:/Users/Zack Oyafuso/Google Drive/GOA_", 
-                    "C:/Users/zack.oyafuso/Desktop/")[which_machine],
-                  "VAST_Runs/VAST_output", VAST_model, "/")
+                    "G:/Oyafuso/")[which_machine],
+                  "VAST_Runs_EFH/VAST_output", VAST_model, "/")
 
 ##################################################
 ####   Set up Result Directories
@@ -49,6 +48,7 @@ if(!dir.exists(result_dir)){
 ####   Load VAST output and bathymetry data
 ##################################################
 load(paste0(VAST_dir, "/fit.RData"))
+
 load(paste0(github_dir, "data/Extrapolation_depths.RData"))
 spp_df <- read.csv(file = paste0(github_dir, "data/spp_df.csv"), 
                   check.names = F, 
@@ -73,7 +73,6 @@ N <- nrow(Extrapolation_depths)
 #Species names
 which_spp_idx <- unlist(spp_df[VAST_model,])
 sci_names <- sort( names(spp_df)[which_spp_idx] )
-
 
 ns <- length(sci_names)
 
@@ -100,7 +99,7 @@ df <- cbind(
              x = 1:N,
              lat = Extrapolation_depths$N_km,
              lon = Extrapolation_depths$E_km - min(Extrapolation_depths$E_km),
-             depth = Extrapolation_depths$depth),
+             depth = Extrapolation_depths$DEPTH_EFH),
   
   #Mean Density across years
   apply(X = fit$Report$D_gcy[,,Years2Include], 
@@ -127,7 +126,7 @@ for (iT in 1:NTime) {
                year = iT,
                lat = Extrapolation_depths$N_km,
                lon = Extrapolation_depths$E_km - min(Extrapolation_depths$E_km),
-               depth = Extrapolation_depths$depth),
+               depth = Extrapolation_depths$DEPTH_EFH),
     fit$Report$D_gcy[,,Years2Include[iT]] )
   )
 }
@@ -142,7 +141,7 @@ frame_raw <- SamplingStrata::buildFrameDF(df = df_raw,
                                           domainvalue = "Domain")
 
 ##################################################
-####   Calculate "true" mean density
+####   Calculate "true" mean density and "true" abundance index
 ##################################################
 frame_raw$year <- rep(x = 1:NTime, each = N)
 stmt <- paste0("aggregate(cbind(",
@@ -151,10 +150,15 @@ stmt <- paste0("aggregate(cbind(",
 true_mean <- eval(parse(text = stmt))[,-1]
 colnames(true_mean) <- sci_names
 
+true_index <- t(apply(X = fit$Report$Index[,, Years2Include], 
+                    MARGIN = 2:3,
+                    FUN = sum))
+
 ##################################################
 ####   Save Data
 ##################################################
-save(list = c("frame", "frame_raw", "true_mean", "ns", "NTime", "N",
-              "sci_names", "samples", "nboats", "Niters", "stratas", 'NStrata'),
+save(list = c("frame", "frame_raw", "true_mean", "true_index", "ns",
+              "Years2Include","NTime", "N", "sci_names", "samples", "nboats",
+              "Niters", "stratas", "NStrata"),
      file = paste0(github_dir, "model_", VAST_model, 
                    "/optimization_data.RData"))

@@ -22,7 +22,7 @@ library(raster)
 ####   Single_Species: Spatiotemporal Variance, univariate optimization, 
 ####                   one CV constraint
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 VAST_model <- "11" 
 
 SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
@@ -32,7 +32,7 @@ SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
 
 which_method = c("Flexible" = 1,
                  "Spatial" = 2,
-                 "Single_Species" = 3)[3]
+                 "Single_Species" = 3)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -63,16 +63,12 @@ if (which_method %in% 2) {
 ##################################################
 load(paste0(dirname(github_dir), "/optimization_data.RData"))
 load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
+load(paste0(dirname(github_dir), "/Population_Variances.RData"))
 
 ##################################################
 ####   If doing a survey comparison (for models 10x and 11)
 ####   Load Simulated Survey metrics for use in threshold levels
 ##################################################
-if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
-  load(paste0(dirname(github_dir), "/Survey_Comparison_Simulations/",
-              "Survey_Simulation_Results.RData"))
-}
-
 stratas <- c(5,10,15,20,30,60)
 ns <- c(15, 15, 1)[which_method]
 
@@ -98,19 +94,10 @@ if (which_method == 3) {
 }
 
 ##################################################
-####  lower CV threshold
-####  If doing a survey comparison, set to the median of the simulated surveys
-####  Else: set to 0.10 for all scenarios (naive assumption)
+####  Lower CV threshold
+####  Set the lower CV threshold to be either
 ##################################################
-if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
-  threshold <- list(apply(Survey_true_cv_array, 
-                          MARGIN = 2:3, FUN = median),
-                    apply(Survey_true_cv_array, 
-                          MARGIN = 2:3, FUN = median),
-                    matrix(0, nrow = ns, ncol = 3))[[which_method]]
-} else {
-  threshold <- matrix(0.1, nrow = ns, ncol = 3)
-}
+threshold <- SRS_Pop_CV
 
 ##################################################
 ####   Run optimization
@@ -126,26 +113,28 @@ for (istrata in 2) {
   isample <- 1
   current_n <- 0
   
+  CV_constraints <- SRS_Pop_CV[, 1]
+  
   ##Initial Upper CV constraints
-  if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
-    CV_constraints <- list( 
-      rep(c(.4, 0.3, 0.2)[isample], ns),
-      rep(c(.4, 0.3, 0.2)[isample], ns),
-      c(0.09, 0.20, 0.10,   
-        0.09, 0.15, 0.07,
-        0.05, 0.09, 0.15,   
-        0.09, 0.20, 0.06,
-        0.30, 0.20, 0.06)[SS_which_species])[[which_method]]
-    
-    creep_rate <- c(0.1, 0.05, 0.025)[isample]
-    
-  } else {
-    CV_constraints <- list( 
-      rep(c(.4, 0.3, 0.2)[isample], ns),
-      rep(c(.2, 0.15, 0.1)[isample], ns))[[which_method]]
-    
-    creep_rate <- c(0.02, 0.01)[which_method]
-  }
+  # if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
+  #   CV_constraints <- list( 
+  #     rep(c(.4, 0.3, 0.2)[isample], ns),
+  #     rep(c(.4, 0.3, 0.2)[isample], ns),
+  #     c(0.09, 0.20, 0.10,   
+  #       0.09, 0.15, 0.07,
+  #       0.05, 0.09, 0.15,   
+  #       0.09, 0.20, 0.06,
+  #       0.30, 0.20, 0.06)[SS_which_species])[[which_method]]
+  #   
+  #   creep_rate <- c(0.1, 0.05, 0.025)[isample]
+  #   
+  # } else {
+  #   CV_constraints <- list( 
+  #     rep(c(.4, 0.3, 0.2)[isample], ns),
+  #     rep(c(.2, 0.15, 0.1)[isample], ns))[[which_method]]
+  #   
+  #   creep_rate <- c(0.02, 0.01)[which_method]
+  # }
   
   
   #Create CV dataframe
@@ -174,7 +163,7 @@ for (istrata in 2) {
                             nStrata = temp_strata,
                             showPlot = T,
                             parallel = F,
-                            writeFiles = T)
+                            writeFiles = F)
     
     sum_stats <- summaryStrata(solution$framenew,
                                solution$aggr_strata,
