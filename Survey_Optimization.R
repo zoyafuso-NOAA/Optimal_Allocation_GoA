@@ -17,10 +17,8 @@ library(raster)
 ####   Set up directories
 ####
 ####   Set up some constants of the optimization
-####   Flexible: Spatiotemporal Variance, species specific CV constraints
-####   Spatial:  Spatial Variance, 1 CV constraint
+####   Multispeceis: Spatiotemporal Variance, species specific CV constraints
 ####   Single_Species: Spatiotemporal Variance, univariate optimization, 
-####                   one CV constraint
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 VAST_model <- "11" 
@@ -30,9 +28,8 @@ SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
                                "C:/Users/zack.oyafuso/")[which_machine],
                              "Downloads/SamplingStrata-master/R")
 
-which_method = c("Flexible" = 1,
-                 "Spatial" = 2,
-                 "Single_Species" = 3)[1]
+which_method = c("Multi_Species" = 1,
+                 "Single_Species" = 2)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -40,44 +37,37 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
                      "/GitHub/Optimal_Allocation_GoA/model_", 
                      VAST_model, "/", 
                      c("Spatiotemporal_Optimization/", 
-                       "Spatial_Optimization/",
                        "Single_Species_Optimization/")[which_method])
 
 ##################################################
 ####   Load functions from SamplingStrata packages into global environment
-####   Load modified buildStrataDF function if using spatiotemporal 
-####   stratum variance
+####   Load modified buildStrataDF function to incorporate spatiotemporal 
+####   stratum variance instead of spatial variance
 ##################################################
-if (which_method %in% c(1,3)) { 
-  for (ifile in dir(SamplingStrata_dir, full.names = T)) source(ifile)
-  source(paste0(dirname(dirname(github_dir)), 
-                "/modified_functions/buildStrataDF_Zack.R"))
-}
-
-if (which_method %in% 2) { 
-  library(SamplingStrata)
-}
+for (ifile in dir(SamplingStrata_dir, full.names = T)) source(ifile)
+source(paste0(dirname(dirname(github_dir)), 
+              "/modified_functions/buildStrataDF_Zack.R"))
 
 ##################################################
 ####   Load Data
+####   Load Population CVs for use in the thresholds
 ##################################################
 load(paste0(dirname(github_dir), "/optimization_data.RData"))
 load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
 load(paste0(dirname(github_dir), "/Population_Variances.RData"))
 
 ##################################################
-####   If doing a survey comparison (for models 10x and 11)
-####   Load Simulated Survey metrics for use in threshold levels
+####   Some Constants
 ##################################################
 stratas <- c(5,10,15,20,30,60)
-ns <- c(15, 15, 1)[which_method]
+ns <- c(15, 1)[which_method]
 
 ##################################################
 ####   If Single_Species: subset just the one species
 ##################################################
-SS_which_species <- 2 #which species are we doing?
-if (which_method == 3) {
+if (which_method == 2) {
   SS_which_species <- 1 #which species are we doing?
+  
   frame <- frame[,c("id", "X1", "X2", paste0("Y", SS_which_species),
                     "domainvalue")]
   
@@ -91,18 +81,16 @@ if (which_method == 3) {
                                        pattern = ' ', 
                                        replacement = '_'), '/')
   if(!dir.exists(github_dir)) dir.create(github_dir)
+  
+  # Lower CV threshold is not needed for a single-species analysis
+  threshold <- c(0, 0, 0)
 }
-
-##################################################
-####  Lower CV threshold
-####  Set the lower CV threshold to be either
-##################################################
-threshold <- SRS_Pop_CV
 
 ##################################################
 ####   Run optimization
 ##################################################
-par(mfrow = c(6,6), mar = c(2,2,0,0))
+par(mfrow = c(6,6), 
+    mar = c(2,2,0,0))
 
 for (istrata in 2) {
   
@@ -156,14 +144,13 @@ for (istrata in 2) {
     solution <- optimStrata(method = "continuous",
                             errors = cv, 
                             framesamp = frame,
-                            iter = 200,
-                            pops = 30,
+                            iter = 300,
+                            pops = 50,
                             elitism_rate = 0.1,
                             mut_chance = 1 / (temp_strata + 1),
                             nStrata = temp_strata,
                             showPlot = T,
-                            parallel = F,
-                            writeFiles = F)
+                            writeFiles = T)
     
     sum_stats <- summaryStrata(solution$framenew,
                                solution$aggr_strata,
