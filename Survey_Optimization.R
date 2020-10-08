@@ -66,7 +66,7 @@ ns <- c(15, 1)[which_method]
 ####   If Single_Species: subset just the one species
 ##################################################
 if (which_method == 2) {
-  SS_which_species <- 1 #which species are we doing?
+  SS_which_species <- 7 #which species are we doing?
   
   frame <- frame[,c("id", "X1", "X2", paste0("Y", SS_which_species),
                     "domainvalue")]
@@ -83,7 +83,9 @@ if (which_method == 2) {
   if(!dir.exists(github_dir)) dir.create(github_dir)
   
   # Lower CV threshold is not needed for a single-species analysis
-  threshold <- c(0, 0, 0)
+  threshold <- matrix(data = 0,
+                      nrow = ns,
+                      ncol = 3)
 }
 
 ##################################################
@@ -101,7 +103,7 @@ for (istrata in 2) {
   isample <- 1
   current_n <- 0
   
-  CV_constraints <- SRS_Pop_CV[, 1]
+  CV_constraints <- SRS_Pop_CV[SS_which_species, 1] * 0.60
   
   ##Initial Upper CV constraints
   # if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
@@ -132,7 +134,7 @@ for (istrata in 2) {
   cv[["domainvalue"]] <- 1
   cv <- as.data.frame(cv)
   
-  while(current_n <= 820){ #Run until you reach 820 samples
+  while (current_n <= 820) { #Run until you reach 820 samples
     
     #Set wd for output files, create a directory if it doesn"t exist yet
     temp_dir = paste0(github_dir, "Str", temp_strata, "Run",Run)
@@ -186,12 +188,9 @@ for (istrata in 2) {
     #Else: reduce CV absolutely
     Run <- Run + 1
     
-    if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
-      creep_rate <- c(0.1, 0.05, 0.05)[isample]
-      CV_constraints <- CV_constraints * (1 - creep_rate) 
-    } else {
-      CV_constraints <- CV_constraints - creep_rate
-    }
+    creep_rate <- c(0.1, 0.05, 0.05)[isample]
+    CV_constraints <- CV_constraints * (1 - creep_rate) 
+ 
     
     #Apply lower threshold: if CV is lower than the threshold, set CV to 
     #to the lower theshold
