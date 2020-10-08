@@ -11,6 +11,8 @@ rm(list = ls())
 ##################################################
 library(VAST)
 library(readxl)
+library(spatialEco)
+library(sp)
 
 ##################################################
 ####   Set up directories
@@ -27,6 +29,7 @@ github_dir <- paste0(c('/Users/zackoyafuso/Documents/',
 ## Import Strata Allocations and spatial grid and predicted density
 ##################################
 load(paste0(github_dir, 'optimization_data.RData'))
+load(paste0(dirname(github_dir), '/data/Extrapolation_depths.RData'))
 
 GOA_allocations <- readxl::read_xlsx(
   path = paste0(dirname(github_dir), 
@@ -53,12 +56,21 @@ allocations$boat1 = ifelse(allocations$boat1 == 0, 0,
                                   allocations$boat1))
 
 ##################################################
-####   Sampling Units in teh Gulf of Alaska
+####   Attribute each grid point to the current stratification
 ##################################################
-GOA_grid = FishStatsUtils::make_extrapolation_info(
-  Region = 'Gulf_of_Alaska'
-)$Data_Extrap
-rm(gulf_of_alaska_grid)
+
+goa_grid <- rgdal::readOGR(
+  paste0(c('/Users/zackoyafuso/Documents/', 
+           'C:/Users/Zack Oyafuso/Documents/',
+           'C:/Users/zack.oyafuso/Work/')[which_machine], 
+         "GitHub/MS_OM_GoA/data/shapefiles/goa_strata.shp"))
+
+goa_grid = sp::spTransform(x = goa_grid, 
+                           CRSobj = "+proj=utm +zone=5N +units=km")
+goa_grid <- spatialEco::point.in.poly(
+  x = SpatialPoints(coords = Extrapolation_depths[, c("E_km", "N_km")],
+                    proj4string=CRS("+proj=utm +zone=5N +units=km")),
+  y = goa_grid)
 
 ##################################################
 ####   Result Objects
@@ -67,7 +79,8 @@ sim_mean <- sim_cv <- array(dim = c(NTime, ns, Niters, nboats),
                             dimnames = list(NULL, sci_names, NULL, NULL ))
 
 true_cv_array <- rrmse_cv_array <- rel_bias_est <- rel_bias_cv <-
-  array(dim = c(NTime, ns, nboats), dimnames = list(NULL, sci_names, NULL))
+  array(dim = c(NTime, ns, nboats), 
+        dimnames = list(NULL, sci_names, NULL))
 
 ##################################################
 ####   Simulate STRS based on current stratifications and allocations
@@ -84,16 +97,18 @@ for (isample in 1:nboats) {
   nh <- nh[sampled_strata]
   
   #strata constraints
-  stratano <- rep(x = allocations$Stratum[sampled_strata], times = nh)
+  stratano <- rep(x = allocations$Stratum[sampled_strata], 
+                  times = nh)
   
-  Nh <- table(GOA_grid$GOA_STRATUM)[sampled_strata]
+  Nh <- table(goa_grid$STRATUM)[sampled_strata]
   Wh <- Nh / N
   wh <- nh / Nh
   
   for (iyear in 1:NTime) {
     
     #Subset densities
-    sub_df <- subset(frame_raw, year == iyear)
+    sub_df <- subset(frame_raw, 
+                     year == iyear)
     
     for (iter in 1:Niters) {
       
@@ -101,8 +116,10 @@ for (isample in 1:nboats) {
       sample_idx = c()
       for (istrata in 1:nstrata) {
         temp_nh <- nh[istrata]
-        str_idx <- which(GOA_grid$GOA_STRATUM == allocations$Stratum[istrata])
-        sample_idx <- c(sample_idx, sample(x = str_idx, size = temp_nh))
+        str_idx <- which(goa_grid$STRATUM == allocations$Stratum[istrata])
+        sample_idx <- c(sample_idx, 
+                        sample(x = str_idx, 
+                               size = temp_nh))
       }
       
       sample_df <- sub_df[sample_idx, ]
