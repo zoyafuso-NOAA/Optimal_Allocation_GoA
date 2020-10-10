@@ -66,7 +66,7 @@ ns <- c(15, 1)[which_method]
 ####   If Single_Species: subset just the one species
 ##################################################
 if (which_method == 2) {
-  SS_which_species <- 7 #which species are we doing?
+  SS_which_species <- 14 #which species are we doing?
   
   frame <- frame[,c("id", "X1", "X2", paste0("Y", SS_which_species),
                     "domainvalue")]
