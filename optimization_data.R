@@ -97,16 +97,15 @@ df <- df_raw <- NULL
 df <- cbind(
   data.frame(Domain = 1,
              x = 1:N,
-             lat = Extrapolation_depths$N_km,
              lon = Extrapolation_depths$E_km - min(Extrapolation_depths$E_km),
              depth = Extrapolation_depths$DEPTH_EFH),
   
   #Mean Density across years
-  apply(X = fit$Report$D_gcy[,,Years2Include], 
+  apply(X = fit$Report$D_gct[,,Years2Include], 
         MARGIN = 1:2, 
         FUN = mean )
   )
-names(df)[-(1:5)] <- gsub(x = sci_names, pattern = " ", replacement = "_")
+names(df)[-(1:4)] <- gsub(x = sci_names, pattern = " ", replacement = "_")
 
 frame <- SamplingStrata::buildFrameDF(df = df,
                                       id = "x",
@@ -124,13 +123,12 @@ for (iT in 1:NTime) {
     data.frame(Domain = 1,
                x = 1:N,
                year = iT,
-               lat = Extrapolation_depths$N_km,
                lon = Extrapolation_depths$E_km - min(Extrapolation_depths$E_km),
                depth = Extrapolation_depths$DEPTH_EFH),
-    fit$Report$D_gcy[,,Years2Include[iT]] )
+    fit$Report$D_gct[,,Years2Include[iT]] )
   )
 }
-names(df_raw)[-(1:6)] <- gsub(x = sci_names, pattern = " ", replacement = "_")
+names(df_raw)[-(1:5)] <- gsub(x = sci_names, pattern = " ", replacement = "_")
 
 frame_raw <- SamplingStrata::buildFrameDF(df = df_raw,
                                           id = "x",

@@ -93,8 +93,8 @@ SRS_Pop_CV <- Current_STRS_Pop_CV <- matrix(nrow = ns,
                                             dimnames = list(sci_names, NULL))
 
 for (ispp in 1:15) {
-  SRS_var = var(as.vector(fit$Report$D_gcy[, ispp, Years2Include])) 
-  SRS_mean = mean(as.vector(fit$Report$D_gcy[, ispp, Years2Include]))
+  SRS_var = var(as.vector(fit$Report$D_gct[, ispp, Years2Include])) 
+  SRS_mean = mean(as.vector(fit$Report$D_gct[, ispp, Years2Include]))
   
   SRS_CV = sqrt(SRS_var / samples) / SRS_mean
   
