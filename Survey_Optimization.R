@@ -66,7 +66,7 @@ ns <- c(15, 1)[which_method]
 ####   If Single_Species: subset just the one species
 ##################################################
 if (which_method == 2) {
-  SS_which_species <- 14 #which species are we doing?
+  SS_which_species <- 1 #which species are we doing?
   
   frame <- frame[,c("id", "X1", "X2", paste0("Y", SS_which_species),
                     "domainvalue")]
@@ -103,7 +103,7 @@ for (istrata in 2) {
   isample <- 1
   current_n <- 0
   
-  CV_constraints <- SRS_Pop_CV[SS_which_species, 1] * 0.60
+  CV_constraints <- Current_STRS_Pop_CV[SS_which_species, 1] * 1
   
   ##Initial Upper CV constraints
   # if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
@@ -188,7 +188,7 @@ for (istrata in 2) {
     #Else: reduce CV absolutely
     Run <- Run + 1
     
-    creep_rate <- c(0.1, 0.05, 0.05)[isample]
+    creep_rate <- c(0.1, 0.05, 0.025)[isample]
     CV_constraints <- CV_constraints * (1 - creep_rate) 
  
     
