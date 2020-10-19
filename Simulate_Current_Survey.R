@@ -9,7 +9,6 @@ rm(list = ls())
 ##################################################
 ####   Import Libraries
 ##################################################
-library(VAST)
 library(readxl)
 library(spatialEco)
 library(sp)
@@ -17,7 +16,7 @@ library(sp)
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[1]
 VAST_model <- "11" 
 
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
@@ -58,19 +57,10 @@ allocations$boat1 = ifelse(allocations$boat1 == 0, 0,
 ##################################################
 ####   Attribute each grid point to the current stratification
 ##################################################
-
-goa_grid <- rgdal::readOGR(
-  paste0(c('/Users/zackoyafuso/Documents/', 
-           'C:/Users/Zack Oyafuso/Documents/',
-           'C:/Users/zack.oyafuso/Work/')[which_machine], 
-         "GitHub/MS_OM_GoA/data/shapefiles/goa_strata.shp"))
-
-goa_grid = sp::spTransform(x = goa_grid, 
-                           CRSobj = "+proj=utm +zone=5N +units=km")
-goa_grid <- spatialEco::point.in.poly(
-  x = SpatialPoints(coords = Extrapolation_depths[, c("E_km", "N_km")],
-                    proj4string=CRS("+proj=utm +zone=5N +units=km")),
-  y = goa_grid)
+goa_grid <- sp::SpatialPointsDataFrame(
+  coords = Extrapolation_depths[, c("E_km", "N_km")],
+  proj4string=CRS("+proj=utm +zone=5N +units=km"),
+  data = Extrapolation_depths)
 
 ##################################################
 ####   Result Objects
@@ -91,16 +81,16 @@ for (isample in 1:nboats) {
   
   #Adjust sample size proportionally
   nh <- allocations[, paste0('boat', isample)]
-  sampled_strata <- nh > 0
-  nstrata <- sum(sampled_strata)
+  sampled_strata <- allocations$Stratum[nh > 0]
+  nstrata <- length(sampled_strata)
   
-  nh <- nh[sampled_strata]
+  nh <- nh[allocations$Stratum %in% sampled_strata]
   
   #strata constraints
-  stratano <- rep(x = allocations$Stratum[sampled_strata], 
+  stratano <- rep(x = sampled_strata, 
                   times = nh)
   
-  Nh <- table(goa_grid$STRATUM)[sampled_strata]
+  Nh <- table(goa_grid$stratum)[as.character(sampled_strata)]
   Wh <- Nh / N
   wh <- nh / Nh
   
@@ -116,7 +106,8 @@ for (isample in 1:nboats) {
       sample_idx = c()
       for (istrata in 1:nstrata) {
         temp_nh <- nh[istrata]
-        str_idx <- which(goa_grid$STRATUM == allocations$Stratum[istrata])
+        temp_strata <- sampled_strata[istrata]
+        str_idx <- which(goa_grid$stratum == temp_strata)
         sample_idx <- c(sample_idx, 
                         sample(x = str_idx, 
                                size = temp_nh))
@@ -195,3 +186,4 @@ save(file = paste0(github_dir, 'Survey_Comparison_Simulations/',
      list = c(paste0('Survey_', c('rrmse_cv_array',
                                   'true_cv_array', 'sim_mean', 'sim_cv',
                                   'rel_bias_est', 'rel_bias_cv'))))
+
