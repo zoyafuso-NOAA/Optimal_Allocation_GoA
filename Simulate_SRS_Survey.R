@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC'=1, 'Zack_PC' =2, 'Zack_GI_PC'=3)[1]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' =2, 'Zack_GI_PC' = 3)[3]
 VAST_model <- "11" 
 
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
@@ -21,12 +21,23 @@ github_dir <- paste0(c('/Users/zackoyafuso/Documents/',
 ####   Load predicted density and optimization results
 ##################################################
 load(paste0(github_dir, 'optimization_data.RData'))
+load(paste0(dirname(github_dir), '/data/Extrapolation_depths.RData'))
+
+##################################################
+####   Create indices for trawlable and shallow cells
+##################################################
+trawl_idx <- Extrapolation_depths$Id %in% cells_trawlable
+shallow_idx <- Extrapolation_depths$Id %in% cells_shallower_than_700m
+trawl_shallow_idx <- apply(X = cbind(trawl_idx, shallow_idx),
+                           MARGIN = 1,
+                           FUN = all)
 
 ##################################################
 ####   Result Objects
 ##################################################
-sim_mean <- sim_cv <- array(dim = c(NTime, ns, nboats, Niters), 
-                            dimnames = list(NULL, sci_names, NULL, NULL))
+sim_mean <- sim_cv <- sim_mean_trawl <- sim_cv_trawl <- 
+  array(dim = c(NTime, ns, nboats, Niters), 
+        dimnames = list(NULL, sci_names, NULL, NULL))
 
 true_cv_array <- rrmse_cv_array <- rel_bias_est <- rel_bias_cv <- 
   array(dim = c(NTime, ns, nboats), dimnames = list(NULL, sci_names, NULL))
@@ -39,6 +50,7 @@ for (iyear in 1:NTime) {
   for (isample in 1:nboats) {
     for (iter in 1:Niters) {
       
+      ##Full Domain
       #Take a random sample based on number of boats
       samplesize <- samples[isample]
       sample_vec <- sample(x = 1:N, size = samplesize)
@@ -54,6 +66,25 @@ for (iyear in 1:NTime) {
       #Save Mean and CV
       sim_mean[iyear, ,isample, iter] <- temp_sim_mean
       sim_cv[iyear, ,isample, iter] <- temp_sim_se / temp_sim_mean
+      
+      
+      ##SUbsetted Spatial Domain
+      #Take a random sample based on number of boats
+      samplesize <- samples[isample]
+      sample_vec <- sample(x = which(trawl_shallow_idx == T), 
+                           size = samplesize)
+      sample_df <- subset(frame_raw, year == iyear)[sample_vec,]
+      
+      #Calculate Mean and standard error
+      temp_sim_mean <- colMeans(sample_df[, paste0('Y', 1:ns)])
+      temp_sim_var <- apply(sample_df[, paste0('Y', 1:ns)], 
+                            MARGIN = 2, 
+                            FUN = var)
+      temp_sim_se <- sqrt(temp_sim_var / samplesize)
+      
+      #Save Mean and CV
+      sim_mean_trawl[iyear, ,isample, iter] <- temp_sim_mean
+      sim_cv_trawl[iyear, ,isample, iter] <- temp_sim_se / temp_sim_mean
     }
   }
   print(paste0('Done with year', iyear))
