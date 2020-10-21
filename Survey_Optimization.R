@@ -103,7 +103,7 @@ for (istrata in 2) {
   isample <- 1
   current_n <- 0
   
-  CV_constraints <- Current_STRS_Pop_CV[SS_which_species, 1] * 0.4
+  CV_constraints <- Current_STRS_Pop_CV[SS_which_species, 1] * 0.65
   
   ##Initial Upper CV constraints
   # if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
