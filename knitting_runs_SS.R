@@ -15,7 +15,7 @@ library(raster)
 ###############################
 ## Set up directories
 ###############################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 
 SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
                                "C:/Users/Zack Oyafuso/",

@@ -29,7 +29,7 @@ SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
                              "Downloads/SamplingStrata-master/R")
 
 which_method = c("Multi_Species" = 1,
-                 "Single_Species" = 2)[2]
+                 "Single_Species" = 2)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -103,7 +103,7 @@ for (istrata in 2) {
   isample <- 1
   current_n <- 0
   
-  CV_constraints <- Current_STRS_Pop_CV[SS_which_species, 1] * 0.65
+  CV_constraints <- SRS_Pop_CV[, 2] 
   
   ##Initial Upper CV constraints
   # if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
@@ -138,7 +138,7 @@ for (istrata in 2) {
     
     #Set wd for output files, create a directory if it doesn"t exist yet
     temp_dir = paste0(github_dir, "Str", temp_strata, "Run",Run)
-    if(!dir.exists(temp_dir)) dir.create(temp_dir)
+    if(!dir.exists(temp_dir)) dir.create(temp_dir, recursive = T)
     
     setwd(temp_dir)
     

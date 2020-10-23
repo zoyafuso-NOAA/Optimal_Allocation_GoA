@@ -16,6 +16,7 @@ library(VAST)
 library(readxl)
 library(rgdal)
 library(spatialEco)
+library(tidyr)
 
 ##################################################
 ####   Set up directories
@@ -34,6 +35,9 @@ github_dir <- paste0(c('/Users/zackoyafuso/Documents/',
 load("G:/Oyafuso/VAST_Runs_EFH/VAST_output11/fit.RData")
 load(paste0(dirname(github_dir), "/data/Extrapolation_depths.RData") )
 load(paste0(github_dir, 'optimization_data.RData'))
+load(paste0(github_dir, "/Single_Species_Optimization/",
+            "optimization_knitted_results.RData"))
+
 
 ##################################
 ## Import Strata Allocations and spatial grid and predicted density
@@ -151,8 +155,14 @@ for (isample in 1:nboats) {
   Current_STRS_Pop_CV[, isample ] <- strata_cv
 }
 
+
+SS_STRS_Pop_CV <- tidyr::spread(data = settings[,c("isample", "ispp", "cv")], 
+                                value = cv, 
+                                key = isample)[, -1]
+rownames(SS_STRS_Pop_CV) = sci_names
+
 ##################################
 ## Save
 ##################################
-save(list = c("SRS_Pop_CV", "Current_STRS_Pop_CV"), 
+save(list = c("SRS_Pop_CV", "Current_STRS_Pop_CV", "SS_STRS_Pop_CV"), 
      file = paste0(github_dir, "Population_Variances.RData"))
