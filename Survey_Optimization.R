@@ -93,40 +93,16 @@ if (which_method == 2) {
 ##################################################
 par(mfrow = c(6,6), 
     mar = c(2,2,0,0))
-isample <- 2
+isample <- 3
 
-for (istrata in 2) {
+for (istrata in 3) {
   
   temp_strata <- stratas[istrata]
   
   ##Initial Condition
   Run <- 1
-
   current_n <- 0
-  
-  CV_constraints <- SRS_Pop_CV[, 2] 
-  
-  ##Initial Upper CV constraints
-  # if (VAST_model %in% c(paste0(10, letters[1:4]), '11') ) {
-  #   CV_constraints <- list( 
-  #     rep(c(.4, 0.3, 0.2)[isample], ns),
-  #     rep(c(.4, 0.3, 0.2)[isample], ns),
-  #     c(0.09, 0.20, 0.10,   
-  #       0.09, 0.15, 0.07,
-  #       0.05, 0.09, 0.15,   
-  #       0.09, 0.20, 0.06,
-  #       0.30, 0.20, 0.06)[SS_which_species])[[which_method]]
-  #   
-  #   creep_rate <- c(0.1, 0.05, 0.025)[isample]
-  #   
-  # } else {
-  #   CV_constraints <- list( 
-  #     rep(c(.4, 0.3, 0.2)[isample], ns),
-  #     rep(c(.2, 0.15, 0.1)[isample], ns))[[which_method]]
-  #   
-  #   creep_rate <- c(0.02, 0.01)[which_method]
-  # }
-  
+  CV_constraints <- SRS_Pop_CV[, isample] 
   
   #Create CV dataframe
   cv <- list()
@@ -135,7 +111,7 @@ for (istrata in 2) {
   cv[["domainvalue"]] <- 1
   cv <- as.data.frame(cv)
   
-  while (current_n <= c(280, 550, 820)[isample] ) { #Run until you reach 820 samples
+  while (current_n <= c(280, 550, 820)[isample] ) {
     
     #Set wd for output files, create a directory if it doesn"t exist yet
     temp_dir = paste0(github_dir, "boat", isample, "/Str", temp_strata, 
@@ -161,13 +137,19 @@ for (istrata in 2) {
                                progress=FALSE) 
     
     #Plot Solution
-    goa <- SpatialPointsDataFrame(
+    goa <- sp::SpatialPointsDataFrame(
       coords = Extrapolation_depths[,c("E_km", "N_km")],
       data = data.frame(Str_no = solution$framenew$STRATO) )
-    goa_ras <- raster(goa, resolution = 5)
-    goa_ras <- rasterize(x = goa, y = goa_ras, field = "Str_no")
+    goa_ras <- raster::raster(x = goa, 
+                              resolution = 5)
+    goa_ras <- raster::rasterize(x = goa, 
+                                 y = goa_ras, 
+                                 field = "Str_no")
     
-    png(filename = "solution.png", width = 5, height = 5, units = "in", 
+    png(filename = "solution.png", 
+        width = 5, 
+        height = 5, 
+        units = "in", 
         res = 500)
     plot(goa_ras, axes = F, 
          col = terrain.colors(temp_strata)[sample(temp_strata)])
@@ -184,21 +166,9 @@ for (istrata in 2) {
     save(list = "result_list", file = "result_list.RData")
     
     #Set up next run by changing upper CV constraints
-    #If doing a survey comparison, reduce CV proportionally
-    #Else: reduce CV absolutely
     Run <- Run + 1
     
     CV_constraints <- 0.9*CV_constraints + 0.1*(SS_STRS_Pop_CV[, isample]) 
- 
-    
-    #Apply lower threshold: if CV is lower than the threshold, set CV to 
-    #to the lower theshold
-    # for (ispp in 1:ns) {
-    #   CV_constraints[ispp] <- 
-    #     ifelse(CV_constraints[ispp]<threshold[ispp, isample],
-    #            threshold[ispp, isample],
-    #            CV_constraints[ispp])
-    # }
     
     #Create CV dataframe in the formmat of SamplingStrata
     cv <- list()
