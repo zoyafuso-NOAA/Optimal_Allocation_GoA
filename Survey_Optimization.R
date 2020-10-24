@@ -93,6 +93,7 @@ if (which_method == 2) {
 ##################################################
 par(mfrow = c(6,6), 
     mar = c(2,2,0,0))
+isample <- 2
 
 for (istrata in 2) {
   
@@ -100,7 +101,7 @@ for (istrata in 2) {
   
   ##Initial Condition
   Run <- 1
-  isample <- 1
+
   current_n <- 0
   
   CV_constraints <- SRS_Pop_CV[, 2] 
@@ -134,10 +135,11 @@ for (istrata in 2) {
   cv[["domainvalue"]] <- 1
   cv <- as.data.frame(cv)
   
-  while (current_n <= 820) { #Run until you reach 820 samples
+  while (current_n <= c(280, 550, 820)[isample] ) { #Run until you reach 820 samples
     
     #Set wd for output files, create a directory if it doesn"t exist yet
-    temp_dir = paste0(github_dir, "Str", temp_strata, "Run",Run)
+    temp_dir = paste0(github_dir, "boat", isample, "/Str", temp_strata, 
+                      "Run", Run)
     if(!dir.exists(temp_dir)) dir.create(temp_dir, recursive = T)
     
     setwd(temp_dir)
@@ -174,9 +176,7 @@ for (istrata in 2) {
     #Save Output
     CV_constraints <- expected_CV(strata = solution$aggr_strata)
     current_n <- sum(sum_stats$Allocation)
-    isample <- ifelse(current_n < 280, 1, #1 boat
-                      ifelse(current_n < 550, 2, #2 boat
-                             3)) #3 boat
+
     result_list <- list(solution = solution, 
                         sum_stats = sum_stats, 
                         CV_constraints = CV_constraints, 
@@ -188,18 +188,17 @@ for (istrata in 2) {
     #Else: reduce CV absolutely
     Run <- Run + 1
     
-    creep_rate <- c(0.1, 0.05, 0.025)[isample]
-    CV_constraints <- CV_constraints * (1 - creep_rate) 
+    CV_constraints <- 0.9*CV_constraints + 0.1*(SS_STRS_Pop_CV[, isample]) 
  
     
     #Apply lower threshold: if CV is lower than the threshold, set CV to 
     #to the lower theshold
-    for (ispp in 1:ns) {
-      CV_constraints[ispp] <- 
-        ifelse(CV_constraints[ispp]<threshold[ispp, isample],
-               threshold[ispp, isample],
-               CV_constraints[ispp])
-    }
+    # for (ispp in 1:ns) {
+    #   CV_constraints[ispp] <- 
+    #     ifelse(CV_constraints[ispp]<threshold[ispp, isample],
+    #            threshold[ispp, isample],
+    #            CV_constraints[ispp])
+    # }
     
     #Create CV dataframe in the formmat of SamplingStrata
     cv <- list()
