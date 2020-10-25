@@ -23,7 +23,7 @@ library(raster)
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 VAST_model <- "11" 
 
-domain <- c("full_domain", "trawlable")[2]
+domain <- c("full_domain", "trawlable")[1]
 
 SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
                                "C:/Users/Zack Oyafuso/",
@@ -56,7 +56,7 @@ source(paste0(dirname(dirname(dirname(github_dir))),
 ##################################################
 load(paste0(dirname(github_dir), "/optimization_data.RData"))
 load(paste0(dirname(dirname(dirname(github_dir))), "/data/Extrapolation_depths.RData"))
-load(paste0(dirname(github_dir), "/Population_Variances.RData"))
+load(paste0(dirname(dirname(github_dir)), "/Population_Variances.RData"))
 
 ##################################################
 ####   Some Constants
