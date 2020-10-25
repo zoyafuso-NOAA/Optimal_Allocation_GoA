@@ -23,7 +23,6 @@ library(tidyr)
 ##################################################
 which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
 VAST_model <- "11" 
-
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
                        'C:/Users/Zack Oyafuso/Documents/',
                        'C:/Users/zack.oyafuso/Work/')[which_machine], 
@@ -32,12 +31,11 @@ github_dir <- paste0(c('/Users/zackoyafuso/Documents/',
 ##################################
 ## Import Operating Model
 ##################################
-load("G:/Oyafuso/VAST_Runs_EFH/VAST_output11/fit.RData")
 load(paste0(dirname(github_dir), "/data/Extrapolation_depths.RData") )
-load(paste0(github_dir, 'optimization_data.RData'))
-load(paste0(github_dir, "/Single_Species_Optimization/",
+load(paste0(github_dir, '/fit_density.RData'))
+load(paste0(github_dir, 'full_domain/optimization_data.RData'))
+load(paste0(github_dir, "full_domain/Single_Species_Optimization/",
             "optimization_knitted_results.RData"))
-
 
 ##################################
 ## Import Strata Allocations and spatial grid and predicted density
@@ -96,9 +94,9 @@ SRS_Pop_CV <- Current_STRS_Pop_CV <- matrix(nrow = ns,
                                             ncol = nboats,
                                             dimnames = list(sci_names, NULL))
 
-for (ispp in 1:15) {
-  SRS_var = var(as.vector(fit$Report$D_gct[, ispp, Years2Include])) 
-  SRS_mean = mean(as.vector(fit$Report$D_gct[, ispp, Years2Include]))
+for (ispp in 1:ns) {
+  SRS_var = var(as.vector(D_gct[, ispp, Years2Include])) 
+  SRS_mean = mean(as.vector(D_gct[, ispp, Years2Include]))
   
   SRS_CV = sqrt(SRS_var / samples) / SRS_mean
   
