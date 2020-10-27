@@ -15,7 +15,7 @@ library(raster)
 ###############################
 ## Set up directories
 ###############################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
                                "C:/Users/Zack Oyafuso/",
@@ -23,17 +23,21 @@ SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
                              "Downloads/SamplingStrata-master/R")
 
 VAST_model <- "11" 
+which_domain <- c("full_domain", "trawlable")[1]
+
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
                        "C:/Users/zack.oyafuso/Work")[which_machine],
                      "/GitHub/Optimal_Allocation_GoA/model_", 
-                     VAST_model, "/Single_Species_Optimization/")
+                     VAST_model, "/", which_domain, 
+                     "/Single_Species_Optimization/")
 
 ###########################
 ## Load Data
 ###########################
 load(paste0(dirname(github_dir), "/optimization_data.RData"))
-load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
+load(paste0(dirname(dirname(dirname(github_dir))), 
+            "/data/Extrapolation_depths.RData"))
 
 ###########################
 ## Empty Result objects
@@ -87,7 +91,7 @@ for (ispp in 1:ns) {
       load(temp_file)
       
       master_settings <- rbind(master_settings,
-                              data.frame(isample = isample,
+                              data.frame(iboat = isample,
                                          ispp = ispp,
                                          n = result_list$n,
                                          cv = as.numeric(result_list[[3]]) ))
