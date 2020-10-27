@@ -95,7 +95,7 @@ if (which_method == 2) {
 ##################################################
 par(mfrow = c(6,6), 
     mar = c(2,2,0,0))
-isample <- 3
+isample <- 2
 
 for (istrata in 3) {
   
@@ -127,7 +127,7 @@ for (istrata in 3) {
                             errors = cv, 
                             framesamp = frame,
                             iter = 300,
-                            pops = 50,
+                            pops = 30,
                             elitism_rate = 0.1,
                             mut_chance = 1 / (temp_strata + 1),
                             nStrata = temp_strata,
@@ -174,7 +174,8 @@ for (istrata in 3) {
     
     #Create CV dataframe in the formmat of SamplingStrata
     cv <- list()
-    for (spp in 1:ns) cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
+    for (spp in 1:ns) 
+      cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
     cv[["DOM"]] <- 1
     cv[["domainvalue"]] <- 1
     cv <- as.data.frame(cv)
