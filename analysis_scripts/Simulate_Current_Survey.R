@@ -24,6 +24,7 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents/",
                        "C:/Users/Zack Oyafuso/Documents/",
                        "C:/Users/zack.oyafuso/Work/")[which_machine], 
                      "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/",
+                     which_domain, "/")
 
 if(!dir.exists(paste0(github_dir, "Survey_Comparison_Simulations/"))) {
   dir.create(paste0(github_dir, "Survey_Comparison_Simulations/"))
