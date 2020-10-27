@@ -6,17 +6,23 @@
 rm(list = ls())
 
 ##################################################
-####  Set up directories  
+####   Set up directories
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
 VAST_model <- "11" 
+which_domain <- c("full_domain", "trawlable")[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
                        "C:/Users/zack.oyafuso/Work/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/")
+                     "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/",
+                     which_domain, "/")
 
-result_dir <- paste0(github_dir, "Spatiotemporal_Optimization")
+if(!dir.exists(paste0(github_dir, "Survey_Comparison_Simulations/"))) {
+  dir.create(paste0(github_dir, "Survey_Comparison_Simulations/"))
+}
+
+result_dir <- paste0(github_dir, "Spatiotemporal_Optimization/")
 
 ##################################################
 ####    Load predicted density and optimization results
@@ -41,8 +47,8 @@ true_cv_array <- rrmse_cv_array <- rel_bias_est <- rel_bias_cv <-
 ####   Simulating surveys from each optimized solution
 ##################################################
 # for (istrata in c(1:NStratas)) {
-for (istrata in 2) {
-  for (isample in 1:nboats) {
+for (istrata in 3) {
+  for (isample in 2) {
     
     #Load optimization data
     sub_settings = subset(settings, strata == stratas[istrata])
@@ -125,8 +131,8 @@ for (istrata in 2) {
 ####   Simulation Metrics
 ##################################################
 for (iyear in 1:NTime) {
-  for (istrata in 1:NStratas) {
-    for (isample in 1:3) {
+  for (istrata in 3) {
+    for (isample in 2) {
       for (ispp in sci_names) { 
         
         iter_est <- sim_mean[iyear, ispp, isample, istrata, ]

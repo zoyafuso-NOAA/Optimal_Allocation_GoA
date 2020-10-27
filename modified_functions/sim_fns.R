@@ -48,8 +48,8 @@ do_SRS <- function(density = frame_raw[, paste0("Y", 1:ns)],
 ## Create function to calcualte a STRS and output mean, CV, and relative bias
 ##################################
 do_STRS <- function(density = frame_raw[, paste0("Y", 1:ns)],
-                    cell_idx = (1:N)[Extrapolation_depths$stratum != 0],
-                    strata = Extrapolation_depths$stratum[Extrapolation_depths$stratum != 0],
+                    cell_idx = (1:N),
+                    strata = Extrapolation_depths$stratum,
                     strata_to_use = allocations$Stratum, 
                     allocation = allocations$boat1,
                     true_density = true_mean,
@@ -72,23 +72,25 @@ do_STRS <- function(density = frame_raw[, paste0("Y", 1:ns)],
   nh <- allocation[allocation > 0]
   wh <- nh / Nh
   
+  strata_to_use <- strata_to_use[allocation > 0]
+
   #Result objects
   mean_density <- cv <- rel_bias <- matrix(ncol = n_spp, nrow = n_time)
   
   for (iyear in 1:n_time) {
     #Subset density df by year, then by available cells
-    sub_df <- density[time == iyear, ][cell_idx, ]
+    sub_df <- density[time == iyear, ]
     
     #Take a random sample based on the allocation and stratum
     sample_vec <- c()
     for(istrata in 1:length(strata_to_use)) {
       sample_vec <- c(sample_vec,
                       sample(x = which(strata == strata_to_use[istrata]),
-                             size = allocation[istrata]))
+                             size = nh[istrata]))
     }
     
     sampled_strata <- rep(x = strata_to_use, 
-                          times = allocation)
+                          times = nh)
     
     #subset sub_df by which cells were chosen
     sample_df <- sub_df[sample_vec, ]
@@ -205,10 +207,3 @@ do_SS_STRS <- function(density = frame_raw[, paste0("Y15")],
               "rel_bias" = round(rel_bias, 2) ))
   
 }
-
-##################################################
-####   Calculate True CV and RRMSE of CV
-##################################################
-# apply(X = SRS_sim_mean[,,1,],
-#       MARGIN = 1:2,
-#       FUN = sd) / true_mean * 100
