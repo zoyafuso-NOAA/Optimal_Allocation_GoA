@@ -55,13 +55,6 @@ do_STRS <- function(density = frame_raw[, paste0("Y", 1:ns)],
                     true_density = true_mean,
                     time = frame_raw$year){
   
-  #Do some input checks
-  if(! length(cell_idx) == length(strata)) 
-    stop("cell_idx must be same length as strata")
-  
-  if(! length(allocation) == length(strata_to_use)) 
-    stop("cell_idx must be same length as strata")
-  
   #Some constants
   n_time <- length(unique(time))
   n_spp <-  dim(density)[2]

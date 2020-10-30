@@ -18,7 +18,7 @@ library(sp)
 ##################################################
 which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
 VAST_model <- "11" 
-which_domain <- c("full_domain", "trawlable")[2]
+which_domain <- c("full_domain", "trawlable")[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -53,11 +53,7 @@ GOA_allocations3 <- readxl::read_xlsx(
 ##################################################
 ####   Create indices for trawlable and shallow cells
 ##################################################
-trawl_idx <- Extrapolation_depths$Id %in% cells_trawlable
-shallow_idx <- Extrapolation_depths$Id %in% cells_shallower_than_700m
-trawl_shallow_idx <- apply(X = cbind(trawl_idx, shallow_idx),
-                           MARGIN = 1,
-                           FUN = all)
+trawl_shallow_idx <- Extrapolation_depths$shallow_trawlable
 
 if(which_domain == "full_domain") domain_idx <- rep(TRUE, N)
 if(which_domain == "trawlable") domain_idx <- trawl_shallow_idx
@@ -99,7 +95,7 @@ set.seed(23234)
 for (iboat in 1:nboats) {
   for (iter in 1:Niters) {
     temp_sim <- do_STRS(density = frame_raw[, paste0("Y", 1:ns)],
-                        cell_idx = which(domain_idx == T),
+                        cell_idx = 1:N,
                         strata = Extrapolation_depths$stratum[domain_idx],
                         strata_to_use = allocations$Stratum, 
                         allocation = allocations[, paste0("boat", iboat)],
@@ -146,8 +142,9 @@ if (which_domain == "trawlable") {
     assign(x = paste0(ivar, "_trawl"),
            value = get(ivar))
   }
-  save(list = paste0(c("Current_sim_mean", "Current_sim_cv", "Current_rel_bias_est",
-                       "Current_true_cv_array", "Current_rrmse_cv_array"), "_trawl"),
+  save(list = paste0(c("Current_sim_mean", "Current_sim_cv", 
+                       "Current_rel_bias_est", "Current_true_cv_array", 
+                       "Current_rrmse_cv_array"), "_trawl"),
        file = paste0(github_dir, 
                      "Survey_Comparison_Simulations/",
                      "Survey_Simulation_Results.RData"))
