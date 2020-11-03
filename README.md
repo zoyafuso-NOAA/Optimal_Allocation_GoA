@@ -14,19 +14,37 @@ library(raster)
 library(RColorBrewer)
 ```
 
-The bulk of the optimization is done within the SamplingStrata R Package (https://github.com/barcaroli/SamplingStrata). It is best to download the package and save the path of the directory. There is one function in the package, BuildStrataDF() that I modify for this analysis, so the functions in the SamplingStrata package, along with my modified BuildStrataDF() function need to be in the global environment. 
+The bulk of the optimization is done within the SamplingStrata R Package 
+(https://github.com/barcaroli/SamplingStrata). It is best to download the 
+package and save the path of the directory. There is one function in the 
+package, BuildStrataDF() that I modify for this analysis, so the functions 
+in the SamplingStrata package, along with my modified BuildStrataDF() 
+function need to be in the global environment. 
 
-## Script Overview
+## Script Overview (Optimal_Allocation_GoA/analysis_scripts/)
 
-Survey_Optimization.R : Conducts the survey optimization
+optimization_data.R : Synthesizes data inputs and constants common to 
+all subsequent scripts. 
 
-knitting_runs.R : knits all the optimization runs into neat result outputs
+Calculate_Population_Variances.R : Calculates population variances of 
+simple random, optimized single-species stratified random, and current 
+stratified random surveys.
 
-Simulate_Opt_Survey.R: Simulates optimized surveys
+Survey_Optimization.R : Conducts the multi- and single-species survey 
+optimization.
+
+knitting_runs.R : knits all the optimization runs into neat result
+outputs.
+
+knitting_runs_SS.R : knits all the single-species optimization runs into
+neat result outputs.
+
+Simulate_Surveys.R : Simulates current and optimized stratified random 
+surveys.
 
 ## Species Included
 
-The species set (n = 15) included in the manuscript are a complex of Gulf of 
+The species set (ns = 15) included in the manuscript are a complex of Gulf of 
 Alaska cods, flatfishes, and rockfishes:
 
 | Scientific Name                     | Common Name                           |
@@ -91,16 +109,18 @@ years from 2003-2019. Code in the repository zoyafuso-NOAA/MS_OM_GoA/
 (https://github.com/zoyafuso-NOAA/MS_OM_GoA) was used to run the VAST models 
 and the output was saved in this repo (model_11/fit_density.RData). This .RData
 file contains a variable called "D_gct" which is a 3-D array of dimension 
-(N, ns, 24). There are 24 total years (1996-2019), but only 11 years of data 
-used. 
+(N, ns, 24). There are 24 total years (1996-2019), but only NTime = 11 years of
+data used. 
 
 ## Input Data -- Putting it all together
 
 Data for the optimization were synthesized in the optimization_data.R script. 
 It's purpose is to take the VAST model density predictions and create an input 
 dataset in the form that is used in the SamplingStrata package. The depth and 
-E_km fields are used as strata variables. The output of the script is saved as 
-optimization_data.RData and contains the following variables and constants. 
+E_km fields are used as strata variables. The script creates two subdirectories
+model_11/full_domain/ and model_11/trawlable/, and an .RData file called 
+optimization_data.RData is saved in each subdirectory. The output of 
+optimization_data.RData contains the following variables and constants: 
 
 | Variable Name | Description                                                                                                                        | Class Type and Dimensions                  |
 |---------------|------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
@@ -118,16 +138,20 @@ optimization_data.RData and contains the following variables and constants.
 | true_mean     | True mean densities for each species and year. This is the "truth" that is used in the performance metrics when simulating surveys | dataframe, NTime rows x ns columns         |
 
 The optimization_data.R script uses the indices in the Extrapolation_depths
-dataframe to remove untrawlable/deep survey grids for the trawlable scenarios
+dataframe to remove untrawlable/deep survey grids for the trawlable scenario.
 
 ## Survey Optimization
 
-The SamplingStrata R package is used for the optimization. 
+The SamplingStrata R package (https://github.com/barcaroli/SamplingStrata)
+is used for the optimization. 
 
-The optimization is run over a range of number of stratas from 5 to 60. Each 
-run of the optimization is saved in its own directory with the code template of
-StrXRunY where X is the number of strata in the solution and Y is the run 
-number. Within each run folder contains:
+The optimization is run over a range of number of stratas from 5 to 60 on the
+full domain (model_11/full_domain/Spatiotemporal_Optimization/) and the 
+trawlable domain (model_11/trawlable/Spatiotemporal_Optimization/). 
+Optimizations were conducted for each boat effort level (../boat1, ../boat2,
+../boat3). Each run of the optimization is saved in its own directory with the 
+code template of StrXRunY where X is the number of strata in the solution and Y
+is the run number. Within each run folder contains:
 
 | File Name            | Description                                                         |
 |----------------------|---------------------------------------------------------------------|
@@ -160,17 +184,6 @@ variables are saved in the optimization_knitted_results.RData workspace:
 | strata_list       | Collection of result_list$solution$aggr_strata from each run                | list of variable length                       |
 | strata_stats_list | Collection of stratum-level means and variances across species for each run | list of variable length                       |
 
-## Survey Simulation and Performance Metrics
-The Simulate_Opt_Survey.R script takes the knitted results and the optimization
-data and simulates surveys, then calculates stratum means and vaiances. True 
-CV, RRMSE of CV, and bias are calculated on the simulated surveys. The output
-consists of six variables saved to workspace STRS_Sim_Res_spatiotemporal.RData:
+## Survey Simulation and Performance Metrics (work in progress)...
 
-| Variable Name  | Description                                                                        | Class Type and Dimensions                                  |
-|----------------|------------------------------------------------------------------------------------|------------------------------------------------------------|
-| sim_mean       | Simulated survey estimates of mean density                                         | Array with dimensions (NTime, ns, nboats, NStrata, Niters) |
-| sim_cv         | Simulated survey estimate of CV                                                    | Array with dimensions (NTime, ns, nboats, NStrata, Niters) |
-| true_cv_array  | True CV                                                                            | Array with dimensions (NTime, ns, nboats, NStrata)         |
-| rrmse_cv_array | Relative root mean square error of the CV estiamte                                 | Array with dimensions (NTime, ns, nboats, NStrata)         |
-| rel_bias_est   | Relative percent bias of survey estimates of mean density relative to true density | Array with dimensions (NTime, ns, nboats, NStrata)         |
 
