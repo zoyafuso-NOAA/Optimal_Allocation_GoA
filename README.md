@@ -188,5 +188,5 @@ variables are saved in the optimization_knitted_results.RData workspace:
 
 ## Graphic Workflow
 
-![](graphics/Workflow.png)
+![](graphics/workflow.png)
 
