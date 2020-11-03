@@ -186,4 +186,7 @@ variables are saved in the optimization_knitted_results.RData workspace:
 
 ## Survey Simulation and Performance Metrics (work in progress)...
 
+## Graphic Workflow
+
+![](graphics/Workflow.png)
 
