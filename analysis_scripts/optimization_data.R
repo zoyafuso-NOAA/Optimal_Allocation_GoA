@@ -75,11 +75,7 @@ NStrata <- length(stratas)
 ##################################################
 ####   Create indices for trawlable and shallow cells
 ##################################################
-trawl_idx <- Extrapolation_depths$Id %in% cells_trawlable
-shallow_idx <- Extrapolation_depths$Id %in% cells_shallower_than_700m
-trawl_shallow_idx <- apply(X = cbind(trawl_idx, shallow_idx),
-                           MARGIN = 1,
-                           FUN = all)
+trawl_shallow_idx <- Extrapolation_depths$shallow_trawlable
 
 ##################################################
 ####   Empty result objects
@@ -217,10 +213,26 @@ frame_raw <- SamplingStrata::buildFrameDF(df = df_raw,
 frame_raw$year <- rep(x = 1:NTime, 
                       each = sum(trawl_shallow_idx))
 N <- nrow(frame)
+
+##################################################
+####   Calculate "true" mean density and "true" abundance index
+####   of trawlable areas
+##################################################
+stmt <- paste0("aggregate(cbind(",
+               paste0("Y", 1:(ns-1), sep = ",", collapse = ""), "Y",ns, 
+               ") ~ year, data = frame_raw, FUN = mean)")
+true_mean_trawl <- eval(parse(text = stmt))[,-1]
+colnames(true_mean_trawl) <- sci_names
+
+# true_index_trawl <- t(apply(X = Index[,, Years2Include], 
+#                       MARGIN = 2:3,
+#                       FUN = sum))
+
 ##################################################
 ####   Save Data
 ##################################################
-save(list = c("frame", "frame_raw", "true_mean", "trawl_shallow_idx",
-              "true_index", "ns", "Years2Include","NTime", "N", "sci_names", 
-              "samples", "nboats", "Niters", "stratas", "NStrata"),
+save(list = c("frame", "frame_raw", "true_mean", "true_mean_trawl", 
+              "trawl_shallow_idx", "true_index", "ns", "Years2Include","NTime",
+              "N", 
+              "sci_names", "samples", "nboats", "Niters", "stratas", "NStrata"),
      file = paste0(github_dir, "trawlable/optimization_data.RData"))
