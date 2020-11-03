@@ -8,7 +8,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
 VAST_model <- "11" 
 which_domain <- c("full_domain", "trawlable")[1]
 
@@ -92,7 +92,8 @@ for (istrata in 3) {
                            STATS = STRS_true_cv_array[, , iboat, istrata],
                            FUN = "-")^2,
                  MARGIN = 1:2,
-                 FUN = mean)) / apply(STRS_sim_cv[, , iboat, istrata, ], MARGIN = 1:2, mean)
+                 FUN = mean)) / apply(STRS_sim_cv[, , iboat, istrata, ], 
+                                      MARGIN = 1:2, mean)
     
   }
 }
