@@ -36,6 +36,8 @@ source( paste0(dirname(github_dir), "/modified_functions/sim_fns.R") )
 load(paste0(dirname(github_dir), '/data/optimization_data.RData'))
 load(paste0(dirname(github_dir), '/data/RMSE_VAST_models.RData'))
 load(paste0(dirname(github_dir), '/data/Extrapolation_depths.RData'))
+load(paste0(github_dir, "Spatiotemporal_Optimization",
+            "/optimization_knitted_results.RData"))
 
 GOA_allocations <- readxl::read_xlsx(
   path = paste0(dirname(github_dir), 
@@ -102,8 +104,7 @@ res_obj_names <- apply(X = expand.grid(c("Current_", "STRS_"),
 # load("~/GitHub/Optimal_Allocation_GoA/model_11/simulation_result.RData")
 #Load optimized solutions calculated on the full domain
 # load("~/GitHub/Optimal_Allocation_GoA/model_11/fit_density.RData")
-load(paste0(github_dir, "Spatiotemporal_Optimization",
-            "/optimization_knitted_results.RData"))
+
 
 for (iter in 1:1000) {
   
