@@ -17,13 +17,12 @@ library(VAST)
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
-VAST_model <- "11" 
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
                        "C:/Users/zack.oyafuso/Work/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/")
+                     "GitHub/Optimal_Allocation_GoA/results/")
 VAST_dir <- "G:/Oyafuso/VAST_Runs_EFH/Single_Species/"
 
 ##################################################
@@ -34,11 +33,9 @@ source( paste0(dirname(github_dir), "/modified_functions/sim_fns.R") )
 ##################################
 ## Import Strata Allocations and spatial grid and predicted density
 ##################################
-load(paste0(github_dir, 'full_domain/optimization_data.RData'))
-
-load(paste0(github_dir, '/RMSE_VAST_models.RData'))
+load(paste0(dirname(github_dir), '/data/optimization_data.RData'))
+load(paste0(dirname(github_dir), '/data/RMSE_VAST_models.RData'))
 load(paste0(dirname(github_dir), '/data/Extrapolation_depths.RData'))
-# Extrapolation_depths <- subset(Extrapolation_depths, stratum != 0)
 
 GOA_allocations <- readxl::read_xlsx(
   path = paste0(dirname(github_dir), 
@@ -105,7 +102,7 @@ res_obj_names <- apply(X = expand.grid(c("Current_", "STRS_"),
 # load("~/GitHub/Optimal_Allocation_GoA/model_11/simulation_result.RData")
 #Load optimized solutions calculated on the full domain
 # load("~/GitHub/Optimal_Allocation_GoA/model_11/fit_density.RData")
-load(paste0(github_dir, "full_domain/Spatiotemporal_Optimization",
+load(paste0(github_dir, "Spatiotemporal_Optimization",
             "/optimization_knitted_results.RData"))
 
 for (iter in 1:1000) {

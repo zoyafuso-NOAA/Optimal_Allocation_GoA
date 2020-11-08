@@ -10,19 +10,16 @@ rm(list = ls())
 ####  Set up directories
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
-VAST_model <- "11" 
-which_domain <- c("full_domain", "trawlable")[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
                        "C:/Users/zack.oyafuso/Work/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/",
-                     which_domain, "/")
+                     "GitHub/Optimal_Allocation_GoA/")
 
 ##################################################
 ####   Load Data
 ##################################################
-load(paste0(github_dir, "optimization_data.RData"))
+load(paste0(github_dir, "data/optimization_data.RData"))
 
 ##################################################
 ####   Define which optimization settings is being worked on
@@ -58,7 +55,7 @@ for (istrata in 1:NStrata) {
    temp_strata_stats_list <- temp_strata_list <- list()
    
    for (iboat in 1:nboats) {
-      result_dir <- paste0(github_dir, "Spatiotemporal_Optimization/",
+      result_dir <- paste0(github_dir, "results/Spatiotemporal_Optimization/",
                            "boat", iboat, "/")
       
       runs <- grep(x = dir(result_dir), 
@@ -119,4 +116,6 @@ names(res_df)[-1] <- paste0("sol_", 1:(ncol(res_df)-1))
 ####   Save Objects
 ##################################################
 save(list = c("res_df", "settings", "strata_list", "strata_stats_list"),
-     file = paste0(dirname(result_dir), "/optimization_knitted_results.RData"))
+     file = paste0(github_dir,
+                   "results/Spatiotemporal_Optimization",
+                   "/optimization_knitted_results.RData"))

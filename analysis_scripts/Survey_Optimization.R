@@ -20,10 +20,7 @@ library(raster)
 ####   Multispeceis: Spatiotemporal Variance, species specific CV constraints
 ####   Single_Species: Spatiotemporal Variance, univariate optimization, 
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
-VAST_model <- "11" 
-
-domain <- c("full_domain", "trawlable")[1]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
                                "C:/Users/Zack Oyafuso/",
@@ -36,8 +33,7 @@ which_method = c("Multi_Species" = 1,
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
                        "C:/Users/zack.oyafuso/Work")[which_machine],
-                     "/GitHub/Optimal_Allocation_GoA/model_", 
-                     VAST_model, "/", domain, "/",
+                     "/GitHub/Optimal_Allocation_GoA/results/",
                      c("Spatiotemporal_Optimization/", 
                        "Single_Species_Optimization/")[which_method])
 
@@ -47,16 +43,16 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
 ####   stratum variance instead of spatial variance
 ##################################################
 for (ifile in dir(SamplingStrata_dir, full.names = T)) source(ifile)
-source(paste0(dirname(dirname(dirname(github_dir))), 
+source(paste0(dirname(dirname(github_dir)), 
               "/modified_functions/buildStrataDF_Zack.R"))
 
 ##################################################
 ####   Load Data
 ####   Load Population CVs for use in the thresholds
 ##################################################
-load(paste0(dirname(github_dir), "/optimization_data.RData"))
-load(paste0(dirname(dirname(dirname(github_dir))), "/data/Extrapolation_depths.RData"))
-load(paste0(dirname(dirname(github_dir)), "/Population_Variances.RData"))
+load(paste0(dirname(dirname(github_dir)), "/data/optimization_data.RData"))
+load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
+load(paste0(dirname(github_dir), "/Population_Variances.RData"))
 
 ##################################################
 ####   Some Constants
@@ -95,6 +91,8 @@ if (which_method == 2) {
 ##################################################
 par(mfrow = c(6,6), 
     mar = c(2,2,0,0))
+
+#Choose a boat level
 isample <- 2
 
 for (istrata in 3) {

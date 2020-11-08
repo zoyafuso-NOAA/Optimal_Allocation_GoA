@@ -21,32 +21,30 @@ library(tidyr)
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
-VAST_model <- "11" 
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
+
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
                        'C:/Users/Zack Oyafuso/Documents/',
                        'C:/Users/zack.oyafuso/Work/')[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/model_", VAST_model, "/")
+                     "GitHub/Optimal_Allocation_GoA/")
 
 ##################################
 ## Import Operating Model
 ##################################
-load(paste0(dirname(github_dir), "/data/Extrapolation_depths.RData") )
-load(paste0(github_dir, '/fit_density.RData'))
-load(paste0(github_dir, 'full_domain/optimization_data.RData'))
-load(paste0(github_dir, "full_domain/Single_Species_Optimization/",
+load(paste0(github_dir, "data/Extrapolation_depths.RData") )
+load(paste0(github_dir, 'data/fit_density.RData'))
+load(paste0(github_dir, 'data/optimization_data.RData'))
+load(paste0(github_dir, "results/Single_Species_Optimization/",
             "optimization_knitted_results.RData"))
 
 ##################################
 ## Import Strata Allocations and spatial grid and predicted density
 ##################################
 GOA_allocations <- readxl::read_xlsx(
-  path = paste0(dirname(github_dir), 
-                '/data/GOA 2019 stations by stratum.xlsx')
+  path = paste0(github_dir, '/data/GOA 2019 stations by stratum.xlsx')
 )
 GOA_allocations3 <- readxl::read_xlsx(
-  path = paste0(dirname(github_dir), 
-                '/data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')
+  path = paste0(github_dir, '/data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')
 ) 
 
 ##################################################
@@ -63,29 +61,6 @@ allocations$boat1 = ceiling(allocations$boat2 / 2)
 allocations$boat1 = ifelse(allocations$boat1 == 0, 0, 
                            ifelse(allocations$boat1 == 1, 2, 
                                   allocations$boat1))
-
-##################################################
-####   Attribute each grid point to the current stratification
-##################################################
-goa_grid <- rgdal::readOGR(
-  "C:/Users/zack.oyafuso/Work/GitHub/MS_OM_GoA/data/shapefiles/goa_strata.shp")
-goa_grid = sp::spTransform(x = goa_grid, 
-                           CRSobj = "+proj=utm +zone=5N +units=km")
-temp <- spatialEco::point.in.poly(
-  x = SpatialPoints(coords = Extrapolation_depths[, c("E_km", "N_km")],
-                    proj4string=CRS("+proj=utm +zone=5N +units=km")),
-  y = goa_grid)
-
-plot(subset(goa_grid, STRATUM != 0), 
-     col = terrain.colors(100)[sample(60)],
-     border = F)
-plot(subset(goa_grid, STRATUM == 0), col = "brown", add = T)
-
-points(temp, 
-       pch = 16,
-       cex = 0.5)
-
-points(subset(temp, STRATUM == 0), col = 'red')
 
 ##################################
 ## Calculate Population CVs under Simple Random Sampling
@@ -116,12 +91,13 @@ for (isample in 1:nboats) {
   nh <- nh[sampled_strata]
   
   #strata constraints
-  Nh <- table(temp$STRATUM)[paste(allocations$Stratum[sampled_strata])]
+  strata_labels <- paste(allocations$Stratum[sampled_strata])
+  Nh <- table(Extrapolation_depths$stratum)[strata_labels]
   Wh <- Nh / N
   wh <- nh / Nh
   
   #Calculate Total Mean, Variance, CV
-  stratano = rep(temp@data$STRATUM, 11)
+  stratano = rep(Extrapolation_depths$stratum, 11)
   
   stmt <- paste0('aggregate(cbind(',
                  paste0('Y', 1:(ns-1), sep = ',', collapse = ''), 'Y',ns, 
@@ -154,13 +130,13 @@ for (isample in 1:nboats) {
 }
 
 
-SS_STRS_Pop_CV <- tidyr::spread(data = settings[,c("isample", "ispp", "cv")], 
+SS_STRS_Pop_CV <- tidyr::spread(data = settings[,c("iboat", "ispp", "cv")], 
                                 value = cv, 
-                                key = isample)[, -1]
+                                key = iboat)[, -1]
 rownames(SS_STRS_Pop_CV) = sci_names
 
 ##################################
 ## Save
 ##################################
 save(list = c("SRS_Pop_CV", "Current_STRS_Pop_CV", "SS_STRS_Pop_CV"), 
-     file = paste0(github_dir, "Population_Variances.RData"))
+     file = paste0(github_dir, "results/Population_Variances.RData"))
