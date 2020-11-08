@@ -1,8 +1,8 @@
 # Multispecies Stratified Survey Optimization for Gulf of Alaska Groundfishes
  
 This repository is provides the code used for an In Prep NOAA Technical 
-Memorandum manuscript by Zack S. Oyafuso, Lewis A.K. Barnett and Stan Kotwicki 
-entitled "..." 
+Memorandum manuscript by Zack Oyafuso, Lewis Barnett, Margaret Siple,
+and Stan Kotwicki entitled "..." 
 
 ## Requirements
 
@@ -72,12 +72,11 @@ rockfish and rougheye rockfish, respectively) hereafter.
 ## Input Data -- Spatial Domain
 
 The spatial domain of the survey optimization is the Gulf of Alaska 
-divided into a X km resolution grid resulting in N = 22832 total survey cells.
-The script used to create the survey grid is contained in the MS_OM_GoA repo 
-(https://github.com/zoyafuso-NOAA/MS_OM_GoA) in the using the script 
-Extrapolation_Grid_Covariates.R in the data/ directory. That script produces 
-an RData producted called Extrapolation_depths.RData that is contained within 
-the data/ directory this repo. Extrapolation_depths.RData contains a variable 
+divided into a roughly 5 km resolution grid resulting in N = 22832 total survey 
+cells. The script used to create the survey grid is contained in the [MS_OM_GoA](https://github.com/zoyafuso-NOAA/MS_OM_GoA/blob/master/data/Extrapolation_Grid_Covariates.R)
+repo. That script produces an RData product called 
+Extrapolation_depths.RData that is contained within the [data/](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/tree/master/data) 
+directory in this repo. Extrapolation_depths.RData contains a variable 
 called Extrapolation_depths which is a dataframe of N rows. Useful fields for 
 this analysis are stated in the table below:
 
@@ -117,10 +116,10 @@ data used.
 Data for the optimization were synthesized in the optimization_data.R script. 
 It's purpose is to take the VAST model density predictions and create an input 
 dataset in the form that is used in the SamplingStrata package. The depth and 
-E_km fields are used as strata variables. The script creates two subdirectories
-model_11/full_domain/ and model_11/trawlable/, and an .RData file called 
-optimization_data.RData is saved in each subdirectory. The output of 
-optimization_data.RData contains the following variables and constants: 
+E_km fields are used as strata variables. The script creates an .RData file 
+called optimization_data.RData is saved in the [data/](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/tree/master/data)  
+directory. The output of optimization_data.RData contains the following 
+variables and constants: 
 
 | Variable Name | Description                                                                                                                        | Class Type and Dimensions                  |
 |---------------|------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
@@ -137,17 +136,13 @@ optimization_data.RData contains the following variables and constants:
 | frame_raw     | Densities for each species across observed years, along with longitude and depth across cells                                      | dataframe, N*NTime rows x 20 columns       |
 | true_mean     | True mean densities for each species and year. This is the "truth" that is used in the performance metrics when simulating surveys | dataframe, NTime rows x ns columns         |
 
-The optimization_data.R script uses the indices in the Extrapolation_depths
-dataframe to remove untrawlable/deep survey grids for the trawlable scenario.
-
 ## Survey Optimization
 
-The SamplingStrata R package (https://github.com/barcaroli/SamplingStrata)
+The [SamplingStrata](https://github.com/barcaroli/SamplingStrata) R package 
 is used for the optimization. 
 
 The optimization is run over a range of number of stratas from 5 to 60 on the
-full domain (model_11/full_domain/Spatiotemporal_Optimization/) and the 
-trawlable domain (model_11/trawlable/Spatiotemporal_Optimization/). 
+full domain and saved within the results/Spatiotemporal_Optimization/ directory.
 Optimizations were conducted for each boat effort level (../boat1, ../boat2,
 ../boat3). Each run of the optimization is saved in its own directory with the 
 code template of StrXRunY where X is the number of strata in the solution and Y
