@@ -17,7 +17,7 @@ library(VAST)
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -101,12 +101,12 @@ res_obj_names <- apply(X = expand.grid(c("Current_", "STRS_"),
 ##################################################
 ####   
 ##################################################
-# load("~/GitHub/Optimal_Allocation_GoA/model_11/simulation_result.RData")
+load("~/GitHub/Optimal_Allocation_GoA/results/simulation_result.RData")
 #Load optimized solutions calculated on the full domain
 # load("~/GitHub/Optimal_Allocation_GoA/model_11/fit_density.RData")
 
 
-for (iter in 1:1000) {
+for (iter in 491:500) {
   
   set.seed(1000 + iter)
   
