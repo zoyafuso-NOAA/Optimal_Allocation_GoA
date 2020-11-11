@@ -53,10 +53,11 @@ sci_names <- c("Atheresthes stomias", "Gadus chalcogrammus",
                "Sebastes variabilis", "Sebastolobus alascanus" )
 
 common_names <- c("arrowtooth flounder", "Alaska pollock", "Pacific cod",
-                  "rex sole", "Pacific halibut", "southern rock sole",
-                  "northern rock sole", "Pacific Dover sole",
-                  "Pacific ocean perch", "blackspotted/rougheye rockfishes", 
-                  "silvergrey rockfish", "northern rockfish", "dusky rockfish",
+                  "rex sole", "flathead sole", "Pacific halibut", 
+                  "southern rock sole", "northern rock sole", 
+                  "Pacific Dover sole", "Pacific ocean perch", 
+                  "blackspotted/rougheye rockfishes", "silvergrey rockfish",
+                  "northern rockfish", "dusky rockfish",
                   "shortspine thornyhead")
   
 ns <- length(sci_names)
