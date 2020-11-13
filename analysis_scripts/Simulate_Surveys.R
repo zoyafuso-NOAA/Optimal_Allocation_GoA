@@ -87,13 +87,6 @@ Current_true_cv_array <- Current_rrmse_cv_array <-
                         sci_names, 
                         paste0("boat_", 1:3)))
 
-res_obj_names <- apply(X = expand.grid(c("Current_", "STRS_"),
-                                       c("sim_mean", "sim_cv", "rel_bias_est", 
-                                         "true_cv_array", "rrmse_cv_array")),
-                       MARGIN = 1,
-                       FUN = paste0,
-                       collapse = "")
-
 ##################################################
 ####   Knit together density predictions from the original fits and the
 ####   the ten sets of density predictions
@@ -126,9 +119,15 @@ save(list = "pred_density",
 for (iter in 1:1000) {
   
   set.seed(1000 + iter)
-  
-  
+
   for (isim in c("pred_density", "plus_obs_error")) {
+    truth <- switch(
+      isim,
+      "pred_density" = true_mean,
+      "plus_obs_error" = t(apply(X = pred_density$plus_obs_error[ceiling(iter / 100), , , ],
+                                 MARGIN = 2:3, 
+                                 FUN = mean)))
+    
     for (iboat in 1:3) {
       for (isurvey in c("Current", "STRS")) { #Current or Optimized Survey
         
@@ -156,46 +155,41 @@ for (iter in 1:1000) {
                 "Current" = allocations[, paste0("boat", iboat)],
                 "STRS" = strata_list[[idx]]$Allocation),
               
-              "true_density" = switch(
-                isim,
-                "pred_density" = true_mean,
-                "plus_obs_error" = t(apply(pred_density$plus_obs_error[ceiling(1 / 100), , , ],
-                                         MARGIN = 2:3, 
-                                         FUN = mean)) )
-            ))
-        
-        stmt <- paste0(isurvey, "_sim_mean",  
-                       "[isim, , , iboat, iter] = sim_survey$mean_denisty")
-        eval(parse(text = stmt))
-        
-        stmt <- paste0(isurvey, "_sim_cv",  
-                       "[isim, , , iboat, iter] = sim_survey$cv")
-        eval(parse(text = stmt))
-        
-        stmt <- paste0(isurvey, "_rel_bias_est",  
-                       "[isim, , , iboat, iter] = sim_survey$rel_bias")
-        eval(parse(text = stmt))
-        
-        if (iter%%10 == 0) {
-          stmt <- paste0(isurvey, "_true_cv_array",  
-                         "[isim, , , iboat] <- ", "as.matrix(apply(X = ", 
-                         isurvey, "_sim_mean",  
-                         "[isim, , , iboat, ], MARGIN = 1:2, FUN = sd, ",
-                         "na.rm = T) / true_mean)")
-          eval(parse(text = stmt))
-          
-          stmt <- paste0(isurvey, "_rrmse_cv_array",
-                         "[isim, , , iboat] <- sqrt(apply(X = sweep(x = ",
-                         isurvey, "_sim_cv", 
-                         "[isim, , , iboat,], STATS = ", isurvey,
-                         "_true_cv_array", "[isim, , , iboat],",
-                         " MARGIN = 1:2, FUN = '-')^2,  
+              "true_density" = truth )
+          )
+
+stmt <- paste0(isurvey, "_sim_mean",  
+               "[isim, , , iboat, iter] = sim_survey$mean_denisty")
+eval(parse(text = stmt))
+
+stmt <- paste0(isurvey, "_sim_cv",  
+               "[isim, , , iboat, iter] = sim_survey$cv")
+eval(parse(text = stmt))
+
+stmt <- paste0(isurvey, "_rel_bias_est",  
+               "[isim, , , iboat, iter] = sim_survey$rel_bias")
+eval(parse(text = stmt))
+
+if (iter%%10 == 0) {
+  stmt <- paste0(isurvey, "_true_cv_array",  
+                 "[isim, , , iboat] <- ", "as.matrix(apply(X = ", 
+                 isurvey, "_sim_mean",  
+                 "[isim, , , iboat, ], MARGIN = 1:2, FUN = sd, ",
+                 "na.rm = T) / truth)")
+  eval(parse(text = stmt))
+  
+  stmt <- paste0(isurvey, "_rrmse_cv_array",
+                 "[isim, , , iboat] <- sqrt(apply(X = sweep(x = ",
+                 isurvey, "_sim_cv", 
+                 "[isim, , , iboat,], STATS = ", isurvey,
+                 "_true_cv_array", "[isim, , , iboat],",
+                 " MARGIN = 1:2, FUN = '-')^2,  
                            MARGIN = 1:2, FUN = mean, na.rm = T)) / apply(", 
-                         isurvey, "_sim_cv", 
-                         "[isim, , , iboat, ], MARGIN = 1:2, ",
-                         "FUN = mean, na.rm = T)")
-          eval(parse(text = stmt))
-        } 
+                 isurvey, "_sim_cv", 
+                 "[isim, , , iboat, ], MARGIN = 1:2, ",
+                 "FUN = mean, na.rm = T)")
+  eval(parse(text = stmt))
+} 
       }
     }
   }
