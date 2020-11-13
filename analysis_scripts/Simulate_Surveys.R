@@ -119,6 +119,9 @@ for (ispp in 1:ns) {
   }
 }
 
+#Save Predicted Density, move up
+save(list = "pred_density",
+     file = paste0(dirname(VAST_dir), "/sim_density.RData"))
 
 for (iter in 1:1000) {
   
@@ -200,8 +203,7 @@ for (iter in 1:1000) {
     save(list = c("Current_sim_mean", "STRS_sim_mean", "Current_sim_cv",        
                   "STRS_sim_cv", "Current_rel_bias_est", "STRS_rel_bias_est",     
                   "Current_true_cv_array", "STRS_true_cv_array", 
-                  "Current_rrmse_cv_array", "STRS_rrmse_cv_array",
-                  "pred_density"),
+                  "Current_rrmse_cv_array", "STRS_rrmse_cv_array"),
          file = paste0(github_dir, "simulation_result.RData"))
   }
 }
