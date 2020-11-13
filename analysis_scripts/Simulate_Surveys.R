@@ -131,7 +131,7 @@ for (iter in 1:1000) {
   for (isim in c("pred_density", "plus_obs_error")) {
     for (iboat in 1:3) {
       for (isurvey in c("Current", "STRS")) { #Current or Optimized Survey
-    
+        
         if(isurvey == "STRS") {
           #Load optimization data, only focusing on 15 strata for now
           sub_settings = subset(settings, strata == 15)
@@ -156,8 +156,13 @@ for (iter in 1:1000) {
                 "Current" = allocations[, paste0("boat", iboat)],
                 "STRS" = strata_list[[idx]]$Allocation),
               
-              "true_density" = true_mean)
-          )
+              "true_density" = switch(
+                isim,
+                "pred_density" = true_mean,
+                "plus_obs_error" = t(apply(pred_density$plus_obs_error[ceiling(1 / 100), , , ],
+                                         MARGIN = 2:3, 
+                                         FUN = mean)) )
+            ))
         
         stmt <- paste0(isurvey, "_sim_mean",  
                        "[isim, , , iboat, iter] = sim_survey$mean_denisty")
@@ -171,7 +176,7 @@ for (iter in 1:1000) {
                        "[isim, , , iboat, iter] = sim_survey$rel_bias")
         eval(parse(text = stmt))
         
-        if (iter%%100 == 0) {
+        if (iter%%10 == 0) {
           stmt <- paste0(isurvey, "_true_cv_array",  
                          "[isim, , , iboat] <- ", "as.matrix(apply(X = ", 
                          isurvey, "_sim_mean",  
@@ -197,7 +202,7 @@ for (iter in 1:1000) {
   
   
   
-  if(iter%%100 == 0) {
+  if(iter%%10 == 0) {
     
     print(paste("Finished with Iteration", iter))
     save(list = c("Current_sim_mean", "STRS_sim_mean", "Current_sim_cv",        
