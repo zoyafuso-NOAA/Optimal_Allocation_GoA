@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -40,7 +40,7 @@ load(paste0(github_dir, "data/optimization_data.RData"))
 res_df <- data.frame(id = 1:N)
 settings <- data.frame()
 strata_stats_list <- strata_list <- list()
-stratas <- c(15)
+stratas <- c(10, 15, 20)
 NStrata <- length(stratas)
 
 ##################################################
