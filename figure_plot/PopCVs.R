@@ -8,11 +8,14 @@ rm(list = ls())
 ##################################################
 ####  Set up directories  
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[1]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
                      "GitHub/Optimal_Allocation_GoA/")
+github_dir2 <- paste0(c("/Users/zackoyafuso/Documents/", 
+                        "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
+                      "GitHub/MS_OM_GoA/data/")
 
 output_dir <- paste0(c("/Users/zackoyafuso/", 
                        "C:/Users/Zack Oyafuso/")[which_machine], 
@@ -33,6 +36,21 @@ load(paste0(github_dir,
             "results/Population_Variances.RData"))
 
 ##################################################
+####  Import Observed DBEs, calculate ranges of sample CVs
+##################################################
+DBE <- readRDS(paste0(github_dir2, 
+                      "GOA_biomass_indices_wnames.rds"))
+DBE <- subset(DBE, 
+              SPECIES_NAME %in% sci_names &
+                  YEAR %in% (1996:2019)[Years2Include])
+
+DBE$BIOMASS_CV <- sqrt(DBE$VAR_WGT_CPUE) / DBE$MEAN_WGT_CPUE
+
+DBE_CV <- aggregate(BIOMASS_CV ~ SPECIES_NAME, 
+                    data = DBE,
+                    FUN = range)
+
+##################################################
 ####  Plot
 ##################################################
 
@@ -48,7 +66,7 @@ plot(1,
      pch = 16,
      cex = 1.5,
      ylim = c(1, ns),
-     xlim = c(0, 0.40),
+     xlim = c(0, 0.4),
      axes = F,
      ann = F)
 
@@ -56,13 +74,22 @@ box()
 abline(h = 1:ns, 
        col = "lightgrey", 
        lty = "dashed")
+mtext(side = 1, 
+      text = "Population CV",
+      line = 2.5,
+      cex = 1.25,
+      font = 2)
+
+# segments(x0 = DBE_CV$BIOMASS_CV[, 1],
+#          x1 = DBE_CV$BIOMASS_CV[, 2],
+#          y0 = c(1:10, 12:15), lwd = 2)
 
 matpoints(y = 1:ns,
           x = cbind(SRS_Pop_CV[, 2], 
                     SS_STRS_Pop_CV[, 2],
                     unlist(settings[settings$strata == 15 &
-                                               settings$boat == 2, 
-                                       paste0("CV_", 1:ns)]),
+                                        settings$boat == 2, 
+                                    paste0("CV_", 1:ns)]),
                     Current_STRS_Pop_CV[, 2]),
           pch = 16,
           col = c("black", "red", "blue", "green"),
