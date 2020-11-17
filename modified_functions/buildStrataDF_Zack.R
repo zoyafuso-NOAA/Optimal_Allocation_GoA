@@ -5,11 +5,11 @@
 # Author: Giulio Barcaroli
 # Date: October 2019
 # ----------------------------------------------------
-# buildStrataDF <- function(dataset, 
+# buildStrataDF <- function(dataset,
 #                           ############ Zack #############
 #                           dataset_raw = frame_raw,
 #                           ############ Zack #############
-#                           model=NULL, 
+#                           model=NULL,
 #                           progress=TRUE,
 #                           verbose=TRUE) {
 #   # stdev1 is for sampling data
@@ -45,7 +45,7 @@
 #     sum(sum_couples_var) / (2*nrow(df)^2)
 #     sum(2*spatial_autocovariance) / (2*nrow(df)^2)
 #     sum(sum_couples_var-2*spatial_autocovariance) / (2*nrow(df)^2)
-#     var2 <- sum(D2)/(2*nrow(df)^2) 
+#     var2 <- sum(D2)/(2*nrow(df)^2)
 #     sqrt (var2)
 #   }
 #   # cov1 is for spatial models (part III)
@@ -96,15 +96,15 @@
 #       }
 #       if (model$type[i] == "linear" & is.na(model$gamma[i])) stop("gamma for Y variable ",i,"must be specified")
 #     }
-#     
+# 
 #   }
-#   #--------------------------------------------------------- 
+#   #---------------------------------------------------------
 #   dataset$DOMAINVALUE <- factor(dataset$DOMAINVALUE)
-#   
+# 
 #   ############ Zack #############
 #   dataset_raw$DOMAINVALUE = factor(dataset_raw$DOMAINVALUE)
 #   ############ Zack #############
-#   
+# 
 #   # dataset$DOMAINVALUE <- droplevels(dataset$DOMAINVALUE)
 #   numdom <- length(levels(dataset$DOMAINVALUE))
 #   #    numdom <- length(unique(dataset$DOMAINVALUE))
@@ -115,17 +115,17 @@
 #   # dataset$DOMAINVALUE <- as.numeric(dataset$DOMAINVALUE)
 #   # for (d in unique(dataset$DOMAINVALUE)) {
 #   # dataset$DOMAINVALUE <- as.numeric(dataset$DOMAINVALUE)
-#   
+# 
 #   ############ Zack #############
 #   ##################################
-#   ## Change X1 values of dataset_raw based on the 
+#   ## Change X1 values of dataset_raw based on the
 #   ## X1 values of the dataset
 #   ##################################
 #   dataset_raw$X1 = dataset$X1[match(dataset_raw$ID, dataset$ID)]
 #   dataset_raw$X2 = dataset$X2[match(dataset_raw$ID, dataset$ID)]
 #   ############ Zack #############
-#   
-#   
+# 
+# 
 #   for (d in (levels(dataset$DOMAINVALUE))) {
 #     if (progress == TRUE) Sys.sleep(0.1)
 #     # update progress bar
@@ -142,7 +142,7 @@
 #     for (i in 1:nvarX) {
 #       name <- paste("X", i, sep = "")
 #       namesX <- cbind(namesX, name)
-#       if (i < nvarX) 
+#       if (i < nvarX)
 #         listX <- paste(listX, "domain$X", i, ",", sep = "") else listX <- paste(listX, "domain$X", i, sep = "")
 #     }
 #     listM <- NULL
@@ -151,24 +151,24 @@
 #       listM <- paste(listM, "M", i, ",", sep = "")
 #       listS <- paste(listS, "S", i, ",", sep = "")
 #     }
-#     stmt <- paste("domain$STRATO <- as.factor(paste(", listX, 
+#     stmt <- paste("domain$STRATO <- as.factor(paste(", listX,
 #                   ",sep='*'))", sep = "")
 #     eval(parse(text = stmt))
-#     
+# 
 #     ############ Zack #############
 #     listX <- NULL
 #     namesX <- NULL
 #     for (i in 1:nvarX) {
 #       name <- paste("X", i, sep = "")
 #       namesX <- cbind(namesX, name)
-#       if (i < nvarX) 
+#       if (i < nvarX)
 #         listX <- paste(listX, "domain_raw$X", i, ",", sep = "") else listX <- paste(listX, "domain_raw$X", i, sep = "")
 #     }
-#     stmt <- paste("domain_raw$STRATO <- as.factor(paste(", listX, 
+#     stmt <- paste("domain_raw$STRATO <- as.factor(paste(", listX,
 #                   ",sep='*'))", sep = "")
 #     eval(parse(text = stmt))
 #     ############ Zack #############
-#     
+# 
 #     if (!is.null(dataset$COST)) {
 #       cost <- tapply(domain$WEIGHT * domain$COST,domain$STRATO,sum) / tapply(domain$WEIGHT,domain$STRATO,sum)
 #     }
@@ -177,17 +177,17 @@
 #       STRATO <- NULL
 #       Y <- NULL
 #       ############ Zack #############
-#       stmt <- paste("Y <- domain_raw$Y", i, "[!is.na(domain_raw$Y", 
+#       stmt <- paste("Y <- domain_raw$Y", i, "[!is.na(domain_raw$Y",
 #                     i, ")]", sep = "")
 #       eval(parse(text = stmt))
 #       W <- NULL
-#       stmt <- paste("W <- domain_raw$W", i, "[!is.na(domain_raw$W", 
+#       stmt <- paste("W <- domain_raw$W", i, "[!is.na(domain_raw$W",
 #                     i, ")]", sep = "")
 #       eval(parse(text = stmt))
-#       stmt <- paste("WEIGHT <- domain_raw$WEIGHT[!is.na(domain_raw$Y", 
+#       stmt <- paste("WEIGHT <- domain_raw$WEIGHT[!is.na(domain_raw$Y",
 #                     i, ")]", sep = "")
 #       eval(parse(text = stmt))
-#       stmt <- paste("STRATO <- domain_raw$STRATO[!is.na(domain_raw$Y", 
+#       stmt <- paste("STRATO <- domain_raw$STRATO[!is.na(domain_raw$Y",
 #                     i, ")]", sep = "")
 #       ############ Zack #############
 #       eval(parse(text = stmt))
@@ -202,17 +202,17 @@
 #         ############ Zack #############
 #         stmt <- paste("samp <- domain[!is.na(domain$Y", i, "),]", sep = "")
 #         eval(parse(text = stmt))
-#         
+# 
 #         ############ Zack #############
 #         stmt <- paste("samp_raw <- domain_raw[!is.na(domain_raw$Y", i, "),]", sep = "")
 #         eval(parse(text = stmt))
 #         ############ Zack #############
-#         
+# 
 #         l.split <- split(samp, samp$STRATO, drop = TRUE)
 #         ############ Zack #############
 #         l.split_raw =split(samp_raw, samp_raw$STRATO, drop = TRUE)
-#         stmt <- paste("S", i, " <- sapply(l.split_raw, function(df,x,w) ", 
-#                       stdev, "(df[,x],df[,w]), x='Y", i, "', w='WEIGHT')", 
+#         stmt <- paste("S", i, " <- sapply(l.split_raw, function(df,x,w) ",
+#                       stdev, "(df[,x],df[,w]), x='Y", i, "', w='WEIGHT')",
 #                       sep = "")
 #         ############ Zack #############
 #         eval(parse(text = stmt))
@@ -226,14 +226,14 @@
 #           stmt <- paste("samp <- domain[!is.na(domain$Y", i, "),]", sep = "")
 #           eval(parse(text = stmt))
 #           l.split <- split(samp, samp$STRATO, drop = TRUE)
-#           stmt <- paste("S", i, " <- sapply(l.split, function(df,x,w) ", 
-#                         stdev, "(df[,x],df[,w]), x='Y", i, "', w='WEIGHT')", 
+#           stmt <- paste("S", i, " <- sapply(l.split, function(df,x,w) ",
+#                         stdev, "(df[,x],df[,w]), x='Y", i, "', w='WEIGHT')",
 #                         sep = "")
 #           eval(parse(text=stmt))
 #           st <- paste("gammas <- tapply(Y^(model$gamma[",i,"]*2),STRATO,sum) / as.numeric(table(STRATO))",sep="")
 #           eval(parse(text=st))
 #           st <- paste("S",i," <- sqrt(S",i,"^2 * model$beta[",i,"]^2 + model$sig2[",i,"] * gammas)",sep="")
-#           eval(parse(text=st))   
+#           eval(parse(text=st))
 #         }
 #         # Computation of M and S with loglinear model --------------------------
 #         if (!is.null(model) & model$type[i] == "loglinear") {
@@ -250,8 +250,8 @@
 #           stmt <- paste("ph <- sapply(l.split, function(df,x,w) positiv(df[,x],df[,w]), x='Y", i, "', w='WEIGHT')", sep = "")
 #           eval(parse(text=stmt))
 #           #----------------------------------------------------------
-#           # ph <- 1  
-#           st <- paste("S", i, " <- sqrt(ph * (( exp(model$sig2[", i, "])* 
+#           # ph <- 1
+#           st <- paste("S", i, " <- sqrt(ph * (( exp(model$sig2[", i, "])*
 #                                tapply(WEIGHT * Y^(2*model$beta[", i, "]),STRATO,sum)/as.numeric(table(STRATO)) -
 #                                ph * (tapply(WEIGHT * Y^model$beta[", i, "],STRATO,sum)/as.numeric(table(STRATO)))^2)))",sep="")
 #           eval(parse(text = st))
@@ -316,11 +316,11 @@
 #       }
 #       # ------------------------------------------------------------------------
 #       if (is.null(model)) eval(parse(text = stmt))
-#       stmt <- paste("stratirid <- unlist(attr(M", i, ",'dimnames'))", 
+#       stmt <- paste("stratirid <- unlist(attr(M", i, ",'dimnames'))",
 #                     sep = "")
 #       eval(parse(text = stmt))
 #       strati <- data.frame(X1 = levels(domain$STRATO), stringsAsFactors = TRUE)
-#       stmt <- paste("m <- data.frame(cbind(X1=stratirid,X2=M", 
+#       stmt <- paste("m <- data.frame(cbind(X1=stratirid,X2=M",
 #                     i, "), stringsAsFactors = TRUE)", sep = "")
 #       eval(parse(text = stmt))
 #       m <- merge(strati, m, by = c("X1"), all = TRUE)
@@ -329,7 +329,7 @@
 #       m$X2 <- ifelse(is.na(m$X2), 0, m$X2)
 #       stmt <- paste("M", i, " <- m$X2", sep = "")
 #       eval(parse(text = stmt))
-#       stmt <- paste("s <- data.frame(cbind(X1=stratirid,X2=S", 
+#       stmt <- paste("s <- data.frame(cbind(X1=stratirid,X2=S",
 #                     i, "), stringsAsFactors = TRUE)", sep = "")
 #       eval(parse(text = stmt))
 #       s <- merge(strati, s, by = c("X1"), all = TRUE)
@@ -345,17 +345,17 @@
 #     if (!is.null(dataset$COST)) COST <- cost
 #     CENS <- rep(0, length(levels(domain$STRATO)))
 #     DOM1 <- rep(as.character(dom), length(levels(domain$STRATO)))
-#     stmt <- paste("strata <- as.data.frame(cbind(STRATO=levels(STRATO),N,", 
+#     stmt <- paste("strata <- as.data.frame(cbind(STRATO=levels(STRATO),N,",
 #                   listM, listS, "COST,CENS,DOM1), stringsAsFactors = TRUE)")
 #     eval(parse(text = stmt))
 #     for (i in 1:nvarX) {
-#       stmt <- paste("strata$X", i, " <- rep(0, length(levels(domain$STRATO)))", 
+#       stmt <- paste("strata$X", i, " <- rep(0, length(levels(domain$STRATO)))",
 #                     sep = "")
 #       eval(parse(text = stmt))
 #     }
 #     strata$STRATO <- as.character(strata$STRATO)
 #     for (i in 1:nrow(strata)) {
-#       strata[i, c(namesX)] <- unlist(strsplit(strata$STRATO[i], 
+#       strata[i, c(namesX)] <- unlist(strsplit(strata$STRATO[i],
 #                                               "\\*"))
 #     }
 #     stratatot <- rbind(stratatot, strata)
@@ -380,7 +380,7 @@
 #   }
 #   # }
 #   # if (writeFiles == TRUE )
-#   # write.table(stratatot, "strata.txt", quote = FALSE, sep = "\t", 
+#   # write.table(stratatot, "strata.txt", quote = FALSE, sep = "\t",
 #   #     dec = ".", row.names = FALSE)
 #   # stratatot <- read.delim("strata.txt")
 #   if (verbose == TRUE) {
@@ -390,59 +390,55 @@
 #   return(stratatot)
 # }
 
+buildStrataDF <- function(dataset = frame,
+                          model = NULL,
+                          progress = TRUE,
+                          verbose = TRUE) {
 
-
-buildStrataDF <- function(dataset,
-                          model=NULL,
-                          progress=TRUE,
-                          verbose=TRUE) {
-  
-  # stdev2 is for population data
+  # Standard Deviation Function
   stdev <- function(y, y2, w) {
     n <- sum(w)
     mx <- sum(y) / n
     sum_y <- sum(y)
     sum_y2 <- sum(y2)
-    
+
     return( sqrt((sum_y2 + n*mx^2 - 2*mx*sum_y) / n ) )
-    
-    # mx <- sum(x * w)/sum(w)
-    # sqrt(sum(w * (x - mx)^2)/(sum(w)))
   }
-  
+
+  #Make sure column names are all upper-case, DOMAINVALUE is a factor
   colnames(dataset) <- toupper(colnames(dataset))
-  
-  #Constants
-  nvarX <- length(grep("X", names(dataset)))
-  nvarY <- length(grep("SQ_SUM", names(dataset)))
-  
-  #---------------------------------------------------------
   dataset$DOMAINVALUE <- factor(dataset$DOMAINVALUE)
-  numdom <- length(levels(dataset$DOMAINVALUE))
-  
+
+  #Constants
+  nvarX <- length(grep("X", names(dataset))) #number of strata variables
+  nvarY <- length(grep("SQ_SUM", names(dataset))) #number of variables
+  numdom <- length(levels(dataset$DOMAINVALUE)) #number of domains
+
+  #Empty Result Object
   stratatot <- NULL
-  
+
   # create progress bar
   if (progress == TRUE) pb <- txtProgressBar(min = 0, max = numdom, style = 3)
-  
-  for (d in (levels(dataset$DOMAINVALUE))) {
+
+  for (d in (levels(dataset$DOMAINVALUE))) { #Loop over domains, if > 1
     if (progress == TRUE) Sys.sleep(0.1)
     # update progress bar
     if (progress == TRUE) setTxtProgressBar(pb, d)
-    
+
     dom <- d
     domain <- dataset[dataset$DOMAINVALUE == dom, ]
-    
+
+    #Lists of names of strata, target, mean, and sd variables
     listX <- NULL
     namesX <- NULL
     for (i in 1:nvarX) {
       name <- paste("X", i, sep = "")
       namesX <- cbind(namesX, name)
       if (i < nvarX)
-        listX <- paste(listX, "domain$X", i, ",", sep = "") 
+        listX <- paste(listX, "domain$X", i, ",", sep = "")
       else listX <- paste(listX, "domain$X", i, sep = "")
     }
-    
+
     listM <- NULL
     listS <- NULL
     for (i in 1:nvarY) {
@@ -452,8 +448,12 @@ buildStrataDF <- function(dataset,
     stmt <- paste("domain$STRATO <- as.factor(paste(", listX,
                   ",sep='*'))", sep = "")
     eval(parse(text = stmt))
-    
+
+    #Loop over target variables
     for (i in 1:nvarY) {
+
+      #Extract weights (how many observations in a cell), strata, Y, Y_SQ_SUM,
+      #w, STRATO
       WEIGHT <- NULL
       STRATO <- NULL
       Y <- NULL
@@ -475,21 +475,27 @@ buildStrataDF <- function(dataset,
                     i, ")]", sep = "")
       eval(parse(text = stmt))
       STRATO <- factor(STRATO)
-      # Computation of M and S without model --------------------------
+
+
+      # Computation of Mean and SD without model --------------------------
       if (is.null(model)) {
-        stmt <- paste("M", i, " <- tapply(Y,STRATO,sum) / tapply(WEIGHT,STRATO,sum)", sep = "")
+        stmt <- paste("M", i,
+                      " <- tapply(Y,STRATO,sum) / tapply(WEIGHT,STRATO,sum)",
+                      sep = "")
         eval(parse(text = stmt))
         samp <- NULL
         stmt <- paste("samp <- domain[!is.na(domain$Y", i, "),]", sep = "")
         eval(parse(text = stmt))
         l.split <- split(samp, samp$STRATO, drop = TRUE)
-        stmt <- paste("S", i, " <- sapply(l.split, function(df,y,y2,w) ",
-                      "stdev", "(df[,y], df[,y2], df[,w]), y='Y", i, "', y2 = 'Y", i, "_SQ_SUM', w='WEIGHT')",
+        stmt <- paste("S", i,
+                      " <- sapply(l.split, function(df,y,y2,w) ",
+                      "stdev", "(df[,y], df[,y2], df[,w]),",
+                      " y='Y", i, "', y2 = 'Y", i, "_SQ_SUM', w='WEIGHT')",
                       sep = "")
         eval(parse(text = stmt))
       }
-      
-      # if (is.null(model)) eval(parse(text = stmt))
+
+
       stmt <- paste("stratirid <- unlist(attr(M", i, ",'dimnames'))",
                     sep = "")
       eval(parse(text = stmt))
@@ -513,7 +519,7 @@ buildStrataDF <- function(dataset,
       stmt <- paste("S", i, " <- s$X2", sep = "")
       eval(parse(text = stmt))
     }
-    
+
     N <- tapply(domain$WEIGHT, domain$STRATO, sum)
     STRATO <- domain$STRATO
     if (is.null(dataset$COST)) COST <- rep(1, length(levels(domain$STRATO)))
@@ -535,15 +541,12 @@ buildStrataDF <- function(dataset,
     }
     stratatot <- rbind(stratatot, strata)
   }  # end domain cycle
-  
-  
+
+
   if (progress == TRUE) close(pb)
   colnames(stratatot) <- toupper(colnames(stratatot))
   stratatot$DOM1 <- as.factor(stratatot$DOM1)
-  # write.table(stratatot, "strata.txt", quote = FALSE, sep = "\t",
-  #             dec = ".", row.names = FALSE)
-  # stratatot <- read.delim("strata.txt")
-  # unlink("strata.txt")
+
   options("scipen"=100)
   indx <- sapply(stratatot, is.factor)
   stratatot[indx] <- lapply(stratatot[indx], function(x) as.numeric(as.character(x)))
@@ -551,12 +554,12 @@ buildStrataDF <- function(dataset,
     stmt <- paste("stratatot$X",j," <- as.numeric(stratatot$X",j,")",sep="")
     eval(parse(text=stmt))
   }
-  
+
   for (j in (1:nrow(stratatot))) {
     stmt <- paste("stratatot$M",i,"[j] <- ifelse(stratatot$M",i,"[j] == 0,0.000000000000001,stratatot$M",i,"[j])",sep="")
     eval(parse(text=stmt))
   }
-  
+
   if (verbose == TRUE) {
     cat("\nNumber of strata: ",nrow(stratatot))
     cat("\n... of which with only one unit: ",sum(stratatot$N==1))
