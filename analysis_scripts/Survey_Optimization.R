@@ -7,31 +7,13 @@
 rm(list = ls())
 
 ##################################################
-####    Import required packages
+####   Set up directories based on whether the optimization is being conducted
+####        on a multi-species or single-species level
 ##################################################
-library(sp)
-library(RColorBrewer)
-library(raster)
-
-##################################################
-####  Install a forked version of the SamplingStrata Package from 
-####  zoyafuso-NOAA's Github page
-##################################################
-library(devtools)
-devtools::install_github(repo = "zoyafuso-NOAA/SamplingStrata")
-library(SamplingStrata)
-
-##################################################
-####   Set up directories
-####
-####   Set up some constants of the optimization
-####   Multispeceis: Spatiotemporal Variance, species specific CV constraints
-####   Single_Species: Spatiotemporal Variance, univariate optimization, 
-##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 
 which_method = c("Multi_Species" = 1,
-                 "Single_Species" = 2)[1]
+                 "Single_Species" = 2)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -41,43 +23,66 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
                        "Single_Species_Optimization/")[which_method])
 
 ##################################################
+####  Install a forked version of the SamplingStrata Package from 
+####  zoyafuso-NOAA's Github page
+####
+####  Import other required packages
+##################################################
+library(devtools)
+devtools::install_github(repo = "zoyafuso-NOAA/SamplingStrata")
+library(SamplingStrata)
+library(sp)
+library(RColorBrewer)
+library(raster)
+
+##################################################
 ####   Load Data
 ####   Load Population CVs for use in the thresholds
 ##################################################
 load(paste0(dirname(dirname(github_dir)), "/data/optimization_data.RData"))
 load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
-load(paste0(dirname(github_dir), "/Population_Variances.RData"))
+
+if (which_method == 1) load(paste0(dirname(github_dir), 
+                                   "/Population_Variances.RData"))
 
 ##################################################
 ####   Some Constants
 ##################################################
-stratas <- c(5,10,15,20,30,60)
-ns <- c(15, 1)[which_method]
+stratas <- switch(which_method, 
+                  "1" = stratas, 
+                  "2" =  10)
+NStrata <- length(stratas)
+ns_opt <- c(15, 1)[which_method]
+
+which_species <- switch(which_method, 
+                        "1" = 1:ns_opt, 
+                        "2" = 1)
 
 ##################################################
 ####   If Single_Species: subset just the one species
 ##################################################
 if (which_method == 2) {
-  SS_which_species <- 13 #which species are we doing?
   
-  frame <- frame[,c("id", "X1", "X2", paste0("Y", SS_which_species),
-                    "domainvalue")]
+  frame <- frame[, c("domainvalue", "id", "X1", "X2", "WEIGHT",
+                    paste0("Y", which_species), 
+                    paste0("Y", which_species, "_SQ_SUM"))]
   
-  frame_raw <- frame_raw[,c("id", "X1", "X2", 
-                            paste0("Y", SS_which_species),
-                            "domainvalue", "year")]
+  names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
   
-  names(frame)[4] <- names(frame_raw)[4] <- "Y1"
-  
-  github_dir = paste0(github_dir, gsub(x = sci_names[SS_which_species], 
-                                       pattern = ' ', 
-                                       replacement = '_'), '/')
+  github_dir = paste0(github_dir, 
+                      gsub(x = sci_names_opt[which_species], 
+                           pattern = ' ', 
+                           replacement = '_'), '/')
   if(!dir.exists(github_dir)) dir.create(github_dir)
   
   # Lower CV threshold is not needed for a single-species analysis
-  threshold <- matrix(data = 0,
-                      nrow = ns,
-                      ncol = 3)
+  SS_STRS_Pop_CV <- matrix(data = 0,
+                           nrow = ns_opt,
+                           ncol = 3)
+  
+  SRS_Pop_CV <- matrix(data = c(0.07, 0.1, 0.1),
+                       byrow = T,
+                       ncol = 3)
 }
 
 ##################################################
@@ -87,9 +92,10 @@ par(mfrow = c(6,6),
     mar = c(2,2,0,0))
 
 #Choose a boat level
-isample <- 2
+isample <- 1
+istrata <- 1
 
-for (istrata in 3) {
+for (istrata in 1:NStrata) {
   
   temp_strata <- stratas[istrata]
   
@@ -100,7 +106,8 @@ for (istrata in 3) {
   
   #Create CV dataframe
   cv <- list()
-  for (spp in 1:ns) cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
+  for (spp in 1:ns_opt) 
+    cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
   cv[["DOM"]] <- 1
   cv[["domainvalue"]] <- 1
   cv <- as.data.frame(cv)
@@ -152,7 +159,7 @@ for (istrata in 3) {
     #Save Output
     CV_constraints <- expected_CV(strata = solution$aggr_strata)
     current_n <- sum(sum_stats$Allocation)
-
+    
     result_list <- list(solution = solution, 
                         sum_stats = sum_stats, 
                         CV_constraints = CV_constraints, 
