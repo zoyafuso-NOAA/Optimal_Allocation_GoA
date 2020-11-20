@@ -15,11 +15,15 @@ library(RColorBrewer)
 ```
 
 The bulk of the optimization is done within the SamplingStrata R Package 
-(https://github.com/barcaroli/SamplingStrata). It is best to download the 
-package and save the path of the directory. There is one function in the 
-package, BuildStrataDF() that I modify for this analysis, so the functions 
-in the SamplingStrata package, along with my modified BuildStrataDF() 
-function need to be in the global environment. 
+(https://github.com/barcaroli/SamplingStrata). There is one function in 
+the package, BuildStrataDF() that I modify for this analysis, so it is 
+best to use a forked version of the package that I modified:
+
+```
+library(devtools)
+devtools::install_github(repo = "zoyafuso-NOAA/SamplingStrata")
+library(SamplingStrata)
+```
 
 ## Script Overview (Optimal_Allocation_GoA/analysis_scripts/)
 
@@ -44,26 +48,35 @@ surveys.
 
 ## Species Included
 
-The species set (ns = 15) included in the manuscript are a complex of Gulf of 
-Alaska cods, flatfishes, and rockfishes:
+The species set included in the manuscript are a complex of Gulf of Alaska 
+cods, flatfishes, and rockfishes. Some species are included in the survey 
+optimizations (Optimized = T) while others are excluded but are still included
+when simulating surveys (Optimized = F). 
 
-| Scientific Name                     | Common Name                           |
-|-------------------------------------|---------------------------------------|
-| *Atheresthes stomias*               | arrowtooth flounder                   |
-| *Gadus chalcogrammus*               | Alaska or walleye pollock             |
-| *Gadus macrocephalus*               | Pacific cod                           |
-| *Glyptocephalus zachirus*           | rex sole                              |
-| *Hippoglossoides elassodon*         | flathead sole                         |
-| *Hippoglossus stenolepis*           | Pacific halibut                       |
-| *Lepidopsetta bilineata*            | southern rock sole                    |
-| *Lepidopsetta polyxystra*           | northern rock sole                    |
-| *Microstomus pacificus*             | Pacific Dover sole                    |
-| *Sebastes alutus*                   | Pacific ocean perch                   |
-| *Sebastes melanostictus/aleutianus* | blackspotted and rougheye rockfishes* |
-| *Sebastes brevispinis*              | yellowfin sole                        |
-| *Sebastes polyspinis*               | northern rockfish                     |
-| *Sebastes variabilis*               | dusky rockfish                        |
-| *Sebastolobus alascanus*            | shortspine thornyhead                 |
+| Scientific Name                     | Common Name                           | Optimized |
+|-------------------------------------|---------------------------------------|-----------|
+| *Atheresthes stomias*               | arrowtooth flounder                   |     T     |
+| *Gadus chalcogrammus*               | Alaska or walleye pollock             |     T     |
+| *Gadus macrocephalus*               | Pacific cod                           |     T     |
+| *Glyptocephalus zachirus*           | rex sole                              |     T     |
+| *Hippoglossoides elassodon*         | flathead sole                         |     T     |
+| *Hippoglossus stenolepis*           | Pacific halibut                       |     T     |
+| *Lepidopsetta bilineata*            | southern rock sole                    |     T     |
+| *Lepidopsetta polyxystra*           | northern rock sole                    |     T     |
+| *Microstomus pacificus*             | Pacific Dover sole                    |     T     |
+| *Sebastes alutus*                   | Pacific ocean perch                   |     T     |
+| *Sebastes melanostictus/aleutianus* | blackspotted and rougheye rockfishes* |     T     |
+| *Sebastes brevispinis*              | yellowfin sole                        |     T     |
+| *Sebastes polyspinis*               | northern rockfish                     |     T     |
+| *Sebastes variabilis*               | dusky rockfish                        |     T     |
+| *Sebastolobus alascanus*            | shortspine thornyhead                 |     T     |
+| *Anoplopoma fimbria*                | sablefish                             |     F     |
+| *Beringraja* spp.                   | skates spp.                           |     F     |
+| *Enteroctopus dofleini*             | giant octopus                         |     F     |
+| *Pleurogrammus monopterygius*       | Atka mackerel                         |     F     |
+| *Sebastes borealis*                 | shortraker rockfish                   |     F     |
+| *Sebastes variegatus*               | harlequin rockfish                    |     F     |
+| *Squalus suckleyi*                  | spiny dogfish                         |     F     |
 
 *Due to identification issues between two rockfishes these two species were 
 combined into a species group we will refer as "Sebastes B_R" (blackspotted 
@@ -89,15 +102,8 @@ this analysis are stated in the table below:
 | E_km                | num, Eastings in kilometers, 5N UTM         |
 | N_km                | num, Northings in kilometers, 5N UTM        |
 | stratum             | int, Stratum ID in current STRS design      |
-| trawlable           | logi, is the cell trawlable?                |
-| shallower_than_700m | logi, is the cell < 700 m?                  |
-| shallow_trawlable   | logi, is the cells trawlable and < 700 m    |
 
-Two scenarios of the spatial domain are considered in this analysis and are 
-shown below: 1) Full domain (black) and 2) domain when untrawlable and deep
-(i.e., > 700 m ) survey grids are removed:
-
-![](graphics/domain.png)
+![](graphics/workflow.png)
 
 ## Input Data -- Predicted denisity
 Density of each species was predicted across the spatiotemporal domain using a 
@@ -121,32 +127,54 @@ called optimization_data.RData is saved in the [data/](https://github.com/zoyafu
 directory. The output of optimization_data.RData contains the following 
 variables and constants: 
 
-| Variable Name | Description                                                                                                                        | Class Type and Dimensions                  |
-|---------------|------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
-| ns            | Number of species in optimization                                                                                                  | numeric vector, length 1                   |
-| sci_names     | Scientific species names, used in plots                                                                                            | character vector, length ns                |
-| nboats        | Total number of sample sizes of interest, (nboats = 3)                                                                             | numeric vector, length 1                   |
-| samples       | Range of sample sizes of interest, corresponding to 1 (n = 280), 2 (n = 550), and 3 (n = 820) boats                                | numeric vector, length nboats              |
-| NStrata       | Total number of strata scenarios, (NStrata = 6)                                                                                    | numeric vector, length 1                   |
-| stratas       | Range of number of strata, (stratas = c(5, 10, 15, 20, 30, 60))                                                                    | numeric vector, length NStrata             |
-| N             | Total number of grid cells in the spatial domain, (N = 23339 cells)                                                                | numeric vector, length 1                   |
-| NTime         | Total number of years with data, (NTime = 11 years between 1996-2019)                                                              | numeric vector, length 1                   |
-| Niters        | Total number of times a survey is simulated, (Niters = 1000)                                                                       | numeric vector, length 1                   |
-| frame         | Annual mean densities for each species, longitude, and depth across grid cells                                                     | dataframe, N rows x 19 columns             |
-| frame_raw     | Densities for each species across observed years, along with longitude and depth across cells                                      | dataframe, N*NTime rows x 20 columns       |
-| true_mean     | True mean densities for each species and year. This is the "truth" that is used in the performance metrics when simulating surveys | dataframe, NTime rows x ns columns         |
+| Variable Name     | Description                                                                                                                         | Class Type and Dimensions                  |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
+| ns_opt            | Number of species included in optimization                                                                                          | numeric vector, length 1                   |
+| ns_eval           | Number of species excluded in optimization                                                                                          | numeric vector, length 1                   |
+| ns_all            | sum of ns_opt and ns_eval                                                                                                           | numeric vector, length 1                   |
+| sci_names_opt     | Scientific names of species included in optimization                                                                                | character vector, length ns_opt            |
+| sci_names_eval    | Scientific names of species excluded in optimization                                                                                | character vector, length ns_eval           |
+| sci_names_all     | Scientific names of all species considered                                                                                          | character vector, length ns_all            |
+| common_names_opt  | Common names of species included in optimization                                                                                    | character vector, length ns_opt            |
+| common_names_eval | Common names of species excluded in optimization                                                                                    | character vector, length ns_eval           |
+| common_names_all  | Common names of all species considered                                                                                              | character vector, length ns_all            |
+| spp_idx_opt       | indices of the order of species included in optimization                                                                            | numeric vector, length ns_opt              |
+| spp_idx_eval      | indices of the order of species excluded in optimization                                                                            | numeric vector, length ns_eval             |
+| nboats            | Total number of sample sizes of interest, (nboats = 3)                                                                              | numeric vector, length 1                   |
+| samples           | Range of sample sizes of interest, corresponding to 1 (n = 280), 2 (n = 550), and 3 (n = 820) boats                                 | numeric vector, length nboats              |
+| NStrata           | Total number of strata scenarios, (NStrata = 6)                                                                                     | numeric vector, length 1                   |
+| stratas           | Range of number of strata, (stratas = c(5, 10, 15, 20, 30, 60))                                                                     | numeric vector, length NStrata             |
+| N                 | Total number of grid cells in the spatial domain, (N = 23339 cells)                                                                 | numeric vector, length 1                   |
+| NTime             | Total number of years with data, (NTime = 11 years between 1996-2019)                                                               | numeric vector, length 1                   |
+| Year_Set          | Sequence of years over the temporal domain (1996 - 2019)                                                                            | numeric vector, length 24                  |
+| Years2Include     | Indices of years with data                                                                                                          | numeric vector, length NTime               |
+| Niters            | Total number of times a survey is simulated, (Niters = 1000)                                                                        | numeric vector, length 1                   |
+| true_mean         | True mean densities for each species and year. This is the "truth" that is used in the performance metrics when simulating surveys  | numeric matrix, ns_all rows, NTime columns |
+| true_index        | True abundance index for each species and year. This is the "truth" that is used in the performance metrics when simulating surveys | numeric matrix, ns_all rows, NTime columns |
+
+`frame` is the main data input used in the optimization and is a dataframe with 
+`N` rows with useful fields:
+
+| Field Name           | Description                                                                                                                                         |
+|----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| domain               | only one domain so the value is just 1                                                                                                              |
+| id                   | unique ID for each sampling cell                                                                                                                    |
+| X1                   | strata variable 1: longitude in eastings (km). Because the  optimization does not read in negative values, the values so that the lowest value is 0 |
+| X2                   | strata variable 2: depth of cell (m)                                                                                                                |
+| WEIGHT               | number of observed years                                                                                                                            |
+| Y1, Y2, ...          | density for a given cell summed across observed years for  each species                                                                             |
+| Y1_SQ_SUM, Y2_SQ_SUM | density-squared for a given cell, summed across observed  years for each species                                                                    |
 
 ## Survey Optimization
 
-The [SamplingStrata](https://github.com/barcaroli/SamplingStrata) R package 
-is used for the optimization. 
-
-The optimization is run over a range of number of stratas from 5 to 60 on the
-full domain and saved within the results/Spatiotemporal_Optimization/ directory.
-Optimizations were conducted for each boat effort level (../boat1, ../boat2,
-../boat3). Each run of the optimization is saved in its own directory with the 
-code template of StrXRunY where X is the number of strata in the solution and Y
-is the run number. Within each run folder contains:
+The multispecies optimization is conducted over 10, 15, and 20 strata and are
+saved within the results/Spatiotemporal_Optimization/ directory. Single-species
+optimizations are also conducted using 10 strata and are saved within the 
+results/Single_Species_Optimization/ directory. Optimizations were conducted 
+for at boat effort level (../boat1, ../boat2, ../boat3). Each run of the 
+optimization is saved in its own directory with the code template of StrXRunY 
+where X is the number of strata in the solution and Y is the run number. 
+Within each run folder contains:
 
 | File Name            | Description                                                         |
 |----------------------|---------------------------------------------------------------------|
