@@ -14,6 +14,14 @@ library(RColorBrewer)
 library(raster)
 
 ##################################################
+####  Install a forked version of the SamplingStrata Package from 
+####  zoyafuso-NOAA's Github page
+##################################################
+library(devtools)
+devtools::install_github(repo = "zoyafuso-NOAA/SamplingStrata")
+library(SamplingStrata)
+
+##################################################
 ####   Set up directories
 ####
 ####   Set up some constants of the optimization
@@ -21,11 +29,6 @@ library(raster)
 ####   Single_Species: Spatiotemporal Variance, univariate optimization, 
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
-
-SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
-                               "C:/Users/Zack Oyafuso/",
-                               "C:/Users/zack.oyafuso/")[which_machine],
-                             "Downloads/SamplingStrata-master/R")
 
 which_method = c("Multi_Species" = 1,
                  "Single_Species" = 2)[1]
@@ -36,15 +39,6 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
                      "/GitHub/Optimal_Allocation_GoA/results/",
                      c("Spatiotemporal_Optimization/", 
                        "Single_Species_Optimization/")[which_method])
-
-##################################################
-####   Load functions from SamplingStrata packages into global environment
-####   Load modified buildStrataDF function to incorporate spatiotemporal 
-####   stratum variance instead of spatial variance
-##################################################
-for (ifile in dir(SamplingStrata_dir, full.names = T)) source(ifile)
-source(paste0(dirname(dirname(github_dir)), 
-              "/modified_functions/buildStrataDF_Zack.R"))
 
 ##################################################
 ####   Load Data
