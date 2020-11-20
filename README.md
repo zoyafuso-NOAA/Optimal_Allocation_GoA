@@ -103,7 +103,7 @@ this analysis are stated in the table below:
 | N_km                | num, Northings in kilometers, 5N UTM        |
 | stratum             | int, Stratum ID in current STRS design      |
 
-![](graphics/workflow.png)
+![](graphics/domain.png)
 
 ## Input Data -- Predicted denisity
 Density of each species was predicted across the spatiotemporal domain using a 
