@@ -34,7 +34,7 @@ load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 
 ## Years to use
 Year_Set <- 1996:2019
-Years2Include <- c(1,  4,  8, 10, 12, 14, 16, 18, 20, 22, 24)
+Years2Include <- c(1, 4, 8, 10, 12, 14, 16, 18, 20, 22, 24)
 NTime <- length(Years2Include)
 
 ## Number of sampling grids
@@ -76,8 +76,10 @@ common_names_eval <- c("sablefish", "skates spp.", "giant octopus",
 ns_eval <- length(sci_names_eval)
 
 ## In case we need it, all species names together
-sci_names_all <- c(sci_names_opt, sci_names_eval)
-common_names_all <- c(common_names_opt, common_names_eval)
+sci_names_all <- sort(c(sci_names_opt, sci_names_eval))
+common_names_all <- c(common_names_opt, 
+                      common_names_eval)[order(c(sci_names_opt, 
+                                                 sci_names_eval))]
 ns_all <- ns_opt + ns_eval
 
 spp_idx_opt <- which(sci_names_all %in% sci_names_opt)
