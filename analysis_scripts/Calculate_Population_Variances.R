@@ -12,7 +12,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[1]
 
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
                        'C:/Users/Zack Oyafuso/Documents/',
@@ -100,9 +100,13 @@ SRS_mean_sds <- buildStrataDF(dataset = frame_SRS)
 SRS_Pop_CV <- sapply(X = samples,
                      FUN = function(x) {
                        temp_mean <- SRS_mean_sds[, paste0("M", 1:ns_all)]
-                       temp_sd <- SRS_mean_sds[, paste0("S", 1:ns_all)]
-                       return(temp_sd / sqrt(x) / temp_mean)
+                       temp_var <- SRS_mean_sds[, paste0("S", 1:ns_all)]^2
+                       temp_var <- temp_var / x * (1 - x/N)
+                       temp_sd <- sqrt(temp_var)
+                       
+                       return(temp_sd / temp_mean)
                      })
+
 rownames(SRS_Pop_CV) <- sci_names_all
 
 ##################################
