@@ -37,8 +37,8 @@ library(tidyr)
 load(paste0(github_dir, "data/Extrapolation_depths.RData") )
 load(paste0(github_dir, 'data/fit_density.RData'))
 load(paste0(github_dir, 'data/optimization_data.RData'))
-# load(paste0(github_dir, "results/Single_Species_Optimization/",
-#             "optimization_knitted_results.RData"))
+load(paste0(github_dir, "results/Single_Species_Optimization/",
+            "optimization_knitted_results.RData"))
 
 frame <- cbind(data.frame(domainvalue = 1,
                           id = 1:N,
@@ -99,8 +99,8 @@ frame_SRS$X1 = 1
 SRS_mean_sds <- buildStrataDF(dataset = frame_SRS)
 SRS_Pop_CV <- sapply(X = samples,
                      FUN = function(x) {
-                       temp_mean <- temp[, paste0("M", 1:ns_all)]
-                       temp_sd <- temp[, paste0("S", 1:ns_all)]
+                       temp_mean <- SRS_mean_sds[, paste0("M", 1:ns_all)]
+                       temp_sd <- SRS_mean_sds[, paste0("S", 1:ns_all)]
                        return(temp_sd / sqrt(x) / temp_mean)
                      })
 rownames(SRS_Pop_CV) <- sci_names_all
@@ -158,7 +158,7 @@ for (iboat in 1:nboats) {
 SS_STRS_Pop_CV <- tidyr::spread(data = settings[,c("iboat", "ispp", "cv")], 
                                 value = cv, 
                                 key = iboat)[, -1]
-rownames(SS_STRS_Pop_CV) = sci_names
+rownames(SS_STRS_Pop_CV) = sci_names_opt
 
 ##################################
 ## Save
