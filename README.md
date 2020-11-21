@@ -165,16 +165,18 @@ variables and constants:
 | Y1, Y2, ...          | density for a given cell summed across observed years for  each species                                                                             |
 | Y1_SQ_SUM, Y2_SQ_SUM | density-squared for a given cell, summed across observed  years for each species                                                                    |
 
-## Survey Optimization
+![](graphics/workflow1.png)
 
-The multispecies optimization is conducted over 10, 15, and 20 strata and are
-saved within the results/Spatiotemporal_Optimization/ directory. Single-species
-optimizations are also conducted using 10 strata and are saved within the 
-results/Single_Species_Optimization/ directory. Optimizations were conducted 
-for at boat effort level (../boat1, ../boat2, ../boat3). Each run of the 
-optimization is saved in its own directory with the code template of StrXRunY 
-where X is the number of strata in the solution and Y is the run number. 
-Within each run folder contains:
+## Survey Optimization--Single Species Optimizations
+
+Single-species optimizations are first conducted using 10 strata and are 
+saved within the results/Single_Species_Optimization/ directory. The 
+optimized single-species CVs are used as the lower limit for the subsequent
+multispecies survey optimizations. 
+Optimizations were conducted for at boat effort level (../boat1, ../boat2,
+../boat3). Each run of the optimization is saved in its own directory with
+the code template of StrXRunY where X is the number of strata in the solution
+and Y is the run number. Within each run folder contains:
 
 | File Name            | Description                                                         |
 |----------------------|---------------------------------------------------------------------|
@@ -195,7 +197,7 @@ consists of the elements:
 | result_list$CV_constraints       | Expected CV across species                                                                                          | numeric vector, length ns                      |
 | result_list$n                    | Optimized total sample size                                                                                         | numeric, length 1                              |
 
-## Knitting Together Optimization Results
+## Knitting Together Single-Species Optimization Results
 
 The results from each run are synthesized in the knitting_runs.R script. Four
 variables are saved in the optimization_knitted_results.RData workspace:
@@ -207,9 +209,10 @@ variables are saved in the optimization_knitted_results.RData workspace:
 | strata_list       | Collection of result_list$solution$aggr_strata from each run                | list of variable length                       |
 | strata_stats_list | Collection of stratum-level means and variances across species for each run | list of variable length                       |
 
+![](graphics/workflow2.png)
+
 ## Survey Simulation and Performance Metrics (work in progress)...
 
 ## Graphic Workflow
 
-![](graphics/workflow.png)
 
