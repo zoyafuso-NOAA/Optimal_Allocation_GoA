@@ -113,7 +113,7 @@ for (ispp in sort(unique(master_settings$ispp)) ) {
   }
 } 
 
-settings <- master_settings[sol_idx, ]
+settings <- master_settings[sol_idx, 1:4]
 res_df <- master_res_df[, 1 + sol_idx]
 strata_list <- master_strata_list[sol_idx]
 strata_stats_list <- master_strata_stats_list[sol_idx]
