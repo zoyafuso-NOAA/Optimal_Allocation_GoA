@@ -10,23 +10,26 @@
 rm(list = ls())
 
 ##################################################
-####   Import Libraries
-##################################################
-library(VAST)
-library(readxl)
-library(rgdal)
-library(spatialEco)
-library(tidyr)
-
-##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
 
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
                        'C:/Users/Zack Oyafuso/Documents/',
                        'C:/Users/zack.oyafuso/Work/')[which_machine], 
                      "GitHub/Optimal_Allocation_GoA/")
+
+##################################################
+####  Install a forked version of the SamplingStrata Package from 
+####  zoyafuso-NOAA's Github page
+####
+####  Import other required packages
+##################################################
+library(devtools)
+devtools::install_github(repo = "zoyafuso-NOAA/SamplingStrata")
+library(SamplingStrata)
+library(readxl)
+library(tidyr)
 
 ##################################
 ## Import Operating Model
@@ -34,8 +37,27 @@ github_dir <- paste0(c('/Users/zackoyafuso/Documents/',
 load(paste0(github_dir, "data/Extrapolation_depths.RData") )
 load(paste0(github_dir, 'data/fit_density.RData'))
 load(paste0(github_dir, 'data/optimization_data.RData'))
-load(paste0(github_dir, "results/Single_Species_Optimization/",
-            "optimization_knitted_results.RData"))
+# load(paste0(github_dir, "results/Single_Species_Optimization/",
+#             "optimization_knitted_results.RData"))
+
+frame <- cbind(data.frame(domainvalue = 1,
+                          id = 1:N,
+                          X1 = with(Extrapolation_depths, E_km - min(E_km)),
+                          X2 = Extrapolation_depths$DEPTH_EFH,
+                          WEIGHT = NTime),
+               
+               matrix(data = apply(X = D_gct[, , Years2Include],
+                                   MARGIN = c(1, 2), 
+                                   FUN = sum),
+                      ncol = ns_all,
+                      dimnames = list(NULL, paste0("Y", 1:ns_all))),
+               
+               matrix(data = apply(X = D_gct[, , Years2Include],
+                                   MARGIN = c(1, 2), 
+                                   FUN = function(x) sum(x^2)),
+                      ncol = ns_all,
+                      dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
+)
 
 ##################################
 ## Import Strata Allocations and spatial grid and predicted density
@@ -62,71 +84,74 @@ allocations$boat1 = ifelse(allocations$boat1 == 0, 0,
                            ifelse(allocations$boat1 == 1, 2, 
                                   allocations$boat1))
 
+allocations <- rbind(c("Stratum" = 0, "boat3" = 0, "boat2" = 0, "boat1" = 0),
+                     allocations)
+
 ##################################
 ## Calculate Population CVs under Simple Random Sampling
 ##################################
-SRS_Pop_CV <- Current_STRS_Pop_CV <- matrix(nrow = ns, 
-                                            ncol = nboats,
-                                            dimnames = list(sci_names, NULL))
+frame_SRS <- subset(frame, 
+                    select = c("domainvalue", "id", "WEIGHT", 
+                               paste0("Y", 1:ns_all), 
+                               paste0("Y", 1:ns_all, "_SQ_SUM")))
+frame_SRS$X1 = 1
 
-for (ispp in 1:ns) {
-  SRS_var = var(as.vector(D_gct[, ispp, Years2Include])) 
-  SRS_mean = mean(as.vector(D_gct[, ispp, Years2Include]))
-  
-  SRS_CV = sqrt(SRS_var / samples) / SRS_mean
-  
-  SRS_Pop_CV[ispp, ] <- SRS_CV
-}
+SRS_mean_sds <- buildStrataDF(dataset = frame_SRS)
+SRS_Pop_CV <- sapply(X = samples,
+                     FUN = function(x) {
+                       temp_mean <- temp[, paste0("M", 1:ns_all)]
+                       temp_sd <- temp[, paste0("S", 1:ns_all)]
+                       return(temp_sd / sqrt(x) / temp_mean)
+                     })
+rownames(SRS_Pop_CV) <- sci_names_all
 
 ##################################
 ## Calculate Population CVs under current STRS sampling
 ##################################
+Current_STRS_Pop_CV <- matrix(nrow = ns_all, 
+                              ncol = nboats,
+                              dimnames = list(sci_names_all, NULL))
 
-for (isample in 1:nboats) { 
+for (iboat in 1:nboats) {
   #Adjust sample size proportionally
-  nh <- allocations[, paste0('boat', isample)]
-  sampled_strata <- nh > 0
-  nstrata <- sum(sampled_strata)
-  
-  nh <- nh[sampled_strata]
+  nh <- allocations[, paste0('boat', iboat)]
   
   #strata constraints
-  strata_labels <- paste(allocations$Stratum[sampled_strata])
-  Nh <- table(Extrapolation_depths$stratum)[strata_labels]
+  # strata_labels <- paste(allocations$Stratum[sampled_strata])
+  Nh <- table(Extrapolation_depths$stratum)
   Wh <- Nh / N
   wh <- nh / Nh
   
-  #Calculate Total Mean, Variance, CV
-  stratano = rep(Extrapolation_depths$stratum, 11)
+  #Calculate Strata means and sds (calculated over time as well)
+  frame_current <- subset(frame, 
+                          select = c("domainvalue", "id", "WEIGHT", 
+                                     paste0("Y", 1:ns_all), 
+                                     paste0("Y", 1:ns_all, "_SQ_SUM")))
+  frame_current$X1 = Extrapolation_depths$stratum
+  frame_current$X1[is.na(frame_current$X1)] <- 0
   
-  stmt <- paste0('aggregate(cbind(',
-                 paste0('Y', 1:(ns-1), sep = ',', collapse = ''), 'Y',ns, 
-                 ") ~ stratano, data = frame_raw, FUN = mean)")
-  strata_mean <- eval(parse(text = stmt))
-  strata_mean <- subset(strata_mean, stratano %in% allocations$Stratum)[,-1]
-  strata_mean <- strata_mean[sampled_strata,]
+  STRS_mean_sds <- buildStrataDF(dataset = frame_current)
   
-  stmt <- paste0('aggregate(cbind(',
-                 paste0('Y', 1:(ns-1), sep = ',', collapse = ''), 'Y',ns, 
-                 ") ~ stratano, data = frame_raw, FUN = var)")
-  strata_var <- eval(parse(text = stmt))
-  strata_var <- subset(strata_var, stratano %in% allocations$Stratum)[,-1]
-  strata_var <- strata_var[sampled_strata,]
+  STRS_mean <- colSums(sweep(x = STRS_mean_sds[, paste0("M", 1:ns_all)], 
+                             MARGIN = 1, 
+                             STATS = Wh,
+                             FUN = '*'))
   
-  #Calculate Total Mean, Variance, CV
-  SRS_var <- colSums(sweep(x = strata_var, 
-                           MARGIN = 1, 
-                           STATS = Wh^2 * (1 - wh) / nh,
-                           FUN = '*'))
+  STRS_var_temp <- sweep(x = STRS_mean_sds[, paste0("S", 1:ns_all)]^2, 
+                         MARGIN = 1, 
+                         STATS = Wh^2 * (1 - wh) / nh,
+                         FUN = '*')
   
-  SRS_mean <- colSums(sweep(x = strata_mean, 
-                            MARGIN = 1, 
-                            STATS = Wh,
-                            FUN = '*'))
+  ## For those strata with zero effort allocated
+  STRS_var_temp <- apply(X = STRS_var_temp, 
+                         MARGIN = 1:2,
+                         FUN = function(x) ifelse(is.finite(x), x, 0))
   
-  strata_cv <- sqrt(SRS_var) / SRS_mean 
+  STRS_var <- colSums(STRS_var_temp)
   
-  Current_STRS_Pop_CV[, isample ] <- strata_cv
+  strata_cv <- sqrt(STRS_var) / STRS_mean 
+  
+  Current_STRS_Pop_CV[, iboat ] <- strata_cv
 }
 
 
