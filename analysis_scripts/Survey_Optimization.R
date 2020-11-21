@@ -13,7 +13,7 @@ rm(list = ls())
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 
 which_method = c("Multi_Species" = 1,
-                 "Single_Species" = 2)[2]
+                 "Single_Species" = 2)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -42,8 +42,10 @@ library(raster)
 load(paste0(dirname(dirname(github_dir)), "/data/optimization_data.RData"))
 load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
 
-if (which_method == 1) load(paste0(dirname(github_dir), 
-                                   "/Population_Variances.RData"))
+if (which_method == 1) {
+  load(paste0(dirname(github_dir), "/Population_Variances.RData"))
+  SRS_Pop_CV <- SRS_Pop_CV[spp_idx_opt, ]
+}
 
 ##################################################
 ####   Some Constants
@@ -52,7 +54,7 @@ stratas <- switch(which_method,
                   "1" = stratas, 
                   "2" =  10)
 NStrata <- length(stratas)
-ns_opt <- c(15, 1)[which_method]
+ns_opt <- c(ns_opt, 1)[which_method]
 
 which_species <- switch(which_method, 
                         "1" = 1:ns_opt, 
@@ -64,8 +66,8 @@ which_species <- switch(which_method,
 if (which_method == 2) {
   
   frame <- frame[, c("domainvalue", "id", "X1", "X2", "WEIGHT",
-                    paste0("Y", which_species), 
-                    paste0("Y", which_species, "_SQ_SUM"))]
+                     paste0("Y", which_species), 
+                     paste0("Y", which_species, "_SQ_SUM"))]
   
   names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
   
@@ -92,14 +94,14 @@ par(mfrow = c(6,6),
     mar = c(2,2,0,0))
 
 #Choose a boat level
-isample <- 3
+isample <- 1
 
-for (istrata in 1:NStrata) {
+for (istrata in 1) {
   
   temp_strata <- stratas[istrata]
   
   ##Initial Condition
-  Run <- 4
+  Run <- 1
   current_n <- 0
   CV_constraints <- SRS_Pop_CV[, isample] 
   
@@ -168,7 +170,7 @@ for (istrata in 1:NStrata) {
     #Set up next run by changing upper CV constraints
     Run <- Run + 1
     
-    CV_constraints <- 0.95*CV_constraints + 0.1*(SS_STRS_Pop_CV[, isample]) 
+    CV_constraints <- 0.95*CV_constraints + 0.05*(SS_STRS_Pop_CV[, isample]) 
     
     #Create CV dataframe in the formmat of SamplingStrata
     cv <- list()
