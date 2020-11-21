@@ -6,39 +6,34 @@
 rm(list = ls())
 
 ###############################
+## Set up directories
+###############################
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+
+github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
+                       "C:/Users/Zack Oyafuso/Documents",
+                       "C:/Users/zack.oyafuso/Work")[which_machine],
+                     "/GitHub/Optimal_Allocation_GoA/")
+
+###############################
 ## Import required packages
 ###############################
 library(sp)
 library(RColorBrewer)
 library(raster)
 
-###############################
-## Set up directories
-###############################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
-
-SamplingStrata_dir <- paste0(c("/Users/zackoyafuso/",
-                               "C:/Users/Zack Oyafuso/",
-                               "C:/Users/zack.oyafuso/")[which_machine],
-                             "Downloads/SamplingStrata-master/R")
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
-                       "C:/Users/Zack Oyafuso/Documents",
-                       "C:/Users/zack.oyafuso/Work")[which_machine],
-                     "/GitHub/Optimal_Allocation_GoA/results/")
-
 ###########################
 ## Load Data
 ###########################
-load(paste0(dirname(github_dir), "/data/optimization_data.RData"))
-load(paste0(dirname(github_dir), "/data/Extrapolation_depths.RData"))
+load(paste0(github_dir, "/data/optimization_data.RData"))
+load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 
 ###########################
 ## Empty Result objects
 ###########################
 master_res_df <- data.frame(id = 1:N)
 master_settings <- data.frame()
-master_strata_list <- list()
+master_strata_list <- master_strata_stats_list <- list()
 master_tradeoff <- list()
 
 istrata <- 10
@@ -46,72 +41,87 @@ istrata <- 10
 ##########################
 ##########################
 
-for (ispp in 1:ns) {
-  runs = dir(paste0(github_dir,
-                    "Single_Species_Optimization/",
-                    gsub(x = sci_names[ispp], 
-                         pattern = " ", 
-                         replacement = "_")), 
-             full.names = T)
-  
-  if (length(runs) > 0) {
-    temp_sample_size <- temp_cvs <- c()
+for (ispp in 1:ns_opt) {
+  for (iboat in 1:nboats) {
     
+    ## For a given species and boat scenario, collect all runs
+    runs = dir(paste0(github_dir,
+                      "results/Single_Species_Optimization/",
+                      gsub(x = sci_names_opt[ispp], 
+                           pattern = " ", 
+                           replacement = "_"),
+                      "/boat", iboat), 
+               full.names = T)
     nruns = length(runs)
     
-    for (irun in 1:nruns) {
-      temp_file <- paste0(github_dir, 
-                          "Single_Species_Optimization/",
-                          gsub(x = sci_names[ispp], 
-                               pattern = " ", 
-                               replacement = "_"),
-                          "/Str", istrata, "Run", irun, "/result_list.RData")
-      
-      if (file.exists(temp_file)) {
-        load(temp_file)
-        temp_sample_size <- c(temp_sample_size, result_list$n )
-        temp_cvs <- c(temp_cvs, result_list[[3]])
+    ## For each run
+    if (nruns > 0) {
+      for (irun in 1:nruns) {
         
-        master_tradeoff[[ispp]] <-
-          data.frame(cv = temp_cvs[order(temp_cvs, decreasing = T)], 
-                     n = temp_sample_size[order(temp_cvs, decreasing = T)] )
+        #Load run
+        temp_file <- paste0(github_dir, 
+                            "results/Single_Species_Optimization/",
+                            gsub(x = sci_names_opt[ispp], 
+                                 pattern = " ", 
+                                 replacement = "_"),
+                            "/boat", iboat,
+                            "/Str", istrata, "Run", irun, "/result_list.RData")
+        
+        if (file.exists(temp_file)) {
+          
+          load(temp_file)
+          
+          #master_settings: result of optimization (CV, sample size)
+          master_settings <- rbind(
+            master_settings,
+            data.frame(iboat = iboat,
+                       ispp = ispp,
+                       n = result_list$n,
+                       cv = as.numeric(result_list[[3]]))
+          )
+          
+          #master_res_df: solution (which cell belongs to which stratum?)
+          master_res_df <- cbind(master_res_df,
+                                 result_list[[1]]$indices$X1)
+          
+          #master_strata_list: stratum-level details of solution
+          master_strata_list <- c(master_strata_list, 
+                                  list(result_list[[2]]))
+          
+          #master_strata_stats_list: stratum-level means and variances
+          master_strata_stats_list <- c(master_strata_stats_list, 
+                                        list(result_list$solution$aggr_strata))
+        }
       }
     }
-    
-    for (isample in 1:nboats) {
-      irun <- which.min(abs(temp_sample_size - samples[isample]))
-      temp_file <- paste0(github_dir, 
-                          "Single_Species_Optimization/",
-                          gsub(x = sci_names[ispp], 
-                               pattern = " ", 
-                               replacement = "_"),
-                          "/Str", istrata, "Run", irun, "/result_list.RData")
-      load(temp_file)
-      
-      master_settings <- rbind(master_settings,
-                               data.frame(iboat = isample,
-                                          ispp = ispp,
-                                          n = result_list$n,
-                                          cv = as.numeric(result_list[[3]]) ))
-      
-      master_res_df <- cbind(master_res_df,
-                             result_list[[1]]$indices$X1)
-      
-      master_strata_list <- c(master_strata_list, list(result_list[[2]]))
-    }
   }
-  
 }
+
+####################################
+## Subset those solutions that correspond to 1, 2, and 3 boats
+####################################
+master_settings$id = 1:nrow(master_settings)
+sol_idx <- c()
+
+for (ispp in sort(unique(master_settings$ispp)) ) {
+  for (isample in samples) {
+    #Find solution closet to isample, append to sol_idx
+    sol_idx <- c(sol_idx, 
+                 with(master_settings[master_settings$ispp == ispp, ],
+                      id[which.min(abs(n - isample))])
+    )
+  }
+} 
+
+settings <- master_settings[sol_idx, ]
+res_df <- master_res_df[, 1 + sol_idx]
+strata_list <- master_strata_list[sol_idx]
+strata_stats_list <- master_strata_stats_list[sol_idx]
 
 ####################################
 ## Save
 ####################################
-settings <- master_settings
-settings$id = 1:nrow(settings)
-res_df <- master_res_df
-strata_list <- master_strata_list
-
-save(list = c("res_df", "settings", "strata_list"),
+save(list = c("res_df", "settings", "strata_list", "strata_stats_list"),
      file = paste0(github_dir, 
-                   "Single_Species_Optimization/", 
+                   "results/Single_Species_Optimization/", 
                    "optimization_knitted_results.RData"))
