@@ -56,7 +56,7 @@ ns_opt <- c(15, 1)[which_method]
 
 which_species <- switch(which_method, 
                         "1" = 1:ns_opt, 
-                        "2" = 1)
+                        "2" = 12)
 
 ##################################################
 ####   If Single_Species: subset just the one species
@@ -80,7 +80,7 @@ if (which_method == 2) {
                            nrow = ns_opt,
                            ncol = 3)
   
-  SRS_Pop_CV <- matrix(data = c(0.07, 0.1, 0.1),
+  SRS_Pop_CV <- matrix(data = c(0.12, 0.1, 0.1),
                        byrow = T,
                        ncol = 3)
 }
@@ -169,11 +169,11 @@ for (istrata in 1:NStrata) {
     #Set up next run by changing upper CV constraints
     Run <- Run + 1
     
-    CV_constraints <- 0.9*CV_constraints + 0.1*(SS_STRS_Pop_CV[, isample]) 
+    CV_constraints <- 0.95*CV_constraints + 0.1*(SS_STRS_Pop_CV[, isample]) 
     
     #Create CV dataframe in the formmat of SamplingStrata
     cv <- list()
-    for (spp in 1:ns) 
+    for (spp in 1:ns_opt) 
       cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
     cv[["DOM"]] <- 1
     cv[["domainvalue"]] <- 1
