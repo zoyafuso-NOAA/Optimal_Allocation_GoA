@@ -56,7 +56,7 @@ ns_opt <- c(15, 1)[which_method]
 
 which_species <- switch(which_method, 
                         "1" = 1:ns_opt, 
-                        "2" = 12)
+                        "2" = 14)
 
 ##################################################
 ####   If Single_Species: subset just the one species
@@ -80,7 +80,7 @@ if (which_method == 2) {
                            nrow = ns_opt,
                            ncol = 3)
   
-  SRS_Pop_CV <- matrix(data = c(0.12, 0.1, 0.1),
+  SRS_Pop_CV <- matrix(data = c(0.1, 0.1, 0.1315),
                        byrow = T,
                        ncol = 3)
 }
@@ -92,15 +92,14 @@ par(mfrow = c(6,6),
     mar = c(2,2,0,0))
 
 #Choose a boat level
-isample <- 1
-istrata <- 1
+isample <- 3
 
 for (istrata in 1:NStrata) {
   
   temp_strata <- stratas[istrata]
   
   ##Initial Condition
-  Run <- 1
+  Run <- 4
   current_n <- 0
   CV_constraints <- SRS_Pop_CV[, isample] 
   
