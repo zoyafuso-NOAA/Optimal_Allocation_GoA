@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -22,26 +22,11 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents/",
 load(paste0(github_dir, "data/optimization_data.RData"))
 
 ##################################################
-####   Define which optimization settings is being worked on
-####
-####   which_variance:
-####   Spatial: spatial variance for stratum variance
-####   Spatiotemporal: spatiotemporal variance for stratum variance
-####
-####   which_constraint: 
-####   one_CV: One CV constraint applied to all species
-####   "": species specific CV constraints, assumed to be the default
-##################################################
-# result_dir <- paste0(github_dir, which_variance)
-
-##################################################
 ####   Empty Result Objects
 ##################################################
 res_df <- data.frame(id = 1:N)
 settings <- data.frame()
 strata_stats_list <- strata_list <- list()
-stratas <- c(10, 15, 20)
-NStrata <- length(stratas)
 
 ##################################################
 ####   Collect optimization results from each strata
@@ -84,7 +69,7 @@ for (istrata in 1:NStrata) {
             #High-level settings: total sample size and expected CV across species
             species_cv <- result_list[[3]]
             attributes(species_cv)$dimnames[[1]] <- ""
-            attributes(species_cv)$dimnames[[2]] <- paste0("CV_", 1:ns)
+            attributes(species_cv)$dimnames[[2]] <- paste0("CV_", 1:ns_opt)
             cv <- max(as.numeric(species_cv))
             n <- result_list$n
             
