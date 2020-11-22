@@ -17,7 +17,7 @@ library(VAST)
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -39,7 +39,7 @@ load(paste0(dirname(github_dir), '/data/Extrapolation_depths.RData'))
 load(paste0(dirname(github_dir), '/data/fit_density.RData'))
 load(paste0(github_dir, "Spatiotemporal_Optimization",
             "/optimization_knitted_results.RData"))
-load(paste0(dirname(VAST_dir), "/sim_density.RData"))
+# load(paste0(dirname(VAST_dir), "/sim_density.RData"))
 
 GOA_allocations <- readxl::read_xlsx(
   path = paste0(dirname(github_dir), 
@@ -73,20 +73,20 @@ allocations <- rbind(data.frame(Stratum = 0, boat3 = 0, boat2 = 0, boat1 = 0),
 ##################################################
 Current_sim_mean <- Current_sim_cv <- Current_rel_bias_est <- 
   STRS_sim_mean <- STRS_sim_cv <- STRS_rel_bias_est <-
-  array(dim = c(2, NTime, ns, nboats, Niters), 
+  array(dim = c(2, NTime, ns_all, nboats, Niters), 
         dimnames = list(c("pred_density", "plus_obs_error"), 
                         paste0("year_", 1:NTime), 
-                        sci_names, 
-                        paste0("boat_", 1:3), 
+                        sci_names_all, 
+                        paste0("boat_", 1:nboats), 
                         NULL ))
 
 Current_true_cv_array <- Current_rrmse_cv_array <- 
   STRS_true_cv_array <- STRS_rrmse_cv_array <-  
-  array(dim = c(2, NTime, ns, nboats), 
+  array(dim = c(2, NTime, ns_all, nboats), 
         dimnames = list(c("pred_density", "plus_obs_error"), 
                         paste0("year_", 1:NTime), 
-                        sci_names, 
-                        paste0("boat_", 1:3)))
+                        sci_names_all, 
+                        paste0("boat_", 1:nboats)))
 
 ##################################################
 ####   Simulate Survey
@@ -97,17 +97,8 @@ for (iter in 1:1000) {
   set.seed(1000 + iter)
   
   for (isim in c("pred_density", "plus_obs_error")) {
-    truth <- true_mean
-      
-      # switch(
-      #   isim,
-      #   "pred_density" = true_mean,
-      #   "plus_obs_error" = t(apply(X = pred_density$plus_obs_error[ceiling(iter / 100), , , ],
-      #                              MARGIN = 2:3, 
-      #                              FUN = mean)))
-    
     for (iboat in 1:3) {
-      for (isurvey in c("Current", "STRS")) { #Current or Optimized Survey
+      for (isurvey in c("Current", "STRS")) {
         
         if(isurvey == "STRS") {
           #Load optimization data, only focusing on 15 strata for now
@@ -116,25 +107,19 @@ for (iter in 1:1000) {
         }
         
         sim_survey <- 
-          do_STRS(
-            input <- list(
-              "density" = switch(
-                isim,
-                "pred_density" = pred_density$pred_density,
-                "plus_obs_error" = pred_density$plus_obs_error[ceiling(iter / 100), , , ]),
-              
-              "solution" = switch(
-                isurvey,
-                "Current" = Extrapolation_depths$stratum,
-                "STRS" = res_df[, 1 + idx]),
-              
-              "allocation" = switch( 
-                isurvey,
-                "Current" = allocations[, paste0("boat", iboat)],
-                "STRS" = strata_list[[idx]]$Allocation),
-              
-              "true_density" = truth )
-          )
+          do_STRS( list("density" = D_gct,
+                        
+                        "solution" = switch(
+                          isurvey,
+                          "Current" = Extrapolation_depths$stratum,
+                          "STRS" = res_df[, 1 + idx]),
+                        
+                        "allocation" = switch( 
+                          isurvey,
+                          "Current" = allocations[, paste0("boat", iboat)],
+                          "STRS" = strata_list[[idx]]$Allocation),
+                        
+                        "true_density" = true_mean) )
         
         stmt <- paste0(isurvey, "_sim_mean",  
                        "[isim, , , iboat, iter] = sim_survey$mean_denisty")
@@ -174,7 +159,7 @@ for (isim in c("pred_density", "plus_obs_error")) {
                          isurvey, "_sim_mean[isim, iyear, ispp, iboat,]) / ",
                          "truth[iyear, ispp]")
           eval(parse(text = stmt))
-        
+          
           temp_sim_cv <- get(paste0(isurvey, 
                                     "_sim_cv"))[isim, iyear, ispp, iboat,]
           
@@ -182,7 +167,7 @@ for (isim in c("pred_density", "plus_obs_error")) {
                          " <- sqrt(mean((temp_sim_cv - temp_true_cv)^2)) / ", 
                          "mean(temp_sim_cv)")
           eval(parse(text = stmt))
-            
+          
         }
       }
     }

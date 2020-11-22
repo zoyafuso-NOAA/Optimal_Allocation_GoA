@@ -10,7 +10,7 @@ rm(list = ls())
 ####   Set up directories based on whether the optimization is being conducted
 ####        on a multi-species or single-species level
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
 
 which_method = c("Multi_Species" = 1,
                  "Single_Species" = 2)[1]
@@ -96,7 +96,7 @@ par(mfrow = c(6,6),
 #Choose a boat level
 isample <- 1
 
-for (istrata in 1) {
+for (istrata in 3) {
   
   temp_strata <- stratas[istrata]
   
@@ -170,7 +170,7 @@ for (istrata in 1) {
     #Set up next run by changing upper CV constraints
     Run <- Run + 1
     
-    CV_constraints <- 0.95*CV_constraints + 0.05*(SS_STRS_Pop_CV[, isample]) 
+    CV_constraints <- 0.9*CV_constraints + 0.1*(SS_STRS_Pop_CV[, isample]) 
     
     #Create CV dataframe in the formmat of SamplingStrata
     cv <- list()
