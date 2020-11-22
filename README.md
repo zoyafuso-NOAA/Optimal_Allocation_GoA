@@ -211,6 +211,20 @@ variables are saved in the optimization_knitted_results.RData workspace:
 
 ![](graphics/workflow2.png)
 
+## Calculate population variances of different survey types
+After the single-species optimizations are conducted, we calculate the population
+variances under different survey designs under the three boat scenarios: 1) simple 
+random sampling, 2) stratified random sampling using the current strata and effort
+allocations and 3) stratified random sampling using the stratification and effort
+allocation from the optimized single-species survey optimizations from the previous
+section. 
+
+![](graphics/workflow3.png)
+
+## Survey Optimization--Multi-Species Optimizations
+
+![](graphics/workflow3.png)
+
 ## Survey Simulation and Performance Metrics (work in progress)...
 
 ## Graphic Workflow
