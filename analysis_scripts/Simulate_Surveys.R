@@ -17,7 +17,7 @@ library(VAST)
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[1]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -71,10 +71,13 @@ allocations <- rbind(data.frame(Stratum = 0, boat3 = 0, boat2 = 0, boat1 = 0),
 ##################################################
 ####   Result Objects
 ##################################################
+obs_CV <- c(0, 0.1, 0.25, 0.5, 1) #low to high sampling CVs
+nobs_CV <- length(obs_CV)
+
 Current_sim_mean <- Current_sim_cv <- Current_rel_bias_est <- 
   STRS_sim_mean <- STRS_sim_cv <- STRS_rel_bias_est <-
-  array(dim = c(2, NTime, ns_all, nboats, Niters), 
-        dimnames = list(c("pred_density", "plus_obs_error"), 
+  array(dim = c(nobs_CV, NTime, ns_all, nboats, Niters), 
+        dimnames = list(paste0("obsCV=", obs_CV), 
                         paste0("year_", 1:NTime), 
                         sci_names_all, 
                         paste0("boat_", 1:nboats), 
@@ -82,8 +85,8 @@ Current_sim_mean <- Current_sim_cv <- Current_rel_bias_est <-
 
 Current_true_cv_array <- Current_rrmse_cv_array <- 
   STRS_true_cv_array <- STRS_rrmse_cv_array <-  
-  array(dim = c(2, NTime, ns_all, nboats), 
-        dimnames = list(c("pred_density", "plus_obs_error"), 
+  array(dim = c(nobs_CV, NTime, ns_all, nboats), 
+        dimnames = list(paste0("obsCV=", obs_CV), 
                         paste0("year_", 1:NTime), 
                         sci_names_all, 
                         paste0("boat_", 1:nboats)))
@@ -92,13 +95,13 @@ Current_true_cv_array <- Current_rrmse_cv_array <-
 ####   Simulate Survey
 ##################################################
 
-for (iter in 1:1000) {
+for (iter in 1:100) {
   
   set.seed(1000 + iter)
   
-  for (isim in c("pred_density", "plus_obs_error")) {
+  for (ierror in 1:nobs_CV) {
     for (iboat in 1:3) {
-      for (isurvey in c("Current", "STRS")) {
+      for (isurvey in c("Current", "STRS")[1]) {
         
         if(isurvey == "STRS") {
           #Load optimization data, only focusing on 15 strata for now
@@ -107,30 +110,33 @@ for (iter in 1:1000) {
         }
         
         sim_survey <- 
-          do_STRS( list("density" = D_gct,
-                        
-                        "solution" = switch(
-                          isurvey,
-                          "Current" = Extrapolation_depths$stratum,
-                          "STRS" = res_df[, 1 + idx]),
-                        
-                        "allocation" = switch( 
-                          isurvey,
-                          "Current" = allocations[, paste0("boat", iboat)],
-                          "STRS" = strata_list[[idx]]$Allocation),
-                        
-                        "true_density" = true_mean) )
+          do_STRS( input = list(
+            "density" = D_gct[, , Years2Include],
+            
+            "obs_CV" = obs_CV[ierror],
+            
+            "solution" = switch(
+              isurvey,
+              "Current" = Extrapolation_depths$stratum,
+              "STRS" = res_df[, 1 + idx]),
+            
+            "allocation" = switch( 
+              isurvey,
+              "Current" = allocations[, paste0("boat", iboat)],
+              "STRS" = strata_list[[idx]]$Allocation),
+            
+            "true_density" = true_mean) )
         
         stmt <- paste0(isurvey, "_sim_mean",  
-                       "[isim, , , iboat, iter] = sim_survey$mean_denisty")
+                       "[ierror, , , iboat, iter] = sim_survey$mean_denisty")
         eval(parse(text = stmt))
         
         stmt <- paste0(isurvey, "_sim_cv",  
-                       "[isim, , , iboat, iter] = sim_survey$cv")
+                       "[ierror, , , iboat, iter] = sim_survey$cv")
         eval(parse(text = stmt))
         
         stmt <- paste0(isurvey, "_rel_bias_est",  
-                       "[isim, , , iboat, iter] = sim_survey$rel_bias")
+                       "[ierror, , , iboat, iter] = sim_survey$rel_bias")
         eval(parse(text = stmt))
       }
     }
@@ -141,31 +147,24 @@ for (iter in 1:1000) {
 ##################################
 ## Calculate Performance Metric
 ##################################
-for (isim in c("pred_density", "plus_obs_error")) {
-  truth <- switch(
-    isim,
-    "pred_density" = true_mean,
-    "plus_obs_error" = t(apply(X = pred_density$plus_obs_error[ceiling(1 / 100), , , ],
-                               MARGIN = 2:3, 
-                               FUN = mean)))
-  
+for (ierror in 1:nobs_CV) {
   for (iboat in 1:3) {
-    for (isurvey in c("Current", "STRS")) {
-      for (ispp in 1:ns) {
+    for (isurvey in c("Current", "STRS")[1]) {
+      for (ispp in 1:ns_all) {
         for(iyear in 1:NTime) {
           
-          stmt <- paste0(isurvey, "_true_cv_array[isim, iyear, ispp, iboat]",
-                         " <- temp_true_cv <- sd(", 
-                         isurvey, "_sim_mean[isim, iyear, ispp, iboat,]) / ",
-                         "truth[iyear, ispp]")
+          stmt <- paste0(isurvey, "_true_cv_array[ierror, iyear, ispp, iboat]",
+                         " <- temp_true_cv <- sd(", isurvey, 
+                         "_sim_mean[ierror, iyear, ispp, iboat,], na.rm = T) / ",
+                         "true_mean[ispp, iyear]")
           eval(parse(text = stmt))
           
           temp_sim_cv <- get(paste0(isurvey, 
-                                    "_sim_cv"))[isim, iyear, ispp, iboat,]
+                                    "_sim_cv"))[ierror, iyear, ispp, iboat,]
           
-          stmt <- paste0(isurvey, "_rrmse_cv_array[isim, iyear, ispp, iboat]",
-                         " <- sqrt(mean((temp_sim_cv - temp_true_cv)^2)) / ", 
-                         "mean(temp_sim_cv)")
+          stmt <- paste0(isurvey, "_rrmse_cv_array[ierror, iyear, ispp, iboat]",
+                         " <- sqrt(mean((temp_sim_cv - temp_true_cv)^2, na.rm = T)) / ", 
+                         "mean(temp_sim_cv, na.rm = T)")
           eval(parse(text = stmt))
           
         }
@@ -173,6 +172,18 @@ for (isim in c("pred_density", "plus_obs_error")) {
     }
   }
 }
+
+par(mar = c(2,12,0,0))
+boxplot(t(Current_rel_bias_est[5,1,,1,1:100]),
+        horizontal = TRUE,
+        las = 1,
+        ylim = c(-50, 50)
+)
+abline(v = 0)
+
+boxplot(t(Current_true_cv_array[, , 2 , 1]),
+        ylim = c(0, 0.1),
+        las = 1)
 
 
 save(list = c("Current_sim_mean", "STRS_sim_mean", "Current_sim_cv",        

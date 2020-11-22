@@ -1,6 +1,24 @@
 ##################################
 ## Create function to calcualte a STRS and output mean, CV, and relative bias
 ##################################
+
+# input = list(
+#   "density" = D_gct[, , Years2Include],
+#   
+#   "obs_CV" = ierror,
+#   
+#   "solution" = switch(
+#     isurvey,
+#     "Current" = Extrapolation_depths$stratum,
+#     "STRS" = res_df[, 1 + idx]),
+#   
+#   "allocation" = switch( 
+#     isurvey,
+#     "Current" = allocations[, paste0("boat", iboat)],
+#     "STRS" = strata_list[[idx]]$Allocation),
+#   
+#   "true_density" = true_mean)
+
 do_STRS <- function(input){
   
   #Some constants
@@ -44,11 +62,23 @@ do_STRS <- function(input){
     
     #subset sub_df by which cells were chosen
     sample_df <- as.data.frame(sub_df[sample_vec, ])
-    colnames(sample_df) <- paste0("Y", 1:ns)
+    colnames(sample_df) <- paste0("Y", 1:n_spp)
+    
+    #add observation error proportional to predicted density
+    sample_df <- apply(sample_df, 
+                       MARGIN = 1:2,
+                       FUN = function(x) {
+                         m <- x
+                         s <- x * input$obs_CV
+                         location <- log(m^2 / sqrt(s^2 + m^2))
+                         shape <- sqrt(log(1 + (s^2 / m^2)))
+                         return(rlnorm(n = 1, location, shape))
+                       })
     
     #Calculate STRS mean density
     stmt <- paste0('aggregate(cbind(',
-                   paste0('Y', 1:(ns-1), sep = ',', collapse = ''), 'Y',ns, 
+                   paste0('Y', 1:(n_spp-1), sep = ',', collapse = ''), 
+                   'Y', n_spp, 
                    ") ~ sampled_strata, data = sample_df, FUN = mean)")
     sample_mean <- eval(parse(text = stmt))[, -1]
     STRS_mean <- colSums(sweep(x = sample_mean, 
@@ -58,7 +88,8 @@ do_STRS <- function(input){
     
     #Calculate STRS variance of mean density
     stmt <- paste0('aggregate(cbind(',
-                   paste0('Y', 1:(ns-1), sep = ',', collapse = ''), 'Y',ns, 
+                   paste0('Y', 1:(n_spp-1), sep = ',', collapse = ''),
+                   'Y',n_spp, 
                    ") ~ sampled_strata, data = sample_df, FUN = var)")
     sample_var <- eval(parse(text = stmt))[, -1]
     STRS_var <- colSums(sweep(x = sample_var, 
@@ -72,8 +103,8 @@ do_STRS <- function(input){
     
     #Calculate relative bias of mean estimate
     rel_bias[iyear, ] <- unlist(
-      100 * (STRS_mean - input$true_density[iyear, ]) / 
-        input$true_density[iyear, ])
+      100 * (STRS_mean - input$true_density[, iyear]) / 
+        input$true_density[, iyear])
     
   }
   
