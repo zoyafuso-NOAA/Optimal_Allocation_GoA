@@ -102,7 +102,7 @@ Current_true_cv_array <- Current_rrmse_cv_array <-
 ####   Simulate Survey
 ##################################################
 
-for (iter in 1:100) {
+for (iter in 1:Niters) {
   
   set.seed(1000 + iter)
   
