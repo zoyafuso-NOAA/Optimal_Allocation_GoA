@@ -69,6 +69,14 @@ allocations <- rbind(data.frame(Stratum = 0, boat3 = 0, boat2 = 0, boat1 = 0),
                      allocations)
 
 ##################################################
+####   Subset 15 strata solutions
+##################################################
+sol_idx <- which(settings$strata == 15)
+settings <- settings[sol_idx,]
+res_df <- res_df[, 1 + sol_idx]
+strata_list <- strata_list[sol_idx]
+
+##################################################
 ####   Result Objects
 ##################################################
 obs_CV <- c(0, 0.1, 0.25, 0.5, 1) #low to high sampling CVs
@@ -101,13 +109,7 @@ for (iter in 1:100) {
   
   for (ierror in 1:nobs_CV) {
     for (iboat in 1:3) {
-      for (isurvey in c("Current", "STRS")[1]) {
-        
-        if(isurvey == "STRS") {
-          #Load optimization data, only focusing on 15 strata for now
-          sub_settings = subset(settings, strata == 15)
-          idx <- which.min(abs(sub_settings$n - samples[iboat]))
-        }
+      for (isurvey in c("Current", "STRS")) {
         
         sim_survey <- 
           do_STRS( input = list(
@@ -118,12 +120,12 @@ for (iter in 1:100) {
             "solution" = switch(
               isurvey,
               "Current" = Extrapolation_depths$stratum,
-              "STRS" = res_df[, 1 + idx]),
+              "STRS" = res_df[, iboat]),
             
             "allocation" = switch( 
               isurvey,
               "Current" = allocations[, paste0("boat", iboat)],
-              "STRS" = strata_list[[idx]]$Allocation),
+              "STRS" = strata_list[[iboat]]$Allocation),
             
             "true_density" = true_mean) )
         
@@ -149,7 +151,7 @@ for (iter in 1:100) {
 ##################################
 for (ierror in 1:nobs_CV) {
   for (iboat in 1:3) {
-    for (isurvey in c("Current", "STRS")[1]) {
+    for (isurvey in c("Current", "STRS")) {
       for (ispp in 1:ns_all) {
         for(iyear in 1:NTime) {
           
@@ -173,19 +175,9 @@ for (ierror in 1:nobs_CV) {
   }
 }
 
-par(mar = c(2,12,0,0))
-boxplot(t(Current_rel_bias_est[5,1,,1,1:100]),
-        horizontal = TRUE,
-        las = 1,
-        ylim = c(-50, 50)
-)
-abline(v = 0)
-
-boxplot(t(Current_true_cv_array[, , 2 , 1]),
-        ylim = c(0, 0.1),
-        las = 1)
-
-
+##################################
+## Save results
+##################################
 save(list = c("Current_sim_mean", "STRS_sim_mean", "Current_sim_cv",        
               "STRS_sim_cv", "Current_rel_bias_est", "STRS_rel_bias_est",     
               "Current_true_cv_array", "STRS_true_cv_array", 
