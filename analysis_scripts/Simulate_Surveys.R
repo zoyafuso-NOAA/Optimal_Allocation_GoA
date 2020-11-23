@@ -39,7 +39,6 @@ load(paste0(dirname(github_dir), '/data/Extrapolation_depths.RData'))
 load(paste0(dirname(github_dir), '/data/fit_density.RData'))
 load(paste0(github_dir, "Spatiotemporal_Optimization",
             "/optimization_knitted_results.RData"))
-# load(paste0(dirname(VAST_dir), "/sim_density.RData"))
 
 GOA_allocations <- readxl::read_xlsx(
   path = paste0(dirname(github_dir), 
