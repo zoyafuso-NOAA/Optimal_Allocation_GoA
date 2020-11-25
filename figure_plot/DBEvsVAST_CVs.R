@@ -26,7 +26,6 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
 ##################################################
 load(paste0(github_dir, 
             "data/optimization_data.RData"))
-common_names[11] <- "blackspotted/rougheye\nrockfishes" 
 
 load(paste0(github_dir, 
             "results/Spatiotemporal_Optimization/",

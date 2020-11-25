@@ -10,9 +10,7 @@ rm(list = ls())
 ####   Import Libraries
 ##################################################
 library(readxl)
-library(spatialEco)
 library(sp)
-library(VAST)
 
 ##################################################
 ####   Set up directories

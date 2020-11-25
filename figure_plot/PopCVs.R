@@ -26,36 +26,14 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
 ##################################################
 load(paste0(github_dir, 
             "data/optimization_data.RData"))
-common_names[11] <- "blackspotted/rougheye\nrockfishes" 
-
+load(paste0(github_dir, 
+            "data/fit_density.RData"))
 load(paste0(github_dir, 
             "results/Spatiotemporal_Optimization/",
             "optimization_knitted_results.RData"))
 
 load(paste0(github_dir, 
             "results/Population_Variances.RData"))
-
-##################################################
-####  Import Observed DBEs, calculate ranges of sample CVs
-##################################################
-DBE <- readRDS(paste0(github_dir2, 
-                      "GOA_biomass_indices_wnames.rds"))
-DBE <- subset(DBE, 
-              SPECIES_NAME %in% sci_names &
-                YEAR %in% (1996:2019)[Years2Include])
-
-DBE$BIOMASS_CV <- sqrt(DBE$VAR_WGT_CPUE) / DBE$MEAN_WGT_CPUE
-
-DBE_CV <- aggregate(BIOMASS_CV ~ SPECIES_NAME, 
-                    data = DBE,
-                    FUN = range)$BIOMASS_CV
-
-load(paste0(github_dir, 
-            "data/vast_index.RData"))
-
-vast_ranges <- aggregate(cv ~ spp, 
-                         data = vast_index,
-                         FUN = range)$cv
 
 ##################################################
 ####  Plot
@@ -72,13 +50,13 @@ plot(1,
      type = "n",
      pch = 16,
      cex = 1.5,
-     ylim = c(1, ns),
-     xlim = c(0, 0.75),
+     ylim = c(1, ns_opt),
+     xlim = c(0, 0.4),
      axes = F,
      ann = F)
 
 box()
-abline(h = 1:ns, 
+abline(h = 1:ns_opt, 
        col = "lightgrey", 
        lty = "dashed")
 mtext(side = 1, 
@@ -87,32 +65,21 @@ mtext(side = 1,
       cex = 1.25,
       font = 2)
 
-segments(x0 = vast_ranges[, 1],
-         x1 = vast_ranges[, 2],
-         y0 = (1:ns) + 0.2 , 
-         lwd = 2)
-
-segments(x0 = DBE_CV[, 1],
-         x1 = DBE_CV[, 2],
-         y0 = (1:ns) - 0.2 , 
-         lwd = 2,
-         col = "brown")
-
-matpoints(y = 1:ns,
-          x = cbind(SRS_Pop_CV[, 2], 
+matpoints(y = 1:ns_opt,
+          x = cbind(SRS_Pop_CV[spp_idx_opt, 2], 
                     SS_STRS_Pop_CV[, 2],
                     unlist(settings[settings$strata == 15 &
-                                      settings$boat == 2, 
-                                    paste0("CV_", 1:ns)]),
-                    Current_STRS_Pop_CV[, 2]),
+                                      settings$boat == 2,
+                                    paste0("CV_", 1:ns_opt)]),
+                    Current_STRS_Pop_CV[spp_idx_opt, 2]),
           pch = 16,
           col = c("black", "red", "blue", "green"),
           cex = 1)
 
 axis(side = 1, at = seq(from = 0, to = 0.8, by = 0.05))
 axis(side = 2, 
-     labels = common_names, 
-     at = 1:ns,
+     labels = common_names_opt, 
+     at = 1:ns_opt,
      las = 1)
 
 legend("bottomright",
