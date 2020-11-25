@@ -57,7 +57,7 @@ allocations <- data.frame(Stratum = sort(unique(GOA_allocations3$stratum)),
                                             data = GOA_allocations3, 
                                             FUN = length)$id,
                           boat2 = c(GOA_allocations$`Number stations`,
-                                    rep(0,5)))
+                                    rep(0, 5)))
 allocations$boat1 <- ceiling(allocations$boat2 / 2)
 
 allocations$boat1 <- ifelse(allocations$boat1 == 0, 0, 
@@ -78,9 +78,6 @@ strata_list <- strata_list[sol_idx]
 ##################################################
 ####   Result Objects
 ##################################################
-obs_CV <- c(0, 0.1, 0.25, 0.5, 1) #low to high sampling CVs
-nobs_CV <- length(obs_CV)
-
 Current_sim_mean <- Current_sim_cv <- Current_rel_bias_est <- 
   STRS_sim_mean <- STRS_sim_cv <- STRS_rel_bias_est <-
   array(dim = c(nobs_CV, NTime, ns_all, nboats, Niters), 
