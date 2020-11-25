@@ -6,14 +6,7 @@
 rm(list = ls())
 
 ##################################################
-####  Import Libraries  
-##################################################
-library(sp)
-library(raster)
-library(RColorBrewer)
-
-##################################################
-####  Set up directories  ----
+####  Set up directories  
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[1]
 
@@ -26,13 +19,26 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
                      "Google Drive/MS_Optimizations/TechMemo/figures/")
 
 ##################################################
+####  Import Libraries  
+##################################################
+library(sp)
+library(raster)
+library(RColorBrewer)
+
+##################################################
 ####    Load predicted density and optimization results ----
 ##################################################
-load(paste0(github_dir, "data/optimization_data.RData"))
-common_names <- gsub(common_names, pattern = " ", replacement = "\n")
-common_names[11] <- "blackspotted/\nrougheye\nrockfishes"
-load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
-load(paste0(github_dir, "results/Single_Species_Optimization/optimization_knitted_results.RData"))
+load(paste0(github_dir, 
+            "data/optimization_data.RData"))
+common_names_opt <- gsub(common_names_opt, 
+                         pattern = " ", 
+                         replacement = "\n")
+common_names_opt[11] <- "blackspotted/\nrougheye\nrockfishes"
+load(paste0(github_dir, 
+            "/data/Extrapolation_depths.RData"))
+load(paste0(github_dir, 
+            "results/Single_Species_Optimization/",
+            "optimization_knitted_results.RData"))
 
 isample <- 2 #1, 2, or 3 boat solution
 
@@ -51,9 +57,9 @@ y_range <- diff(range(Extrapolation_depths$N_km))
   par(mfrow = c(1,2),
       mar = c(0,0,0,0))
   
-  for (ispp in 1:ns) {
+  for (ispp in 1:ns_opt) {
     
-    if (ispp%%8 == 1 ) plot(1, 
+    if (ispp%%8 == 1) plot(1, 
                             type = "n",
                             xlim = range(Extrapolation_depths$E_km),
                             ylim = with(Extrapolation_depths, 
@@ -64,12 +70,12 @@ y_range <- diff(range(Extrapolation_depths$N_km))
                             asp = 1)
     
     #Which index to plot
-    idx = settings$id[settings$iboat == isample & settings$ispp == ispp]
+    idx = which(settings$iboat == isample & settings$ispp == ispp)
     
     #Plot Solution
     goa <- SpatialPointsDataFrame(
       coords = Extrapolation_depths[,c("E_km", "N_km")],
-      data = data.frame(Str_no = res_df[, 1 + idx]) )
+      data = data.frame(Str_no = res_df[, idx]) )
     
     goa_ras <- raster(goa, 
                       resolution = 5)
@@ -89,7 +95,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
     #Simulate a sample solution
     temp_samples <- c()
     temp_strata <- nrow(strata_list[[idx]])
-    temp_solution <- res_df[, idx + 1] 
+    temp_solution <- res_df[, idx ] 
     temp_allocation <- strata_list[[idx]]$Allocation
     
     for (istrata in 1:temp_strata) {
@@ -108,7 +114,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
     
     text(x = min(Extrapolation_depths$E_km) + x_range * 0.725,
          y = min(Extrapolation_depths$N_km) + offset_y + y_range*0.55,
-         labels = common_names[ispp],
+         labels = common_names_opt[ispp],
          cex = 0.75)
   }
   

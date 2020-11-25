@@ -6,13 +6,6 @@
 rm(list = ls())
 
 ##################################################
-####  Import Libraries  
-##################################################
-library(sp)
-library(raster)
-library(RColorBrewer)
-
-##################################################
 ####  Set up directories  
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[1]
@@ -26,16 +19,23 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
                      "Google Drive/MS_Optimizations/TechMemo/figures/")
 
 ##################################################
+####  Import Libraries  
+##################################################
+library(sp)
+library(raster)
+library(RColorBrewer)
+
+##################################################
 ####    Load predicted density and optimization results 
 ####    Set up constants
 ##################################################
-load(paste0(github_dir, "data/optimization_data.RData"))
-load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
+load(paste0(github_dir, "data/optimization_data.RData"), verbose = TRUE)
+load(paste0(github_dir, "/data/Extrapolation_depths.RData"), verbose = TRUE)
 load(paste0(github_dir, "results/Spatiotemporal_Optimization/",
-            "optimization_knitted_results.RData"))
+            "optimization_knitted_results.RData"), verbose = TRUE)
 
-common_names <- gsub(common_names, pattern = " ", replacement = "\n")
-common_names[11] <- "blackspotted/\nrougheye\nrockfishes"
+common_names_opt <- gsub(common_names_opt, pattern = " ", replacement = "\n")
+common_names_opt[11] <- "blackspotted/\nrougheye\nrockfishes"
 
 x_range <- diff(range(Extrapolation_depths$E_km))
 y_range <- diff(range(Extrapolation_depths$N_km))
@@ -55,7 +55,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
       mar = c(0,0,0,0))
   
   for (sample_survey in c(FALSE, TRUE)) { 
-    for (istrata in 2:4) {
+    for (istrata in 1:NStrata) {
       
       #Base Plot layer
       plot(1, 
@@ -78,8 +78,8 @@ y_range <- diff(range(Extrapolation_depths$N_km))
       
       for (iboat in 1:3) {
         #Which index to plot
-        idx = settings$id[settings$boat == iboat & 
-                            settings$strata == stratas[istrata]]
+        idx = which(settings$boat == iboat & 
+                      settings$strata == stratas[istrata])
         
         #Plot Solution
         goa <- SpatialPointsDataFrame(
