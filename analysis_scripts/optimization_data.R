@@ -14,7 +14,7 @@ rm(list = ls())
 ##################################################
 ####    Set up directories here first 
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents",
                        "C:/Users/Zack Oyafuso/Documents",
@@ -53,9 +53,9 @@ common_names_opt <- c("arrowtooth flounder", "Alaska pollock", "Pacific cod",
                       "rex sole", "flathead sole", "Pacific halibut", 
                       "southern rock sole", "northern rock sole", 
                       "Pacific Dover sole", "Pacific ocean perch", 
-                      "blackspotted/rougheye rockfishes", "silvergrey rockfish",
-                      "northern rockfish", "dusky rockfish",
-                      "shortspine thornyhead")
+                      "blackspotted/rougheye\nrockfishes", 
+                      "silvergrey rockfish", "northern rockfish", 
+                      "dusky rockfish", "shortspine thornyhead")
 
 ns_opt <- length(sci_names_opt)
 
@@ -89,12 +89,15 @@ spp_idx_eval <- which(sci_names_all %in% sci_names_eval)
 samples <- c(280, 550, 820)
 nboats <- length(samples)
 
-## Number of times to simulate survey
-Niters <- 1000
-
 ## Number of strata to input into optimization
 stratas <- c(10, 15, 20)
 NStrata <- length(stratas)
+
+
+## Number of times to simulate survey
+Niters <- 1000
+obs_CV <- c(0, 0.1, 0.25, 0.5, 1) #low to high sampling CVs
+nobs_CV <- length(obs_CV)
 
 ##################################################
 ####   Our df will have fields for:
