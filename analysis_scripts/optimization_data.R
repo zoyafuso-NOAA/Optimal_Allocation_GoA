@@ -156,5 +156,6 @@ save(list = c("frame",
               "spp_idx_eval", "spp_idx_opt",
               "Year_Set", "Years2Include", "NTime", 
               "N", "samples", "nboats", "Niters", 
+              "obs_CV", "nobs_CV",
               "stratas", "NStrata"),
      file = paste0(github_dir, "data/optimization_data.RData"))
