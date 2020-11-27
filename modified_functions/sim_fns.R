@@ -2,22 +2,27 @@
 ## Create function to calcualte a STRS and output mean, CV, and relative bias
 ##################################
 
-# input = list(
-#   "density" = D_gct[, , Years2Include],
-#   
-#   "obs_CV" = ierror,
-#   
-#   "solution" = switch(
-#     isurvey,
-#     "Current" = Extrapolation_depths$stratum,
-#     "STRS" = res_df[, 1 + idx]),
-#   
-#   "allocation" = switch( 
-#     isurvey,
-#     "Current" = allocations[, paste0("boat", iboat)],
-#     "STRS" = strata_list[[idx]]$Allocation),
-#   
-#   "true_density" = true_mean)
+input = list(
+  "density" = D_gct[, , Years2Include],
+  
+  "cell_areas" = Extrapolation_depths$Area_km2,
+  
+  "obs_CV" = obs_CV[ierror],
+  
+  "solution" = switch(
+    isurvey,
+    "Current" = Extrapolation_depths$stratum,
+    "STRS" = res_df[, iboat]),
+  
+  "allocation" = switch( 
+    isurvey,
+    "Current" = allocations[, paste0("boat", iboat)],
+    "STRS" = strata_list[[iboat]]$Allocation),
+  
+  "true_density" = true_mean,
+  
+  "true_index" = true_index
+)
 
 do_STRS <- function(input){
   
@@ -39,6 +44,12 @@ do_STRS <- function(input){
   survey_detail <- survey_detail[survey_detail$nh > 0, ]
   
   strata_to_use <- survey_detail$Stratum
+  
+  #Strata Areas
+  strata_areas <- aggregate(cell_areas ~ solution, 
+                            FUN = sum,
+                            data = with(input, data.frame(solution, cell_areas)))
+  strata_areas <- subset(strata_areas, solution %in% survey_detail$Stratum)
   
   #Result objects
   mean_density <- cv <- rel_bias <- matrix(ncol = n_spp, 
@@ -81,10 +92,19 @@ do_STRS <- function(input){
                    'Y', n_spp, 
                    ") ~ sampled_strata, data = sample_df, FUN = mean)")
     sample_mean <- eval(parse(text = stmt))[, -1]
-    STRS_mean <- colSums(sweep(x = sample_mean, 
-                               MARGIN = 1, 
-                               STATS = with(survey_detail, Wh),
-                               FUN = '*'))
+    strata_mean <- sweep(x = sample_mean, 
+                         MARGIN = 1, 
+                         STATS = with(survey_detail, Wh),
+                         FUN = '*')
+    STRS_mean <- colSums(strata_mean)
+    
+    # est_index <- colSums(sweep(x = sample_mean, 
+    #                    MARGIN = 1, 
+    #                    STATS = strata_areas$cell_areas,
+    #                    FUN = '*')) * 0.001
+    # 
+    # 100 * (est_index - true_index[,1]) / true_index[,1]
+    # 100 * (STRS_mean - true_mean[,1]) / true_mean[,1]
     
     #Calculate STRS variance of mean density
     stmt <- paste0('aggregate(cbind(',
