@@ -14,7 +14,7 @@ rm(list = ls())
 ##################################################
 ####    Set up directories here first 
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents",
                        "C:/Users/Zack Oyafuso/Documents",
@@ -63,12 +63,12 @@ ns_opt <- length(sci_names_opt)
 ## when simulating surveys
 
 sci_names_eval <- c(  "Anoplopoma fimbria", "Beringraja spp.", 
-                      "Enteroctopus dofleini", "Pleurogrammus monopterygius",
+                      "Octopus spp.", "Pleurogrammus monopterygius",
                       "Sebastes borealis",
                       # "Sebastes ruberrimus",
                       "Sebastes variegatus", "Squalus suckleyi")
 
-common_names_eval <- c("sablefish", "skates spp.", "giant octopus", 
+common_names_eval <- c("sablefish", "skates spp.", "Octopus spp.", 
                        "Atka mackerel", "shortraker rockfish",
                        # "yelloweye rockfish",
                        "harlequin rockfish", "spiny dogfish")
