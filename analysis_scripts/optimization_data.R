@@ -99,6 +99,15 @@ Niters <- 1000
 obs_CV <- c(0, 0.1, 0.25, 0.5, 1) #low to high sampling CVs
 nobs_CV <- length(obs_CV)
 
+districts <- data.frame("reg_area" = c("WRA", "CRA", 
+                                       "CRA", "ERA", "ERA"),
+                        "district" = c("W", "Chirikof", 
+                                       "Kodiak", "Yakutat", "SE"),
+                        "domainvalue" = 1:5,
+                        "W_lon" = c(-170, -159, -154, -147, -140),
+                        "E_lon" = c(-159, -154, -147, -140, -132))
+ndom <- nrow(districts)
+
 ##################################################
 ####   Our df will have fields for:
 ####   domain: only one domain so the value is just 1
@@ -115,24 +124,31 @@ nobs_CV <- length(obs_CV)
 ####   Y1_SQ_SUM, Y2_SQ_SUM, ... : density-squared for a given cell, 
 ####           summed across observed years
 ##################################################
-frame <- cbind(data.frame(domainvalue = 1,
-                          id = 1:N,
-                          X1 = with(Extrapolation_depths, E_km - min(E_km)),
-                          X2 = Extrapolation_depths$DEPTH_EFH,
-                          WEIGHT = NTime),
-               
-               matrix(data = apply(X = D_gct[, spp_idx_opt, Years2Include],
-                                   MARGIN = c(1, 2), 
-                                   FUN = sum),
-                      ncol = ns_opt,
-                      dimnames = list(NULL, paste0("Y", 1:ns_opt))),
-               
-               matrix(data = apply(X = D_gct[, spp_idx_opt, Years2Include],
-                                   MARGIN = c(1, 2), 
-                                   FUN = function(x) sum(x^2)),
-                      ncol = ns_opt,
-                      dimnames = list(NULL, paste0("Y", 1:ns_opt, "_SQ_SUM")))
+frame <- cbind(data.frame(
+  domainvalue = cut(x = Extrapolation_depths$Lon, 
+                    breaks = c(-170, -159, -154, -147, -140, -132), 
+                    labels = 1:5),
+  id = 1:N,
+  X1 = with(Extrapolation_depths, E_km - min(E_km)),
+  X2 = Extrapolation_depths$DEPTH_EFH,
+  WEIGHT = NTime),
+  
+  matrix(data = apply(X = D_gct[, spp_idx_opt, Years2Include],
+                      MARGIN = c(1, 2), 
+                      FUN = sum),
+         ncol = ns_opt,
+         dimnames = list(NULL, paste0("Y", 1:ns_opt))),
+  
+  matrix(data = apply(X = D_gct[, spp_idx_opt, Years2Include],
+                      MARGIN = c(1, 2), 
+                      FUN = function(x) sum(x^2)),
+         ncol = ns_opt,
+         dimnames = list(NULL, paste0("Y", 1:ns_opt, "_SQ_SUM")))
 )
+
+plot(Lat ~ Lon, 
+     data = Extrapolation_depths, 
+     col = c("red", "green", "blue", "orange", "black")[frame$domainvalue])
 
 ##################################################
 ####   Calculate "true" mean density and "true" abundance index
@@ -157,5 +173,6 @@ save(list = c("frame",
               "Year_Set", "Years2Include", "NTime", 
               "N", "samples", "nboats", "Niters", 
               "obs_CV", "nobs_CV",
+              "districts", "ndom", 
               "stratas", "NStrata"),
      file = paste0(github_dir, "data/optimization_data.RData"))
