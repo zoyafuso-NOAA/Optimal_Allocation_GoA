@@ -10,10 +10,10 @@ rm(list = ls())
 ####   Set up directories based on whether the optimization is being conducted
 ####        on a multi-species or single-species level
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 
 which_method = c("Multi_Species" = 1,
-                 "Single_Species" = 2)[1]
+                 "Single_Species" = 2)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -42,23 +42,23 @@ library(raster)
 load(paste0(dirname(dirname(github_dir)), "/data/optimization_data.RData"))
 load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
 
-if (which_method == 1) {
+# if (which_method == 1) {
   load(paste0(dirname(github_dir), "/Population_Variances.RData"))
-  SRS_Pop_CV <- SRS_Pop_CV[spp_idx_opt, ]
-}
+  # SRS_Pop_CV <- SRS_Pop_CV[spp_idx_opt, ]
+# }
 
 ##################################################
 ####   Some Constants
 ##################################################
 stratas <- switch(which_method, 
                   "1" = stratas, 
-                  "2" =  10)
+                  "2" =  5)
 NStrata <- length(stratas)
 ns_opt <- c(ns_opt, 1)[which_method]
 
 which_species <- switch(which_method, 
                         "1" = 1:ns_opt, 
-                        "2" = 14)
+                        "2" = 1)
 
 ##################################################
 ####   If Single_Species: subset just the one species
@@ -82,9 +82,6 @@ if (which_method == 2) {
                            nrow = ns_opt,
                            ncol = 3)
   
-  SRS_Pop_CV <- matrix(data = c(0.1, 0.1, 0.1315),
-                       byrow = T,
-                       ncol = 3)
 }
 
 ##################################################
@@ -96,22 +93,19 @@ par(mfrow = c(6,6),
 #Choose a boat level
 isample <- 1
 
-for (istrata in 3) {
+for (istrata in 1) {
   
   temp_strata <- stratas[istrata]
   
   ##Initial Condition
   Run <- 1
   current_n <- 0
-  CV_constraints <- SRS_Pop_CV[, isample] 
   
   #Create CV dataframe
-  cv <- list()
-  for (spp in 1:ns_opt) 
-    cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
-  cv[["DOM"]] <- 1
-  cv[["domainvalue"]] <- 1
-  cv <- as.data.frame(cv)
+  cv <- data.frame("DOM" = 1:5,
+                   domainvalue = 1:5)
+  cv[, paste0("CV", length(which_species))] <- SRS_Pop_CV[[isample]][, which_species] 
+  
   
   while (current_n <= c(280, 550, 820)[isample] ) {
     
@@ -126,22 +120,27 @@ for (istrata in 3) {
     solution <- optimStrata(method = "continuous",
                             errors = cv, 
                             framesamp = frame,
-                            iter = 300,
+                            iter = 30,
                             pops = 30,
                             elitism_rate = 0.1,
-                            mut_chance = 1 / (temp_strata + 1),
-                            nStrata = temp_strata,
+                            mut_chance = 1 / (c(5,5,5,5,5) + 1),
+                            nStrata = c(5,5,5,5,5),
                             showPlot = T,
-                            writeFiles = T)
+                            writeFiles = F,
+                            parallel = T)
     
     sum_stats <- summaryStrata(solution$framenew,
                                solution$aggr_strata,
                                progress=FALSE) 
     
+    plot_solution <- as.factor(paste(solution$framenew$DOMAINVALUE,
+                                     solution$framenew$STRATO))
+    plot_solution <- as.integer(plot_solution)
+    
     #Plot Solution
     goa <- sp::SpatialPointsDataFrame(
       coords = Extrapolation_depths[,c("E_km", "N_km")],
-      data = data.frame(Str_no = solution$framenew$STRATO) )
+      data = data.frame(Str_no = plot_solution) )
     goa_ras <- raster::raster(x = goa, 
                               resolution = 5)
     goa_ras <- raster::rasterize(x = goa, 
@@ -154,7 +153,7 @@ for (istrata in 3) {
         units = "in", 
         res = 500)
     plot(goa_ras, axes = F, 
-         col = terrain.colors(temp_strata)[sample(temp_strata)])
+         col = sample(terrain.colors(20)) )
     dev.off()
     
     #Save Output
