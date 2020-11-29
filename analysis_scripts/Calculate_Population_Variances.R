@@ -12,7 +12,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[1]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
 
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
                        'C:/Users/Zack Oyafuso/Documents/',
@@ -40,23 +40,26 @@ load(paste0(github_dir, 'data/optimization_data.RData'))
 load(paste0(github_dir, "results/Single_Species_Optimization/",
             "optimization_knitted_results.RData"))
 
-frame <- cbind(data.frame(domainvalue = 1,
-                          id = 1:N,
-                          X1 = with(Extrapolation_depths, E_km - min(E_km)),
-                          X2 = Extrapolation_depths$DEPTH_EFH,
-                          WEIGHT = NTime),
-               
-               matrix(data = apply(X = D_gct[, , Years2Include],
-                                   MARGIN = c(1, 2), 
-                                   FUN = sum),
-                      ncol = ns_all,
-                      dimnames = list(NULL, paste0("Y", 1:ns_all))),
-               
-               matrix(data = apply(X = D_gct[, , Years2Include],
-                                   MARGIN = c(1, 2), 
-                                   FUN = function(x) sum(x^2)),
-                      ncol = ns_all,
-                      dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
+frame <- cbind(data.frame(
+  domainvalue = cut(x = Extrapolation_depths$Lon, 
+                    breaks = c(-170, -159, -154, -147, -140, -132), 
+                    labels = 1:5),
+  id = 1:N,
+  # X1 = with(Extrapolation_depths, E_km - min(E_km)),
+  # X2 = Extrapolation_depths$DEPTH_EFH,
+  WEIGHT = NTime),
+  
+  matrix(data = apply(X = D_gct[, , Years2Include],
+                      MARGIN = c(1, 2), 
+                      FUN = sum),
+         ncol = ns_all,
+         dimnames = list(NULL, paste0("Y", 1:ns_all))),
+  
+  matrix(data = apply(X = D_gct[, , Years2Include],
+                      MARGIN = c(1, 2), 
+                      FUN = function(x) sum(x^2)),
+         ncol = ns_all,
+         dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
 )
 
 ##################################
@@ -94,78 +97,85 @@ frame_SRS <- subset(frame,
                     select = c("domainvalue", "id", "WEIGHT", 
                                paste0("Y", 1:ns_all), 
                                paste0("Y", 1:ns_all, "_SQ_SUM")))
-frame_SRS$X1 = 1
+frame_SRS$X1 = cut(x = Extrapolation_depths$Lon, 
+                   breaks = c(-170, -159, -154, -147, -140, -132), 
+                   labels = 1:5)
 
 SRS_mean_sds <- buildStrataDF(dataset = frame_SRS)
-SRS_Pop_CV <- sapply(X = samples,
+SRS_Pop_CV <- lapply(X = 1:nboats,
                      FUN = function(x) {
-                       temp_mean <- SRS_mean_sds[, paste0("M", 1:ns_all)]
-                       temp_var <- SRS_mean_sds[, paste0("S", 1:ns_all)]^2
-                       temp_var <- temp_var / x * (1 - x/N)
+                       n = samples[x] / ndom
+                       N = table(frame$domainvalue)[x]
+                       temp_mean <- SRS_mean_sds[, paste0("M", spp_idx_opt)]
+                       temp_var <- SRS_mean_sds[, paste0("S", spp_idx_opt)]^2
+                       temp_var <- temp_var / n * (1 - n/N)
                        temp_sd <- sqrt(temp_var)
                        
-                       return(temp_sd / temp_mean)
+                       temp_cv <- temp_sd / temp_mean 
+                       colnames(temp_cv) <- sci_names_opt
+                       
+                       return(temp_cv)
                      })
-
-rownames(SRS_Pop_CV) <- sci_names_all
 
 ##################################
 ## Calculate Population CVs under current STRS sampling
 ##################################
-Current_STRS_Pop_CV <- matrix(nrow = ns_all, 
-                              ncol = nboats,
-                              dimnames = list(sci_names_all, NULL))
+# Current_STRS_Pop_CV <- matrix(nrow = ns_all, 
+#                               ncol = nboats,
+#                               dimnames = list(sci_names_all, NULL))
+# 
+# for (iboat in 1:nboats) {
+#   #Adjust sample size proportionally
+#   nh <- allocations[, paste0('boat', iboat)]
+#   
+#   #strata constraints
+#   # strata_labels <- paste(allocations$Stratum[sampled_strata])
+#   Nh <- table(Extrapolation_depths$stratum)
+#   Wh <- Nh / N
+#   wh <- nh / Nh
+#   
+#   #Calculate Strata means and sds (calculated over time as well)
+#   frame_current <- subset(frame, 
+#                           select = c("domainvalue", "id", "WEIGHT", 
+#                                      paste0("Y", 1:ns_all), 
+#                                      paste0("Y", 1:ns_all, "_SQ_SUM")))
+#   frame_current$X1 = Extrapolation_depths$stratum
+#   frame_current$X1[is.na(frame_current$X1)] <- 0
+#   
+#   STRS_mean_sds <- buildStrataDF(dataset = frame_current)
+#   
+#   STRS_mean <- colSums(sweep(x = STRS_mean_sds[, paste0("M", 1:ns_all)], 
+#                              MARGIN = 1, 
+#                              STATS = Wh,
+#                              FUN = '*'))
+#   
+#   STRS_var_temp <- sweep(x = STRS_mean_sds[, paste0("S", 1:ns_all)]^2, 
+#                          MARGIN = 1, 
+#                          STATS = Wh^2 * (1 - wh) / nh,
+#                          FUN = '*')
+#   
+#   ## For those strata with zero effort allocated
+#   STRS_var_temp <- apply(X = STRS_var_temp, 
+#                          MARGIN = 1:2,
+#                          FUN = function(x) ifelse(is.finite(x), x, 0))
+#   
+#   STRS_var <- colSums(STRS_var_temp)
+#   
+#   strata_cv <- sqrt(STRS_var) / STRS_mean 
+#   
+#   Current_STRS_Pop_CV[, iboat ] <- strata_cv
+# }
 
-for (iboat in 1:nboats) {
-  #Adjust sample size proportionally
-  nh <- allocations[, paste0('boat', iboat)]
-  
-  #strata constraints
-  # strata_labels <- paste(allocations$Stratum[sampled_strata])
-  Nh <- table(Extrapolation_depths$stratum)
-  Wh <- Nh / N
-  wh <- nh / Nh
-  
-  #Calculate Strata means and sds (calculated over time as well)
-  frame_current <- subset(frame, 
-                          select = c("domainvalue", "id", "WEIGHT", 
-                                     paste0("Y", 1:ns_all), 
-                                     paste0("Y", 1:ns_all, "_SQ_SUM")))
-  frame_current$X1 = Extrapolation_depths$stratum
-  frame_current$X1[is.na(frame_current$X1)] <- 0
-  
-  STRS_mean_sds <- buildStrataDF(dataset = frame_current)
-  
-  STRS_mean <- colSums(sweep(x = STRS_mean_sds[, paste0("M", 1:ns_all)], 
-                             MARGIN = 1, 
-                             STATS = Wh,
-                             FUN = '*'))
-  
-  STRS_var_temp <- sweep(x = STRS_mean_sds[, paste0("S", 1:ns_all)]^2, 
-                         MARGIN = 1, 
-                         STATS = Wh^2 * (1 - wh) / nh,
-                         FUN = '*')
-  
-  ## For those strata with zero effort allocated
-  STRS_var_temp <- apply(X = STRS_var_temp, 
-                         MARGIN = 1:2,
-                         FUN = function(x) ifelse(is.finite(x), x, 0))
-  
-  STRS_var <- colSums(STRS_var_temp)
-  
-  strata_cv <- sqrt(STRS_var) / STRS_mean 
-  
-  Current_STRS_Pop_CV[, iboat ] <- strata_cv
-}
 
-
-SS_STRS_Pop_CV <- tidyr::spread(data = settings[,c("iboat", "ispp", "cv")], 
-                                value = cv, 
-                                key = iboat)[, -1]
-rownames(SS_STRS_Pop_CV) = sci_names_opt
+# SS_STRS_Pop_CV <- tidyr::spread(data = settings[,c("iboat", "ispp", "cv")], 
+#                                 value = cv, 
+#                                 key = iboat)[, -1]
+# rownames(SS_STRS_Pop_CV) = sci_names_opt
 
 ##################################
 ## Save
 ##################################
-save(list = c("SRS_Pop_CV", "Current_STRS_Pop_CV", "SS_STRS_Pop_CV"), 
-     file = paste0(github_dir, "results/Population_Variances.RData"))
+save(list = c("SRS_Pop_CV"#, "Current_STRS_Pop_CV"
+              #, "SS_STRS_Pop_CV"
+), 
+file = paste0(github_dir, "results/Population_Variances.RData"))
