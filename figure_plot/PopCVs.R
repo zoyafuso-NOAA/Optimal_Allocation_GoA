@@ -22,6 +22,16 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
                      "Google Drive/MS_Optimizations/TechMemo/figures/")
 
 ##################################################
+####  Install a forked version of the SamplingStrata Package from 
+####  zoyafuso-NOAA's Github page
+####
+####  Import other required packages
+##################################################
+library(devtools)
+devtools::install_github(repo = "zoyafuso-NOAA/SamplingStrata")
+library(SamplingStrata)
+
+##################################################
 ####  Load Data
 ##################################################
 load(paste0(github_dir, 
@@ -31,65 +41,126 @@ load(paste0(github_dir,
 load(paste0(github_dir, 
             "results/Spatiotemporal_Optimization/",
             "optimization_knitted_results.RData"))
-
 load(paste0(github_dir, 
             "results/Population_Variances.RData"))
 
 ##################################################
+####  Calculate Pop CV of optimized solutions across ALL species
+##################################################
+frame <- cbind(data.frame(domainvalue = 1,
+                          id = 1:N,
+                          WEIGHT = NTime),
+               
+               matrix(data = apply(X = D_gct[, , Years2Include],
+                                   MARGIN = c(1, 2), 
+                                   FUN = sum),
+                      ncol = ns_all,
+                      dimnames = list(NULL, paste0("Y", 1:ns_all))),
+               
+               matrix(data = apply(X = D_gct[, , Years2Include],
+                                   MARGIN = c(1, 2), 
+                                   FUN = function(x) sum(x^2)),
+                      ncol = ns_all,
+                      dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
+)
+
+STRS_Pop_CV <- matrix(nrow = ns_all, ncol = nrow(settings), dimnames = list())
+
+for (isol in 1:nrow(settings)) {
+  frame$X1 <- res_df[, 1 + isol]
+  
+  strata_stats <- SamplingStrata::buildStrataDF(dataset = frame)
+  nh <- strata_stats_list[[isol]]$SOLUZ
+  Nh <- strata_stats_list[[isol]]$N
+  wh <- nh / Nh
+  Wh <- Nh / N
+  
+  STRS_mean <- colSums(sweep(x = strata_stats[, paste0("M", 1:ns_all)], 
+                             MARGIN = 1, 
+                             STATS = Nh,
+                             FUN = '*'))
+  
+  STRS_var <- colSums(sweep(x = strata_stats[, paste0("S", 1:ns_all)]^2, 
+                            MARGIN = 1, 
+                            STATS =  Nh^2 * (1 - wh) / nh,
+                            FUN = '*'))
+  
+  STRS_Pop_CV[, isol] <- sqrt(STRS_var) / STRS_mean
+}
+rm(isol, strata_stats, nh, Nh, wh, Wh, STRS_mean, STRS_var)
+
+##################################################
 ####  Plot
 ##################################################
-
-png(filename = paste0(output_dir, "PopCVs.png"),
-    width = 190,
-    height = 150,
-    units = "mm",
-    res = 500)
-
-par(mar = c(4,11,1,1))
-plot(1,
-     type = "n",
-     pch = 16,
-     cex = 1.5,
-     ylim = c(1, ns_opt),
-     xlim = c(0, 0.4),
-     axes = F,
-     ann = F)
-
-box()
-abline(h = 1:ns_opt, 
-       col = "lightgrey", 
-       lty = "dashed")
-mtext(side = 1, 
-      text = "Population CV",
-      line = 2.5,
-      cex = 1.25,
-      font = 2)
-
-matpoints(y = 1:ns_opt,
-          x = cbind(SRS_Pop_CV[spp_idx_opt, 2], 
-                    SS_STRS_Pop_CV[, 2],
-                    unlist(settings[settings$strata == 15 &
-                                      settings$boat == 2,
-                                    paste0("CV_", 1:ns_opt)]),
-                    Current_STRS_Pop_CV[spp_idx_opt, 2]),
-          pch = 16,
-          col = c("black", "red", "blue", "green"),
-          cex = 1)
-
-axis(side = 1, at = seq(from = 0, to = 0.8, by = 0.05))
-axis(side = 2, 
-     labels = common_names_opt, 
-     at = 1:ns_opt,
-     las = 1)
-
-legend("bottomright",
-       pch = c(rep(16, 4), NA, NA),
-       lty = c(rep(NA, 4), 1, 1), 
-       lwd = 2,
-       col = c("red", "green", "blue", "black", "black", "brown"),
-       legend = c("SS STRS", "Current STRS", "Optimized STRS", "SRS", 
-                  "Est. VAST CVs",
-                  "Est. DBE CVs"),
-       cex = 1)
-
-dev.off()
+isample = 2
+{
+  png(filename = paste0(output_dir, "PopCVs.png"),
+      width = 190,
+      height = 200,
+      units = "mm",
+      res = 500)
+  
+  par(mar = c(4,11,1,1))
+  plot(1,
+       type = "n",
+       pch = 16,
+       cex = 1.5,
+       ylim = c(1, ns_all),
+       xlim = c(0, 0.90),
+       axes = F,
+       ann = F)
+  
+  box()
+  abline(h = 1:ns_all, 
+         v = seq(from = 0, to = 1, by = 0.1),
+         col = "lightgrey", 
+         lty = "dashed")
+  mtext(side = 1, 
+        text = "Population CV",
+        line = 2.5,
+        cex = 1.25,
+        font = 2)
+  
+  matpoints(y = 1:ns_all,
+            x = cbind(SRS_Pop_CV[c(spp_idx_opt, spp_idx_eval), isample], 
+                      STRS_Pop_CV[c(spp_idx_opt, spp_idx_eval),
+                                  which(settings$boat == isample &
+                                          settings$strata == 15)],
+                      Current_STRS_Pop_CV[c(spp_idx_opt, spp_idx_eval), isample]),
+            pch = 16,
+            col = c("black", "blue", "green"),
+            cex = 1)
+  
+  points(y = 1:ns_opt,
+         x = SS_STRS_Pop_CV[, isample],
+         pch = 16,
+         col = "red",
+         cex = 1)
+  
+  axis(side = 1, at = seq(from = 0, to = 1, by = 0.05))
+  axis(side = 2, 
+       labels = common_names_all[spp_idx_opt], 
+       at = 1:ns_opt,
+       col = "black",
+       las = 1)
+  axis(side = 2, 
+       labels = common_names_all[spp_idx_eval], 
+       at = (ns_opt + 1):ns_all,
+       col.axis = "darkgrey",
+       las = 1)
+  
+  legend("bottomright",
+         pch = 16,
+         lwd = 2,
+         col = c("red", 
+                 "green", 
+                 "blue", 
+                 "black"),
+         legend = c("SS STRS", 
+                    "Current STRS", 
+                    "Optimized STRS", 
+                    "SRS"),
+         cex = 1)
+  
+  dev.off()
+}
