@@ -36,8 +36,6 @@ master_settings <- data.frame()
 master_strata_list <- master_strata_stats_list <- list()
 master_tradeoff <- list()
 
-istrata <- 10
-
 ##########################
 ##########################
 
@@ -65,7 +63,7 @@ for (ispp in 1:ns_opt) {
                                  pattern = " ", 
                                  replacement = "_"),
                             "/boat", iboat,
-                            "/Str", istrata, "Run", irun, "/result_list.RData")
+                            "/Run", irun, "/result_list.RData")
         
         if (file.exists(temp_file)) {
           
@@ -74,9 +72,10 @@ for (ispp in 1:ns_opt) {
           #master_settings: result of optimization (CV, sample size)
           master_settings <- rbind(
             master_settings,
-            data.frame(iboat = iboat,
+            data.frame(irun = irun,
+                       iboat = iboat,
                        ispp = ispp,
-                       n = result_list$n,
+                       n = with(result_list$sum_stats, tapply(Allocation, Domain, sum)),
                        cv = as.numeric(result_list[[3]]))
           )
           
@@ -101,6 +100,9 @@ for (ispp in 1:ns_opt) {
 ## Subset those solutions that correspond to 1, 2, and 3 boats
 ####################################
 master_settings$id = 1:nrow(master_settings)
+master_settings_agg <- aggregate(n ~ irun + iboat + ispp, 
+                                 data = master_settings, sum)
+
 sol_idx <- c()
 
 for (ispp in sort(unique(master_settings$ispp)) ) {
@@ -114,14 +116,14 @@ for (ispp in sort(unique(master_settings$ispp)) ) {
 } 
 
 settings <- master_settings[sol_idx, 1:4]
-res_df <- master_res_df[, 1 + sol_idx]
-strata_list <- master_strata_list[sol_idx]
-strata_stats_list <- master_strata_stats_list[sol_idx]
-
-####################################
-## Save
-####################################
-save(list = c("res_df", "settings", "strata_list", "strata_stats_list"),
-     file = paste0(github_dir, 
-                   "results/Single_Species_Optimization/", 
-                   "optimization_knitted_results.RData"))
+# res_df <- master_res_df[, 1 + sol_idx]
+# strata_list <- master_strata_list[sol_idx]
+# strata_stats_list <- master_strata_stats_list[sol_idx]
+# 
+# ####################################
+# ## Save
+# ####################################
+# save(list = c("res_df", "settings", "strata_list", "strata_stats_list"),
+#      file = paste0(github_dir, 
+#                    "results/Single_Species_Optimization/", 
+#                    "optimization_knitted_results.RData"))
