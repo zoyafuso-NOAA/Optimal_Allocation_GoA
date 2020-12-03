@@ -44,7 +44,7 @@ load(paste0(dirname(github_dir), "/Population_Variances.RData"))
 ##################################################
 #Choose a boat level
 
-which_species <- 7
+which_species <- 13
 frame <- frame[, c("domainvalue", "id", "X1", "X2", "WEIGHT",
                    paste0("Y", which_species), 
                    paste0("Y", which_species, "_SQ_SUM"))]
@@ -68,7 +68,7 @@ for (isample in 1:nboats) {
   #Create CV dataframe
   cv <- list()
   for (spp in 1:1) 
-    cv[[paste0("CV", spp)]] <- SRS_Pop_CV[[isample]][, which_species] * 0.90^2
+    cv[[paste0("CV", spp)]] <- SRS_Pop_CV[[isample]][, which_species] * 0.90^4
   cv[["DOM"]] <- 1:5
   cv[["domainvalue"]] <- 1:5
   cv <- as.data.frame(cv)
