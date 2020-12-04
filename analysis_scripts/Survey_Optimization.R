@@ -10,10 +10,10 @@ rm(list = ls())
 ####   Set up directories based on whether the optimization is being conducted
 ####        on a multi-species or single-species level
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 which_method = c("Multi_Species" = 1,
-                 "Single_Species" = 2)[1]
+                 "Single_Species" = 2)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -58,7 +58,7 @@ ns_opt <- c(ns_opt, 1)[which_method]
 
 which_species <- switch(which_method, 
                         "1" = 1:ns_opt, 
-                        "2" = 14)
+                        "2" = spp_idx_eval[1])
 
 ##################################################
 ####   If Single_Species: subset just the one species
@@ -72,7 +72,7 @@ if (which_method == 2) {
   names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
   
   github_dir = paste0(github_dir, 
-                      gsub(x = sci_names_opt[which_species], 
+                      gsub(x = sci_names_all[which_species], 
                            pattern = ' ', 
                            replacement = '_'), '/')
   if(!dir.exists(github_dir)) dir.create(github_dir)
@@ -82,7 +82,7 @@ if (which_method == 2) {
                            nrow = ns_opt,
                            ncol = 3)
   
-  SRS_Pop_CV <- matrix(data = c(0.1, 0.1, 0.1315),
+  SRS_Pop_CV <- matrix(data = c(0.084, 0.1, 0.1),
                        byrow = T,
                        ncol = 3)
 }
@@ -96,7 +96,7 @@ par(mfrow = c(6,6),
 #Choose a boat level
 isample <- 1
 
-for (istrata in 3) {
+for (istrata in 1) {
   
   temp_strata <- stratas[istrata]
   
