@@ -44,7 +44,7 @@ load(paste0(dirname(github_dir), "/Population_Variances.RData"))
 ##################################################
 #Choose a boat level
 
-which_species <- 13
+which_species <- 3
 frame <- frame[, c("domainvalue", "id", "X1", "X2", "WEIGHT",
                    paste0("Y", which_species), 
                    paste0("Y", which_species, "_SQ_SUM"))]
