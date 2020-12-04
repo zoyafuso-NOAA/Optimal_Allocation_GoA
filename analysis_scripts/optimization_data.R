@@ -14,7 +14,7 @@ rm(list = ls())
 ##################################################
 ####    Set up directories here first 
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents",
                        "C:/Users/Zack Oyafuso/Documents",
@@ -121,17 +121,17 @@ frame <- cbind(data.frame(domainvalue = 1,
                           X2 = Extrapolation_depths$DEPTH_EFH,
                           WEIGHT = NTime),
                
-               matrix(data = apply(X = D_gct[, spp_idx_opt, Years2Include],
+               matrix(data = apply(X = D_gct[, , Years2Include],
                                    MARGIN = c(1, 2), 
                                    FUN = sum),
-                      ncol = ns_opt,
-                      dimnames = list(NULL, paste0("Y", 1:ns_opt))),
+                      ncol = ns_all,
+                      dimnames = list(NULL, paste0("Y", 1:ns_all))),
                
-               matrix(data = apply(X = D_gct[, spp_idx_opt, Years2Include],
+               matrix(data = apply(X = D_gct[, , Years2Include],
                                    MARGIN = c(1, 2), 
                                    FUN = function(x) sum(x^2)),
-                      ncol = ns_opt,
-                      dimnames = list(NULL, paste0("Y", 1:ns_opt, "_SQ_SUM")))
+                      ncol = ns_all,
+                      dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
 )
 
 ##################################################
