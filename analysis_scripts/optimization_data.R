@@ -14,7 +14,7 @@ rm(list = ls())
 ##################################################
 ####    Set up directories here first 
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents",
                        "C:/Users/Zack Oyafuso/Documents",
@@ -93,6 +93,19 @@ nboats <- length(samples)
 stratas <- c(10, 15, 20)
 NStrata <- length(stratas)
 
+## Specify Management Districts
+districts <- data.frame("reg_area" = c("WRA", "CRA", 
+                                       "CRA", "ERA", "ERA"),
+                        "district" = c("W", "Chirikof", 
+                                       "Kodiak", "Yakutat", "SE"),
+                        "domainvalue" = 1:5,
+                        "W_lon" = c(-170, -159, -154, -147, -140),
+                        "E_lon" = c(-159, -154, -147, -140, -132))
+ndom <- nrow(districts)
+
+district_vals = cut(x = Extrapolation_depths$Lon, 
+                    breaks = c(-170, -159, -154, -147, -140, -132), 
+                    labels = 1:5)
 
 ## Number of times to simulate survey
 Niters <- 1000
@@ -145,11 +158,19 @@ true_index <- apply(X = Index[,, Years2Include],
                     MARGIN = 2:3,
                     FUN = sum)
 
+true_index_district <- apply(X = Index[,, Years2Include], 
+                             MARGIN = 2:3,
+                             FUN = function(x) tapply(x, 
+                                                      INDEX = district_vals, 
+                                                      FUN = sum))
+true_index_district <- aperm(a = true_index_district, perm = c(2,3,1))
+
 ##################################################
 ####   Save Data
 ##################################################
 save(list = c("frame", 
-              "true_mean", "true_index", 
+              "districts", "district_vals", "ndom",
+              "true_mean", "true_index", "true_index_district",
               "ns_all", "ns_eval", "ns_opt", 
               "common_names_all", "common_names_eval", "common_names_opt",
               "sci_names_all", "sci_names_eval", "sci_names_opt",

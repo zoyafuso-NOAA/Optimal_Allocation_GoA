@@ -51,9 +51,9 @@ y_range <- diff(range(Extrapolation_depths$N_km))
       units = "mm",
       res = 500)
   
-  par(mfcol = c(3, 2),
-      mar = c(0,0,0,0))
-  
+  par(mar = c(0, 0, 0, 0),
+      mfcol = c(3, 2))
+
   for (sample_survey in c(FALSE, TRUE)) { 
     for (istrata in 1:NStrata) {
       
@@ -133,5 +133,6 @@ y_range <- diff(range(Extrapolation_depths$N_km))
       }
     }
   }
+  
   dev.off()
 }
