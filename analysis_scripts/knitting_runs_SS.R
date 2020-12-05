@@ -8,7 +8,7 @@ rm(list = ls())
 ###############################
 ## Set up directories
 ###############################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -41,13 +41,13 @@ istrata <- 10
 ##########################
 ##########################
 
-for (ispp in 1:ns_opt) {
+for (ispp in 1:ns_all) {
   for (iboat in 1:nboats) {
     
     ## For a given species and boat scenario, collect all runs
     runs = dir(paste0(github_dir,
                       "results/Single_Species_Optimization/",
-                      gsub(x = sci_names_opt[ispp], 
+                      gsub(x = sci_names_all[ispp], 
                            pattern = " ", 
                            replacement = "_"),
                       "/boat", iboat), 
@@ -61,7 +61,7 @@ for (ispp in 1:ns_opt) {
         #Load run
         temp_file <- paste0(github_dir, 
                             "results/Single_Species_Optimization/",
-                            gsub(x = sci_names_opt[ispp], 
+                            gsub(x = sci_names_all[ispp], 
                                  pattern = " ", 
                                  replacement = "_"),
                             "/boat", iboat,

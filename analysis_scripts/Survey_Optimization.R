@@ -58,7 +58,7 @@ ns_opt <- c(ns_opt, 1)[which_method]
 
 which_species <- switch(which_method, 
                         "1" = 1:ns_opt, 
-                        "2" = spp_idx_eval[1])
+                        "2" = spp_idx_eval[7])
 
 ##################################################
 ####   If Single_Species: subset just the one species
@@ -82,7 +82,7 @@ if (which_method == 2) {
                            nrow = ns_opt,
                            ncol = 3)
   
-  SRS_Pop_CV <- matrix(data = c(0.084, 0.1, 0.1),
+  SRS_Pop_CV <- matrix(data = c(0.35, 0.245, 0.0705),
                        byrow = T,
                        ncol = 3)
 }
@@ -94,7 +94,7 @@ par(mfrow = c(6,6),
     mar = c(2,2,0,0))
 
 #Choose a boat level
-isample <- 1
+isample <- 3
 
 for (istrata in 1) {
   
@@ -170,7 +170,7 @@ for (istrata in 1) {
     #Set up next run by changing upper CV constraints
     Run <- Run + 1
     
-    CV_constraints <- 0.9*CV_constraints + 0.1*(SS_STRS_Pop_CV[, isample]) 
+    CV_constraints <- 0.95*CV_constraints + 0.05*(SS_STRS_Pop_CV[, isample]) 
     
     #Create CV dataframe in the formmat of SamplingStrata
     cv <- list()
