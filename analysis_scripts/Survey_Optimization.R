@@ -13,7 +13,7 @@ rm(list = ls())
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 which_method = c("Multi_Species" = 1,
-                 "Single_Species" = 2)[2]
+                 "Single_Species" = 2)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -45,6 +45,17 @@ load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
 if (which_method == 1) {
   load(paste0(dirname(github_dir), "/Population_Variances.RData"))
   SRS_Pop_CV <- SRS_Pop_CV[spp_idx_opt, ]
+  
+  frame <- subset(x = frame, 
+                  select = c("domainvalue", "id", "X1", "X2", "WEIGHT",
+                             paste0("Y", spp_idx_opt),
+                             paste0("Y", spp_idx_opt, "_SQ_SUM")) )
+  
+  names(frame) <- c("domainvalue", "id", "X1", "X2", "WEIGHT",
+                    paste0("Y", 1:ns_opt),
+                    paste0("Y", 1:ns_opt, "_SQ_SUM"))
+  
+  
 }
 
 ##################################################
@@ -94,7 +105,7 @@ par(mfrow = c(6,6),
     mar = c(2,2,0,0))
 
 #Choose a boat level
-isample <- 3
+isample <- 1
 
 for (istrata in 1) {
   
@@ -104,6 +115,10 @@ for (istrata in 1) {
   Run <- 1
   current_n <- 0
   CV_constraints <- SRS_Pop_CV[, isample] 
+  CV_constraints <- ifelse(test = CV_constraints < 0.1,
+                           yes = 0.1,
+                           no = CV_constraints)
+  
   
   #Create CV dataframe
   cv <- list()
@@ -123,20 +138,22 @@ for (istrata in 1) {
     setwd(temp_dir)
     
     #Run optimization
-    solution <- optimStrata(method = "continuous",
-                            errors = cv, 
-                            framesamp = frame,
-                            iter = 300,
-                            pops = 30,
-                            elitism_rate = 0.1,
-                            mut_chance = 1 / (temp_strata + 1),
-                            nStrata = temp_strata,
-                            showPlot = T,
-                            writeFiles = T)
+    solution <- SamplingStrata::optimStrata( 
+      method = "continuous",
+      errors = cv, 
+      framesamp = frame,
+      iter = 300,
+      pops = 30,
+      elitism_rate = 0.1,
+      mut_chance = 1 / (temp_strata + 1),
+      nStrata = temp_strata,
+      showPlot = T,
+      writeFiles = T)
     
-    sum_stats <- summaryStrata(solution$framenew,
-                               solution$aggr_strata,
-                               progress=FALSE) 
+    sum_stats <- SamplingStrata::summaryStrata(
+      solution$framenew,
+      solution$aggr_strata,
+      progress=FALSE) 
     
     #Plot Solution
     goa <- sp::SpatialPointsDataFrame(
@@ -171,6 +188,9 @@ for (istrata in 1) {
     Run <- Run + 1
     
     CV_constraints <- 0.95*CV_constraints + 0.05*(SS_STRS_Pop_CV[, isample]) 
+    CV_constraints <- ifelse(test = CV_constraints < 0.1,
+                             yes = 0.1,
+                             no = CV_constraints)
     
     #Create CV dataframe in the formmat of SamplingStrata
     cv <- list()
