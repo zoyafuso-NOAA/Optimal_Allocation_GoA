@@ -44,7 +44,7 @@ load(paste0(dirname(github_dir), "/Population_Variances.RData"))
 ##################################################
 #Choose a boat level
 
-which_species <- 3
+which_species <- 8
 frame <- frame[, c("domainvalue", "id", "X1", "X2", "WEIGHT",
                    paste0("Y", which_species), 
                    paste0("Y", which_species, "_SQ_SUM"))]
@@ -64,11 +64,11 @@ if(!dir.exists(github_dir)) dir.create(github_dir, recursive = T)
 par(mfrow = c(6,6), 
     mar = c(2,2,0,0))
 
-for (isample in 1:nboats) {
+for (isample in 2) {
   #Create CV dataframe
   cv <- list()
   for (spp in 1:1) 
-    cv[[paste0("CV", spp)]] <- SRS_Pop_CV[[isample]][, which_species] * 0.90^4
+    cv[[paste0("CV", spp)]] <- SRS_Pop_CV[[isample]][, which_species] * 0.90^3
   cv[["DOM"]] <- 1:5
   cv[["domainvalue"]] <- 1:5
   cv <- as.data.frame(cv)
@@ -141,7 +141,7 @@ for (isample in 1:nboats) {
     
     ## Set up next run by changing upper CV constraints
     Run <- Run + 1
-    CV_constraints <- 0.9*CV_constraints
+    CV_constraints <- 0.95*CV_constraints
     
     #Create CV dataframe in the formmat of SamplingStrata
     cv <- list()

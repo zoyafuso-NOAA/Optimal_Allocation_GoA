@@ -102,28 +102,31 @@ for (ispp in 1:ns_opt) {
 master_settings$id = 1:nrow(master_settings)
 master_settings_agg <- aggregate(n ~ irun + iboat + ispp, 
                                  data = master_settings, sum)
+master_settings_agg$id <- 1:nrow(master_settings_agg)
 
 sol_idx <- c()
 
 for (ispp in sort(unique(master_settings$ispp)) ) {
-  for (isample in samples) {
-    #Find solution closet to isample, append to sol_idx
-    sol_idx <- c(sol_idx, 
-                 with(master_settings[master_settings$ispp == ispp, ],
-                      id[which.min(abs(n - isample))])
+  #Find solution closet to isample, append to sol_idx
+  sol_idx <- 
+    c(sol_idx, 
+      sapply( X = samples,
+              FUN = function(x) 
+                with(master_settings_agg[master_settings_agg$ispp == ispp, ],
+                     id[which.min(abs(n - x))]) )
     )
-  }
+  
 } 
 
-settings <- master_settings[sol_idx, 1:4]
-# res_df <- master_res_df[, 1 + sol_idx]
-# strata_list <- master_strata_list[sol_idx]
-# strata_stats_list <- master_strata_stats_list[sol_idx]
-# 
-# ####################################
-# ## Save
-# ####################################
-# save(list = c("res_df", "settings", "strata_list", "strata_stats_list"),
-#      file = paste0(github_dir, 
-#                    "results/Single_Species_Optimization/", 
-#                    "optimization_knitted_results.RData"))
+settings <- master_settings_agg[sol_idx, 1:4]
+res_df <- master_res_df[, 1 + sol_idx]
+strata_list <- master_strata_list[sol_idx]
+strata_stats_list <- master_strata_stats_list[sol_idx]
+
+####################################
+## Save
+####################################
+save(list = c("res_df", "settings", "strata_list", "strata_stats_list"),
+     file = paste0(github_dir,
+                   "results/Single_Species_Optimization/",
+                   "optimization_knitted_results.RData"))
