@@ -141,6 +141,7 @@ do_STRS <- function(input){
   return(list("mean_denisty" = round(mean_density, 2),
               "cv" = round(cv, 4),
               "rel_bias" = round(rel_bias, 2),
+              "index_district" = index_district,
               "bias_index_district" = 100 * 
                 (index_district - input$true_index_district) /
                 input$true_index_district ))
