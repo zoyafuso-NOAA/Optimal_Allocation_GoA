@@ -12,15 +12,11 @@ rm(list = ls())
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 
-which_method = c("Multi_Species" = 1,
-                 "Single_Species" = 2)[2]
-
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
                        "C:/Users/zack.oyafuso/Work")[which_machine],
                      "/GitHub/Optimal_Allocation_GoA/results/",
-                     c("Spatiotemporal_Optimization/", 
-                       "Single_Species_Optimization/")[which_method])
+                     "Spatiotemporal_Optimization/")
 
 ##################################################
 ####  Install a forked version of the SamplingStrata Package from 
@@ -41,143 +37,92 @@ library(raster)
 ##################################################
 load(paste0(dirname(dirname(github_dir)), "/data/optimization_data.RData"))
 load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
-
-# if (which_method == 1) {
-  load(paste0(dirname(github_dir), "/Population_Variances.RData"))
-  # SRS_Pop_CV <- SRS_Pop_CV[spp_idx_opt, ]
-# }
-
-##################################################
-####   Some Constants
-##################################################
-stratas <- switch(which_method, 
-                  "1" = stratas, 
-                  "2" =  5)
-NStrata <- length(stratas)
-ns_opt <- c(ns_opt, 1)[which_method]
-
-which_species <- switch(which_method, 
-                        "1" = 1:ns_opt, 
-                        "2" = 1)
-
-##################################################
-####   If Single_Species: subset just the one species
-##################################################
-if (which_method == 2) {
-  
-  frame <- frame[, c("domainvalue", "id", "X1", "X2", "WEIGHT",
-                     paste0("Y", which_species), 
-                     paste0("Y", which_species, "_SQ_SUM"))]
-  
-  names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
-  
-  github_dir = paste0(github_dir, 
-                      gsub(x = sci_names_opt[which_species], 
-                           pattern = ' ', 
-                           replacement = '_'), '/')
-  if(!dir.exists(github_dir)) dir.create(github_dir)
-  
-  # Lower CV threshold is not needed for a single-species analysis
-  SS_STRS_Pop_CV <- matrix(data = 0,
-                           nrow = ns_opt,
-                           ncol = 3)
-  
-}
+load(paste0(dirname(github_dir), "/Population_Variances.RData"))
 
 ##################################################
 ####   Run optimization
 ##################################################
-par(mfrow = c(6,6), 
-    mar = c(2,2,0,0))
-
 #Choose a boat level
 isample <- 1
 
-for (istrata in 1) {
+##Initial Condition
+Run <- 1
+current_n <- 0
+
+#Create CV dataframe
+cv <- data.frame("DOM" = 1:5,
+                 domainvalue = 1:5)
+cv[, paste0("CV", 1:ns_opt )] <- 
+  SRS_Pop_CV[[isample]][, spp_idx_opt] 
+
+
+while (current_n <= c(280, 550, 820)[isample] ) {
   
-  temp_strata <- stratas[istrata]
+  #Set wd for output files, create a directory if it doesn"t exist yet
+  temp_dir = paste0(github_dir, "boat", isample, "/Run", Run)
+  if(!dir.exists(temp_dir)) dir.create(temp_dir, recursive = T)
   
-  ##Initial Condition
-  Run <- 1
-  current_n <- 0
+  setwd(temp_dir)
   
-  #Create CV dataframe
+  #Run optimization
+  solution <- optimStrata(method = "continuous",
+                          errors = cv, 
+                          framesamp = frame,
+                          iter = 300,
+                          pops = 30,
+                          elitism_rate = 0.1,
+                          mut_chance = 1 / (c(5,5,5,5,5) + 1),
+                          nStrata = c(5,5,5,5,5),
+                          showPlot = T,
+                          writeFiles = T,
+                          parallel = T)
+  
+  sum_stats <- summaryStrata(solution$framenew,
+                             solution$aggr_strata,
+                             progress=FALSE) 
+  
+  plot_solution <- as.factor(paste(solution$framenew$DOMAINVALUE,
+                                   solution$framenew$STRATO))
+  plot_solution <- as.integer(plot_solution)
+  
+  #Plot Solution
+  goa <- sp::SpatialPointsDataFrame(
+    coords = Extrapolation_depths[,c("E_km", "N_km")],
+    data = data.frame(Str_no = plot_solution) )
+  goa_ras <- raster::raster(x = goa, 
+                            resolution = 5)
+  goa_ras <- raster::rasterize(x = goa, 
+                               y = goa_ras, 
+                               field = "Str_no")
+  
+  png(filename = "solution.png", 
+      width = 5, 
+      height = 5, 
+      units = "in", 
+      res = 500)
+  plot(goa_ras, axes = F, 
+       col = sample(terrain.colors(20)) )
+  dev.off()
+  
+  #Save Output
+  CV_constraints <- expected_CV(strata = solution$aggr_strata)
+  current_n <- sum(sum_stats$Allocation)
+  
+  result_list <- list(solution = solution, 
+                      sum_stats = sum_stats, 
+                      CV_constraints = CV_constraints, 
+                      n = current_n)
+  save(list = "result_list", file = "result_list.RData")
+  
+  #Set up next run by changing upper CV constraints
+  Run <- Run + 1
+  
+  CV_constraints <- 0.95*CV_constraints + 0.05*(SS_STRS_Pop_CV[[isample]]) 
+  
+  #Create CV dataframe in the formmat of SamplingStrata
   cv <- data.frame("DOM" = 1:5,
                    domainvalue = 1:5)
-  cv[, paste0("CV", length(which_species))] <- SRS_Pop_CV[[isample]][, which_species] 
+  cv[, paste0("CV", 1:ns_opt )] <- CV_constraints
   
-  
-  while (current_n <= c(280, 550, 820)[isample] ) {
-    
-    #Set wd for output files, create a directory if it doesn"t exist yet
-    temp_dir = paste0(github_dir, "boat", isample, "/Str", temp_strata, 
-                      "Run", Run)
-    if(!dir.exists(temp_dir)) dir.create(temp_dir, recursive = T)
-    
-    setwd(temp_dir)
-    
-    #Run optimization
-    solution <- optimStrata(method = "continuous",
-                            errors = cv, 
-                            framesamp = frame,
-                            iter = 30,
-                            pops = 30,
-                            elitism_rate = 0.1,
-                            mut_chance = 1 / (c(5,5,5,5,5) + 1),
-                            nStrata = c(5,5,5,5,5),
-                            showPlot = T,
-                            writeFiles = F,
-                            parallel = T)
-    
-    sum_stats <- summaryStrata(solution$framenew,
-                               solution$aggr_strata,
-                               progress=FALSE) 
-    
-    plot_solution <- as.factor(paste(solution$framenew$DOMAINVALUE,
-                                     solution$framenew$STRATO))
-    plot_solution <- as.integer(plot_solution)
-    
-    #Plot Solution
-    goa <- sp::SpatialPointsDataFrame(
-      coords = Extrapolation_depths[,c("E_km", "N_km")],
-      data = data.frame(Str_no = plot_solution) )
-    goa_ras <- raster::raster(x = goa, 
-                              resolution = 5)
-    goa_ras <- raster::rasterize(x = goa, 
-                                 y = goa_ras, 
-                                 field = "Str_no")
-    
-    png(filename = "solution.png", 
-        width = 5, 
-        height = 5, 
-        units = "in", 
-        res = 500)
-    plot(goa_ras, axes = F, 
-         col = sample(terrain.colors(20)) )
-    dev.off()
-    
-    #Save Output
-    CV_constraints <- expected_CV(strata = solution$aggr_strata)
-    current_n <- sum(sum_stats$Allocation)
-    
-    result_list <- list(solution = solution, 
-                        sum_stats = sum_stats, 
-                        CV_constraints = CV_constraints, 
-                        n = current_n)
-    save(list = "result_list", file = "result_list.RData")
-    
-    #Set up next run by changing upper CV constraints
-    Run <- Run + 1
-    
-    CV_constraints <- 0.9*CV_constraints + 0.1*(SS_STRS_Pop_CV[, isample]) 
-    
-    #Create CV dataframe in the formmat of SamplingStrata
-    cv <- list()
-    for (spp in 1:ns_opt) 
-      cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
-    cv[["DOM"]] <- 1
-    cv[["domainvalue"]] <- 1
-    cv <- as.data.frame(cv)
-  }
 }
 

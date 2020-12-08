@@ -18,9 +18,7 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
 ###############################
 ## Import required packages
 ###############################
-library(sp)
-library(RColorBrewer)
-library(raster)
+library(tidyr)
 
 ###########################
 ## Load Data
@@ -38,7 +36,7 @@ master_tradeoff <- list()
 
 ##########################
 ##########################
-
+iid <- 1
 for (ispp in 1:ns_opt) {
   for (iboat in 1:nboats) {
     
@@ -72,12 +70,16 @@ for (ispp in 1:ns_opt) {
           #master_settings: result of optimization (CV, sample size)
           master_settings <- rbind(
             master_settings,
-            data.frame(irun = irun,
+            data.frame(id = iid,
+                       idom = 1:ndom,
                        iboat = iboat,
                        ispp = ispp,
-                       n = with(result_list$sum_stats, tapply(Allocation, Domain, sum)),
+                       n = with(result_list$sum_stats, 
+                                tapply(Allocation, Domain, sum)),
                        cv = as.numeric(result_list[[3]]))
           )
+          
+          iid <- iid + 1
           
           #master_res_df: solution (which cell belongs to which stratum?)
           master_res_df <- cbind(master_res_df,
@@ -99,10 +101,8 @@ for (ispp in 1:ns_opt) {
 ####################################
 ## Subset those solutions that correspond to 1, 2, and 3 boats
 ####################################
-master_settings$id = 1:nrow(master_settings)
-master_settings_agg <- aggregate(n ~ irun + iboat + ispp, 
+master_settings_agg <- aggregate(n ~ id + iboat + ispp, 
                                  data = master_settings, sum)
-master_settings_agg$id <- 1:nrow(master_settings_agg)
 
 sol_idx <- c()
 
@@ -118,15 +118,22 @@ for (ispp in sort(unique(master_settings$ispp)) ) {
   
 } 
 
-settings <- master_settings_agg[sol_idx, 1:4]
+settings <- master_settings_agg[sol_idx,]
 res_df <- master_res_df[, 1 + sol_idx]
 strata_list <- master_strata_list[sol_idx]
 strata_stats_list <- master_strata_stats_list[sol_idx]
 
+settings_by_dom <- tidyr::spread(data = subset(x = master_settings, 
+                                               subset = id %in% sol_idx,
+                                               select = -n), 
+                                 value = cv,
+                                 key = idom)
+
 ####################################
 ## Save
 ####################################
-save(list = c("res_df", "settings", "strata_list", "strata_stats_list"),
+save(list = c("res_df", "settings", "strata_list", "strata_stats_list",
+              "settings_by_dom"),
      file = paste0(github_dir,
                    "results/Single_Species_Optimization/",
                    "optimization_knitted_results.RData"))
