@@ -43,7 +43,7 @@ load(paste0(dirname(github_dir), "/Population_Variances.RData"))
 ####   Run optimization
 ##################################################
 #Choose a boat level
-isample <- 1
+isample <- 2
 
 ##Initial Condition
 Run <- 1
