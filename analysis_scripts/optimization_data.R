@@ -108,6 +108,10 @@ districts <- data.frame("reg_area" = c("WRA", "CRA",
                         "E_lon" = c(-159, -154, -147, -140, -132))
 ndom <- nrow(districts)
 
+district_vals = cut(x = Extrapolation_depths$Lon, 
+                    breaks = c(-170, -159, -154, -147, -140, -132), 
+                    labels = 1:5)
+
 ##################################################
 ####   Our df will have fields for:
 ####   domain: only one domain so the value is just 1
@@ -161,11 +165,18 @@ true_index <- apply(X = Index[,, Years2Include],
                     MARGIN = 2:3,
                     FUN = sum)
 
+true_index_district <- apply(X = Index[,, Years2Include], 
+                             MARGIN = 2:3,
+                             FUN = function(x) tapply(x, 
+                                                      INDEX = district_vals, 
+                                                      FUN = sum))
+true_index_district <- aperm(a = true_index_district, perm = c(2,3,1))
+
 ##################################################
 ####   Save Data
 ##################################################
 save(list = c("frame", 
-              "true_mean", "true_index", 
+              "true_mean", "true_index", "true_index_district",
               "ns_all", "ns_eval", "ns_opt", 
               "common_names_all", "common_names_eval", "common_names_opt",
               "sci_names_all", "sci_names_eval", "sci_names_opt",
@@ -173,6 +184,6 @@ save(list = c("frame",
               "Year_Set", "Years2Include", "NTime", 
               "N", "samples", "nboats", "Niters", 
               "obs_CV", "nobs_CV",
-              "districts", "ndom", 
+              "districts", "ndom", "district_vals",
               "stratas", "NStrata"),
      file = paste0(github_dir, "data/optimization_data.RData"))

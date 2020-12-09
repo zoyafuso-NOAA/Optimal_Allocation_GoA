@@ -47,6 +47,14 @@ GOA_allocations3 <- readxl::read_xlsx(
                 '/data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')
 ) 
 
+##################################
+## Specify Management Districts
+##################################
+new_strata_labels = 1:length(unique(Extrapolation_depths$stratum))
+names(new_strata_labels) <- sort(unique(Extrapolation_depths$stratum))
+Extrapolation_depths$stratum_new_label <- 
+  new_strata_labels[paste(Extrapolation_depths$stratum)]
+
 ##################################################
 ####   Create dataframe of effort allocations across boats
 ##################################################
@@ -64,14 +72,6 @@ allocations$boat1 <- ifelse(allocations$boat1 == 0, 0,
 
 allocations <- rbind(data.frame(Stratum = 0, boat3 = 0, boat2 = 0, boat1 = 0),
                      allocations)
-
-##################################################
-####   Subset 15 strata solutions
-##################################################
-sol_idx <- which(settings$strata == 15)
-settings <- settings[sol_idx,]
-res_df <- res_df[, 1 + sol_idx]
-strata_list <- strata_list[sol_idx]
 
 ##################################################
 ####   Result Objects
@@ -93,12 +93,23 @@ Current_true_cv_array <- Current_rrmse_cv_array <-
                         sci_names_all, 
                         paste0("boat_", 1:nboats)))
 
+Current_rel_bias_index_district <- STRS_rel_bias_index_district <-
+  array(dim = c(nobs_CV, NTime, ns_all, nboats, ndom, Niters),
+        dimnames = list(paste0("obsCV=", obs_CV),
+                        paste0("year_", 1:NTime),
+                        sci_names_all,
+                        paste0("boat_", 1:nboats),
+                        paste0("district_", 1:ndom),
+                        NULL ))
+
 ##################################################
 ####   Simulate Survey
 ##################################################
+# iter = 1; ierror = 1; iboat = 1; isurvey = "STRS"
 
-for (iter in 1:Niters) {
-  
+
+# for (iter in 1:Niters) {
+for (iter in 331:1000) {
   set.seed(1000 + iter)
   
   for (ierror in 1:nobs_CV) {
@@ -106,23 +117,33 @@ for (iter in 1:Niters) {
       for (isurvey in c("Current", "STRS")) {
         
         sim_survey <- 
-          do_STRS( input = list(
-            "density" = D_gct[, , Years2Include],
-            
-            "obs_CV" = obs_CV[ierror],
-            
-            "solution" = switch(
-              isurvey,
-              "Current" = Extrapolation_depths$stratum,
-              "STRS" = res_df[, iboat]),
-            
-            "allocation" = switch( 
-              isurvey,
-              "Current" = allocations[, paste0("boat", iboat)],
-              "STRS" = strata_list[[iboat]]$Allocation),
-            
-            "true_density" = true_mean) )
+          do_STRS( 
+            input = list(
+              "density" = D_gct[1:N , 1:ns_all, Years2Include],
+              
+              "cell_areas" = Extrapolation_depths$Area_km2,
+              
+              "obs_CV" = obs_CV[ierror],
+              
+              "solution" = switch(
+                isurvey,
+                "Current" = Extrapolation_depths$stratum_new_label,
+                "STRS" = res_df[, paste0("sol_", iboat)]),
+              
+              "allocation" = switch(
+                isurvey,
+                "Current" = allocations[, paste0("boat", iboat)],
+                "STRS" = strata_list[[iboat]]$Allocation),
+              
+              "true_density" = true_mean,
+              
+              "true_index_district" = true_index_district,
+              
+              "post_strata" = district_vals
+            )
+          )
         
+        ## Record results based on whether it's current or optimized surveys
         stmt <- paste0(isurvey, "_sim_mean",  
                        "[ierror, , , iboat, iter] = sim_survey$mean_denisty")
         eval(parse(text = stmt))
@@ -134,11 +155,42 @@ for (iter in 1:Niters) {
         stmt <- paste0(isurvey, "_rel_bias_est",  
                        "[ierror, , , iboat, iter] = sim_survey$rel_bias")
         eval(parse(text = stmt))
+        
+        stmt <- paste0(isurvey, 
+                       "_rel_bias_index_district[ierror, , , iboat, , iter]",
+                       " <- sim_survey$bias_index_district")
+        eval(parse(text = stmt))
+        
       }
     }
   }
   if(iter%%10 == 0) print(paste("Finished with Iteration", iter))
 }
+
+boxplot(t(STRS_rel_bias_index_district["obsCV=0.5", 
+                                       "year_1", 
+                                       "Sebastes brevispinis", 
+                                       "boat_2", 
+                                       , ]))
+abline(h = 0)
+
+boxplot(t(Current_rel_bias_index_district["obsCV=0.5", 
+                                          "year_1", 
+                                          "Sebastes brevispinis", 
+                                          "boat_2", 
+                                          , 
+                                          ]))
+abline(h = 0)
+
+boxplot(t(STRS_rel_bias_est["obsCV=0.5", 
+                  "year_1", 
+                  "Sebastes brevispinis", , ]))
+abline(h = 0)
+
+boxplot(t(Current_rel_bias_est["obsCV=0.5", 
+                               "year_1", 
+                               "Sebastes brevispinis", , ]))
+abline(h = 0)
 
 ##################################
 ## Calculate Performance Metric
@@ -149,18 +201,22 @@ for (ierror in 1:nobs_CV) {
       for (ispp in 1:ns_all) {
         for(iyear in 1:NTime) {
           
-          stmt <- paste0(isurvey, "_true_cv_array[ierror, iyear, ispp, iboat]",
-                         " <- temp_true_cv <- sd(", isurvey, 
-                         "_sim_mean[ierror, iyear, ispp, iboat,], na.rm = T) / ",
-                         "true_mean[ispp, iyear]")
+          ## Calculate True CV
+          stmt <- paste0(
+            isurvey, "_true_cv_array[ierror, iyear, ispp, iboat]",
+            " <- temp_true_cv <- sd(", isurvey, 
+            "_sim_mean[ierror, iyear, ispp, iboat,], na.rm = T) / ",
+            "true_mean[ispp, iyear]")
           eval(parse(text = stmt))
           
           temp_sim_cv <- get(paste0(isurvey, 
                                     "_sim_cv"))[ierror, iyear, ispp, iboat,]
           
-          stmt <- paste0(isurvey, "_rrmse_cv_array[ierror, iyear, ispp, iboat]",
-                         " <- sqrt(mean((temp_sim_cv - temp_true_cv)^2, na.rm = T)) / ", 
-                         "mean(temp_sim_cv, na.rm = T)")
+          ## Calculate RRMSE of CV
+          stmt <- paste0(
+            isurvey, "_rrmse_cv_array[ierror, iyear, ispp, iboat] <- ",
+            "sqrt(mean((temp_sim_cv - temp_true_cv)^2, na.rm = T)) / ", 
+            "mean(temp_sim_cv, na.rm = T)")
           eval(parse(text = stmt))
           
         }
