@@ -34,15 +34,14 @@ strata_stats_list <- strata_list <- list()
 iid <- 1
 #Temporary result objects
 temp_res_df <- data.frame(id = 1:N)
+temp_settings <- temp_settings_by_dom <- data.frame()
 temp_strata_stats_list <- temp_strata_list <- list()
 
 for (iboat in 1:nboats) {
    result_dir <- paste0(github_dir, "results/Spatiotemporal_Optimization/",
                         "boat", iboat, "/")
    
-   #Temporary result objects
-   temp_strata <- stratas[istrata]
-   temp_strata_stats_list <- temp_strata_list <- list()
+   runs <- grep(x = dir(result_dir), 
                 pattern = "Run", 
                 value = T )
    
