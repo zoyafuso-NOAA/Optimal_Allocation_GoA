@@ -156,17 +156,17 @@ frame_district <- cbind(data.frame(
   X2 = Extrapolation_depths$DEPTH_EFH,
   WEIGHT = n_years),
   
-  matrix(data = apply(X = D_gct[, spp_idx_opt, years_included],
+  matrix(data = apply(X = D_gct[, , years_included],
                       MARGIN = c(1, 2), 
                       FUN = sum),
-         ncol = ns_opt,
-         dimnames = list(NULL, paste0("Y", 1:ns_opt))),
+         ncol = ns_all,
+         dimnames = list(NULL, paste0("Y", 1:ns_all))),
   
-  matrix(data = apply(X = D_gct[, spp_idx_opt, years_included],
+  matrix(data = apply(X = D_gct[, , years_included],
                       MARGIN = c(1, 2), 
                       FUN = function(x) sum(x^2)),
-         ncol = ns_opt,
-         dimnames = list(NULL, paste0("Y", 1:ns_opt, "_SQ_SUM")))
+         ncol = ns_all,
+         dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
 )
 
 ##################################################
