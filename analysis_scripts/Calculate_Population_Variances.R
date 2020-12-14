@@ -12,7 +12,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[1]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
 
 github_dir <- paste0(c('/Users/zackoyafuso/Documents/', 
                        'C:/Users/Zack Oyafuso/Documents/',
@@ -39,25 +39,6 @@ load(paste0(github_dir, 'data/fit_density.RData'))
 load(paste0(github_dir, 'data/optimization_data.RData'))
 load(paste0(github_dir, "results/Single_Species_Optimization/",
             "optimization_knitted_results.RData"))
-
-frame <- cbind(data.frame(domainvalue = 1,
-                          id = 1:N,
-                          X1 = with(Extrapolation_depths, E_km - min(E_km)),
-                          X2 = Extrapolation_depths$DEPTH_EFH,
-                          WEIGHT = NTime),
-               
-               matrix(data = apply(X = D_gct[, , Years2Include],
-                                   MARGIN = c(1, 2), 
-                                   FUN = sum),
-                      ncol = ns_all,
-                      dimnames = list(NULL, paste0("Y", 1:ns_all))),
-               
-               matrix(data = apply(X = D_gct[, , Years2Include],
-                                   MARGIN = c(1, 2), 
-                                   FUN = function(x) sum(x^2)),
-                      ncol = ns_all,
-                      dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
-)
 
 ##################################
 ## Import Strata Allocations and spatial grid and predicted density
@@ -87,6 +68,21 @@ allocations$boat1 = ifelse(allocations$boat1 == 0, 0,
 allocations <- rbind(c("Stratum" = 0, "boat3" = 0, "boat2" = 0, "boat1" = 0),
                      allocations)
 
+idom <- c("full_domain", "district")[2]
+
+frame <- switch( idom,
+                 "full_domain" = frame_all,
+                 "district" = frame_district)[, c("domainvalue", "id", 
+                                                  "WEIGHT",
+                                                  paste0("Y", 1:ns_all), 
+                                                  paste0("Y", 1:ns_all,
+                                                         "_SQ_SUM"))]
+
+district_vals <- switch(idom,
+                        "full_domain" = rep(1, n_cells), 
+                        "district" = district_vals)
+n_dom <- length(unique(district_vals))
+
 ##################################
 ## Calculate Population CVs under Simple Random Sampling
 ##################################
@@ -94,69 +90,71 @@ frame_SRS <- subset(frame,
                     select = c("domainvalue", "id", "WEIGHT", 
                                paste0("Y", 1:ns_all), 
                                paste0("Y", 1:ns_all, "_SQ_SUM")))
-frame_SRS$X1 = 1
+frame_SRS$X1 = district_vals
 
 SRS_mean_sds <- buildStrataDF(dataset = frame_SRS)
-SRS_Pop_CV <- sapply(X = samples,
-                     FUN = function(x) {
-                       temp_mean <- SRS_mean_sds[, paste0("M", 1:ns_all)]
-                       temp_var <- SRS_mean_sds[, paste0("S", 1:ns_all)]^2
-                       temp_var <- temp_var / x * (1 - x/N)
-                       temp_sd <- sqrt(temp_var)
-                       
-                       return(temp_sd / temp_mean)
-                     })
 
-rownames(SRS_Pop_CV) <- sci_names_all
+SRS_Pop_CV <- array(dim = c(ns_all, n_dom, n_boats),
+                    dimnames = list(sci_names_all, NULL, NULL))
+
+for (ispp in 1:ns_all) {
+  for (iboat in 1:n_boats) {
+    srs_n <- samples[iboat] * table(district_vals) / n_cells
+    srs_var <- SRS_mean_sds[, paste0("S", ispp)]^2 * 
+      (1 - srs_n / n_cells) / srs_n
+    srs_mean <- SRS_mean_sds[, paste0("M", ispp)]
+    SRS_Pop_CV[ispp, , iboat] <- sqrt(srs_var) / srs_mean
+  }
+}
 
 ##################################
 ## Calculate Population CVs under current STRS sampling
 ##################################
-Current_STRS_Pop_CV <- matrix(nrow = ns_all, 
-                              ncol = nboats,
-                              dimnames = list(sci_names_all, NULL))
-
-for (iboat in 1:nboats) {
-  #Adjust sample size proportionally
-  nh <- allocations[, paste0('boat', iboat)]
-  
-  #strata constraints
-  # strata_labels <- paste(allocations$Stratum[sampled_strata])
-  Nh <- table(Extrapolation_depths$stratum)
-  Wh <- Nh / N
-  wh <- nh / Nh
-  
-  #Calculate Strata means and sds (calculated over time as well)
-  frame_current <- subset(frame, 
-                          select = c("domainvalue", "id", "WEIGHT", 
-                                     paste0("Y", 1:ns_all), 
-                                     paste0("Y", 1:ns_all, "_SQ_SUM")))
-  frame_current$X1 = Extrapolation_depths$stratum
-  frame_current$X1[is.na(frame_current$X1)] <- 0
-  
-  STRS_mean_sds <- buildStrataDF(dataset = frame_current)
-  
-  STRS_mean <- colSums(sweep(x = STRS_mean_sds[, paste0("M", 1:ns_all)], 
-                             MARGIN = 1, 
-                             STATS = Wh,
-                             FUN = '*'))
-  
-  STRS_var_temp <- sweep(x = STRS_mean_sds[, paste0("S", 1:ns_all)]^2, 
-                         MARGIN = 1, 
-                         STATS = Wh^2 * (1 - wh) / nh,
-                         FUN = '*')
-  
-  ## For those strata with zero effort allocated
-  STRS_var_temp <- apply(X = STRS_var_temp, 
-                         MARGIN = 1:2,
-                         FUN = function(x) ifelse(is.finite(x), x, 0))
-  
-  STRS_var <- colSums(STRS_var_temp)
-  
-  strata_cv <- sqrt(STRS_var) / STRS_mean 
-  
-  Current_STRS_Pop_CV[, iboat ] <- strata_cv
-}
+# Current_STRS_Pop_CV <- matrix(nrow = ns_all, 
+#                               ncol = nboats,
+#                               dimnames = list(sci_names_all, NULL))
+# 
+# for (iboat in 1:nboats) {
+#   #Adjust sample size proportionally
+#   nh <- allocations[, paste0('boat', iboat)]
+#   
+#   #strata constraints
+#   # strata_labels <- paste(allocations$Stratum[sampled_strata])
+#   Nh <- table(Extrapolation_depths$stratum)
+#   Wh <- Nh / N
+#   wh <- nh / Nh
+#   
+#   #Calculate Strata means and sds (calculated over time as well)
+#   frame_current <- subset(frame, 
+#                           select = c("domainvalue", "id", "WEIGHT", 
+#                                      paste0("Y", 1:ns_all), 
+#                                      paste0("Y", 1:ns_all, "_SQ_SUM")))
+#   frame_current$X1 = Extrapolation_depths$stratum
+#   frame_current$X1[is.na(frame_current$X1)] <- 0
+#   
+#   STRS_mean_sds <- buildStrataDF(dataset = frame_current)
+#   
+#   STRS_mean <- colSums(sweep(x = STRS_mean_sds[, paste0("M", 1:ns_all)], 
+#                              MARGIN = 1, 
+#                              STATS = Wh,
+#                              FUN = '*'))
+#   
+#   STRS_var_temp <- sweep(x = STRS_mean_sds[, paste0("S", 1:ns_all)]^2, 
+#                          MARGIN = 1, 
+#                          STATS = Wh^2 * (1 - wh) / nh,
+#                          FUN = '*')
+#   
+#   ## For those strata with zero effort allocated
+#   STRS_var_temp <- apply(X = STRS_var_temp, 
+#                          MARGIN = 1:2,
+#                          FUN = function(x) ifelse(is.finite(x), x, 0))
+#   
+#   STRS_var <- colSums(STRS_var_temp)
+#   
+#   strata_cv <- sqrt(STRS_var) / STRS_mean 
+#   
+#   Current_STRS_Pop_CV[, iboat ] <- strata_cv
+# }
 
 
 SS_STRS_Pop_CV <- tidyr::spread(data = settings[,c("iboat", "ispp", "cv")], 

@@ -28,10 +28,12 @@ library(SamplingStrata)
 load(paste0(github_dir, "/data/optimization_data.RData"))
 
 for(idom in c("full_domain", "district")) {
-  district_vals <- switch(idom,
-                          "full_domain" = rep(1, n_cells), 
-                          "district" = district_vals)
-  n_dom <- length(unique(district_vals))
+  
+  frame <- switch( idom,
+                   "full_domain" = frame_all,
+                   "district" = frame_district)
+  
+  n_dom <- length(unique(frame$domainvalue))
   
   ###########################
   ## Empty Result objects
@@ -123,14 +125,15 @@ for(idom in c("full_domain", "district")) {
   for (ispp in 1:ns_all) {
     for (isample in samples) {
       #Find solution closet to isample, append to sol_idx
-      sol_idx <- c(sol_idx, 
-                   with(master_settings[master_settings$spp == ispp, ],
+      sol_idx <- 
+        c(sol_idx, with(master_settings[master_settings$spp == ispp, ],
                         id[which.min(abs(n - isample))])
-      )
+        )
     }
   } 
   
   settings_agg <- master_settings[sol_idx,]
+  settings_agg$iboat <- rep(1:n_boats, times = ns_all)
   res_df <- master_res_df[, 1 + sol_idx]
   strata_list <- master_strata_list[sol_idx]
   strata_stats_list <- master_strata_stats_list[sol_idx]
@@ -141,9 +144,22 @@ for(idom in c("full_domain", "district")) {
     assign(x = paste0(ivar, "_", idom),
            value = get(ivar))
   }
- 
+  
   if (idom == "district") {
-    settings_district <- subset(master_settings_district, id %in% sol_idx )
+    temp_settings_district <- subset(x = master_settings_district, 
+                                subset = id %in% sol_idx )
+    
+    
+    settings_district <- data.frame()
+    
+    for (idx in sol_idx) {
+      settings_district <- rbind(settings_district,
+                                 subset(temp_settings_district, 
+                                        subset = id %in% idx))  
+    } 
+    
+    head(settings_district[order(settings_district$domain, settings_district$spp),])
+    
     vars_to_save <- c(vars_to_save, "settings")
   }
   

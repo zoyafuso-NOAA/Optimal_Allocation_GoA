@@ -41,16 +41,11 @@ load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 ####   Constants to specify before doing optimization
 ##################################################
 which_domain <- c("full_domain", "district")[1]
-for (which_species in c(11, 13, 21)[1]) {
+for (which_species in 18) {
   
   ##################################################
   ####   Constants to set up based on which_domain and which_species
   ##################################################
-  district_vals <- switch(which_domain,
-                          "full_domain" = rep(1, n_cells), 
-                          "district" = district_vals)
-  n_dom <- length(unique(district_vals))
-  
   frame <- switch( which_domain,
                    "full_domain" = frame_all,
                    "district" = frame_district)[, c("domainvalue", "id", 
@@ -59,7 +54,7 @@ for (which_species in c(11, 13, 21)[1]) {
                                                     paste0("Y", which_species,
                                                            "_SQ_SUM"))]
   names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
-  
+  n_dom <- length(unique(frame$domainvalue))
   no_strata <- switch(which_domain,
                       "full_domain" = 10,
                       "district" = rep(5, n_dom))
@@ -84,7 +79,7 @@ for (which_species in c(11, 13, 21)[1]) {
     dataset = cbind( subset(frame, select = -c(X1, X2)),
                      X1 = 1))
   
-  srs_n <- as.numeric(280 * table(district_vals) / n_cells)
+  srs_n <- as.numeric(280 * table(frame$domainvalue) / n_cells)
   
   srs_var <- srs_stats$S1^2 * (1 - srs_n / n_cells) / srs_n
   srs_cv <- sqrt(srs_var) / srs_stats$M1
@@ -183,9 +178,9 @@ for (which_species in c(11, 13, 21)[1]) {
     ## CVs are reduced proportionally, based on the effort level
     run <- run + 1
     effort_level <- as.integer(cut(x = current_n, 
-                                   breaks = c(0, samples, 1000), 
-                                   labels = 1:4))
-    CV_constraints <- CV_constraints * c(0.90, 0.95, 0.975)[effort_level]
+                                   breaks = c(0, 200, samples, 1000), 
+                                   labels = 1:5))
+    CV_constraints <- CV_constraints * c(0.80, 0.90, 0.95, 0.975)[effort_level]
     
     #Create CV dataframe in the format of SamplingStrata
     cv <- list()
