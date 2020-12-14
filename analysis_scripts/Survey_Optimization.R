@@ -7,22 +7,6 @@
 rm(list = ls())
 
 ##################################################
-####   Set up directories based on whether the optimization is being conducted
-####        on a multi-species or single-species level
-##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
-
-which_method = c("Multi_Species" = 1,
-                 "Single_Species" = 2)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
-                       "C:/Users/Zack Oyafuso/Documents",
-                       "C:/Users/zack.oyafuso/Work")[which_machine],
-                     "/GitHub/Optimal_Allocation_GoA/results/",
-                     c("Spatiotemporal_Optimization/", 
-                       "Single_Species_Optimization/")[which_method])
-
-##################################################
 ####  Install a forked version of the SamplingStrata Package from 
 ####  zoyafuso-NOAA's Github page
 ####
@@ -36,56 +20,44 @@ library(RColorBrewer)
 library(raster)
 
 ##################################################
+####   Set up directories based on whether the optimization is being conducted
+####        on a multi-species or single-species level
+##################################################
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+
+github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
+                       "C:/Users/Zack Oyafuso/Documents",
+                       "C:/Users/zack.oyafuso/Work")[which_machine],
+                     "/GitHub/Optimal_Allocation_GoA/")
+
+##################################################
 ####   Load Data
 ####   Load Population CVs for use in the thresholds
 ##################################################
-load(paste0(dirname(dirname(github_dir)), "/data/optimization_data.RData"))
-load(paste0(dirname(dirname(github_dir)), "/data/Extrapolation_depths.RData"))
-
-if (which_method == 1) {
-  load(paste0(dirname(github_dir), "/Population_Variances.RData"))
-  SRS_Pop_CV <- SRS_Pop_CV[spp_idx_opt, ]
-}
+load(paste0(github_dir, "/data/optimization_data.RData"))
+load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 
 ##################################################
-####   Some Constants
+####   Constants to specify before doing optimization
 ##################################################
-stratas <- switch(which_method, 
-                  "1" = stratas, 
-                  "2" =  10)
-NStrata <- length(stratas)
-ns_opt <- c(ns_opt, 1)[which_method]
+which_domain <- c("full_domain", "district")[2]
+district_vals <- switch(which_domain,
+                        "full_domain" = rep(1, n_cells), 
+                        "district" = district_vals)
+n_dom <- length(unique(district_vals))
 
-which_species <- switch(which_method, 
-                        "1" = 1:ns_opt, 
-                        "2" = spp_idx_eval[7])
+frame <- switch( which_domain,
+                 "full_domain" = frame_all,
+                 "district" = frame_district)[, c("domainvalue", "id", 
+                                                  "X1", "X2", "WEIGHT",
+                                                  paste0("Y", spp_idx_opt), 
+                                                  paste0("Y", spp_idx_opt,
+                                                         "_SQ_SUM"))]
 
-##################################################
-####   If Single_Species: subset just the one species
-##################################################
-if (which_method == 2) {
-  
-  frame <- frame[, c("domainvalue", "id", "X1", "X2", "WEIGHT",
-                     paste0("Y", which_species), 
-                     paste0("Y", which_species, "_SQ_SUM"))]
-  
-  names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
-  
-  github_dir = paste0(github_dir, 
-                      gsub(x = sci_names_all[which_species], 
-                           pattern = ' ', 
-                           replacement = '_'), '/')
-  if(!dir.exists(github_dir)) dir.create(github_dir)
-  
-  # Lower CV threshold is not needed for a single-species analysis
-  SS_STRS_Pop_CV <- matrix(data = 0,
-                           nrow = ns_opt,
-                           ncol = 3)
-  
-  SRS_Pop_CV <- matrix(data = c(0.35, 0.245, 0.0705),
-                       byrow = T,
-                       ncol = 3)
-}
+names(frame)[names(frame) %in% paste0("Y", spp_idx_opt)] <- 
+  paste0("Y", 1:ns_opt)
+names(frame)[names(frame) %in% paste0("Y", spp_idx_opt, "_SQ_SUM")] <- 
+  paste0("Y", 1:ns_opt, "_SQ_SUM")
 
 ##################################################
 ####   Run optimization
@@ -94,30 +66,43 @@ par(mfrow = c(6,6),
     mar = c(2,2,0,0))
 
 #Choose a boat level
-isample <- 3
+isample <- 1
+istrata <- 1
 
 for (istrata in 1) {
   
-  temp_strata <- stratas[istrata]
+  temp_strata <- rep(stratas[istrata], n_dom)
   
   ##Initial Condition
   Run <- 1
   current_n <- 0
-  CV_constraints <- SRS_Pop_CV[, isample] 
+  # CV_constraints <- SRS_Pop_CV[, isample] 
   
-  #Create CV dataframe
+  ## Initiate CVs to be those calculated under SRS
+  srs_stats <- SamplingStrata::buildStrataDF( 
+    dataset = cbind( subset(frame, select = -c(X1, X2)),
+                     X1 = 1))
+  
+  srs_n <- as.numeric(samples[isample] * table(district_vals) / n_cells)
+  
+  srs_var <- srs_stats[, paste0("S", 1:ns_opt)]^2 * (1 - srs_n / n_cells) / srs_n
+  srs_cv <- sqrt(srs_var) / srs_stats[, paste0("M", 1:ns_opt)]
+  # names(srs_cv) <- paste0("S", 1:ns_opt)
+  
   cv <- list()
   for (spp in 1:ns_opt) 
-    cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
-  cv[["DOM"]] <- 1
-  cv[["domainvalue"]] <- 1
+    cv[[paste0("CV", spp)]] <- as.numeric(srs_cv[, spp])
+  cv[["DOM"]] <- 1:n_dom
+  cv[["domainvalue"]] <- 1:n_dom
   cv <- as.data.frame(cv)
+  
   
   while (current_n <= c(280, 550, 820)[isample] ) {
     
     #Set wd for output files, create a directory if it doesn"t exist yet
-    temp_dir = paste0(github_dir, "boat", isample, "/Str", temp_strata, 
-                      "Run", Run)
+    temp_dir = paste0(github_dir, 
+                      "results/", which_domain, "/Multi_Species_Optimization",
+                      "/boat", isample, "/Str", temp_strata, "Run", Run)
     if(!dir.exists(temp_dir)) dir.create(temp_dir, recursive = T)
     
     setwd(temp_dir)
@@ -125,9 +110,9 @@ for (istrata in 1) {
     #Run optimization
     solution <- optimStrata(method = "continuous",
                             errors = cv, 
-                            framesamp = frame,
+                            framesamp = frame[],
                             iter = 300,
-                            pops = 30,
+                            pops = 50,
                             elitism_rate = 0.1,
                             mut_chance = 1 / (temp_strata + 1),
                             nStrata = temp_strata,
