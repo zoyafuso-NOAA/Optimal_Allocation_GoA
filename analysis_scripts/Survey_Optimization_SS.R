@@ -40,8 +40,8 @@ load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 ##################################################
 ####   Constants to specify before doing optimization
 ##################################################
-which_domain <- c("full_domain", "district")[2]
-for (which_species in c(10, 12, 14, 16, 18)) {
+which_domain <- c("full_domain", "district")[1]
+for (which_species in c(11, 13, 21)[1]) {
   
   ##################################################
   ####   Constants to set up based on which_domain and which_species
