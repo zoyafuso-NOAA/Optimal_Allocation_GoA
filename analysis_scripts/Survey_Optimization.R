@@ -40,13 +40,13 @@ load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 ##################################################
 ####   Create optimization scenarios
 ##################################################
-scen <- data.frame(nstrata = seq(from = 5, to = 20, by = 5),
-                   which_domain = c("district", rep("full_domain", 3)))
+scen <- data.frame(nstrata = c(3,5,10, 10,15,20),
+                   which_domain = rep(c("district", "full_domain"), each = 3))
 
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-for (irow in 1:nrow(scen)) {
+for (irow in 1) {
   for(isample in 1:n_boats) {
     
     ##################################################
@@ -78,11 +78,16 @@ for (irow in 1:nrow(scen)) {
     load(paste0(github_dir, "results/", which_domain, "/srs_pop_cv.RData"))
     
     cv_constraints <- get(paste0("srs_pop_cv_", which_domain))[, , isample] 
-    cv_constraints <- cv_constraints[spp_idx_opt, ]
+    cv_constraints <- switch(which_domain, 
+                             "district" = cv_constraints[spp_idx_opt, ],
+                             "full_domain" = cv_constraints[spp_idx_opt])
     
     cv <- list()
     for (spp in 1:ns_opt) 
-      cv[[paste0("CV", spp)]] <- as.numeric(cv_constraints[spp ,])
+      cv[[paste0("CV", spp)]] <- 
+      as.numeric(switch(which_domain, 
+                        "district" = cv_constraints[spp, ],
+                        "full_domain" = cv_constraints[spp]))
     cv[["DOM"]] <- 1:n_dom
     cv[["domainvalue"]] <- 1:n_dom
     cv <- as.data.frame(cv)
@@ -91,7 +96,9 @@ for (irow in 1:nrow(scen)) {
                 "/Single_Species_Optimization/",
                 "optimization_knitted_results.RData"))
     
-    ss_strs_pop_cv <- get(paste0("settings_", which_domain))
+    ss_strs_pop_cv <- t(subset(x = get(paste0("settings_", which_domain)),
+                               subset = iboat == isample & spp %in% spp_idx_opt,
+                               select = paste(1:5)))
     
     ##################################################
     ####   Run optimization
@@ -99,18 +106,10 @@ for (irow in 1:nrow(scen)) {
     while (current_n <= c(280, 550, 820)[isample] ) {
       
       #Set wd for output files, create a directory if it doesn"t exist yet
-      temp_dir = switch(which_domain,
-                        "full_domain" = paste0(github_dir, 
-                                               "results/", which_domain, 
-                                               "/Multi_Species_Optimization",
-                                               "/boat", isample, "/Str",
-                                               temp_strata[1], "/Run", run),
-                        "district" = paste0(github_dir, 
-                                            "results/", which_domain, 
-                                            "/Multi_Species_Optimization",
-                                            "/boat", isample, "/Run", run)
-                        
-      )
+      temp_dir = paste0(github_dir, "results/", which_domain, 
+                        "/Multi_Species_Optimization/boat", isample,
+                        "/Str", temp_strata[1], "/Run", run)
+      
       if(!dir.exists(temp_dir)) dir.create(temp_dir, recursive = T)
       
       setwd(temp_dir)
@@ -121,7 +120,7 @@ for (irow in 1:nrow(scen)) {
       solution <- optimStrata(method = "continuous",
                               errors = cv, 
                               framesamp = frame,
-                              iter = 10,
+                              iter = 300,
                               pops = 50,
                               elitism_rate = 0.1,
                               mut_chance = 1 / (temp_strata[1] + 1),
@@ -149,18 +148,18 @@ for (irow in 1:nrow(scen)) {
       
       png(filename = "solution.png", 
           width = 5, 
-          height = 5, 
+          height = 3, 
           units = "in", 
           res = 500)
       
       par(mfrow = c(1, 1), 
           mar = c(1, 1, 1, 1))
-      plot(goa_ras, 
-           axes = F, 
-           asp = 1,
-           col = colorRampPalette(
-             brewer.pal(n = 11, 
-                        name = "Paired"))(sum(temp_strata)) ) 
+      plot( goa_ras, 
+            axes = F, 
+            asp = 1,
+            col = colorRampPalette(
+              brewer.pal(n = 11, 
+                         name = "Paired"))(sum(temp_strata))[sample(1:sum(temp_strata))] ) 
       
       rect(xleft = districts$W_lon,
            xright = districts$E_lon,
@@ -194,21 +193,15 @@ for (irow in 1:nrow(scen)) {
       #Set up next run by changing upper CV constraints
       run <- run + 1
       
-      cv_constraints <- 
-        0.95*cv_constraints + 0.05*(ss_strs_pop_cv[spp_idx_opt, , isample]) 
+      cv_constraints <- 0.95 * cv_constraints + 0.05 * ss_strs_pop_cv
       
       #Create CV dataframe in the formmat of SamplingStrata
       cv <- list()
       for (spp in 1:ns_opt) 
-        cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
-      cv[["DOM"]] <- 1
-      cv[["domainvalue"]] <- 1
+        cv[[paste0("CV", spp)]] <- as.numeric(cv_constraints[, spp])
+      cv[["DOM"]] <- 1:n_dom
+      cv[["domainvalue"]] <- 1:n_dom
       cv <- as.data.frame(cv)
     }
   }
 }
-
-
-
-
-
