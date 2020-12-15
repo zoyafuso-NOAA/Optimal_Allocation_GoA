@@ -27,7 +27,7 @@ library(SamplingStrata)
 ###########################
 load(paste0(github_dir, "/data/optimization_data.RData"))
 
-for(idom in c("full_domain", "district")) {
+for(idom in c("full_domain", "district")[2]) {
   
   frame <- switch( idom,
                    "full_domain" = frame_all,
@@ -147,8 +147,13 @@ for(idom in c("full_domain", "district")) {
   
   if (idom == "district") {
     temp_settings_district <- subset(x = master_settings_district, 
-                                subset = id %in% sol_idx )
+                                     subset = id %in% sol_idx )
     
+    temp_settings_district <- 
+      tidyr::spread(data = subset(x = temp_settings_district,
+                                  select = -n),
+                    value = cv,
+                    key = domain)
     
     settings_district <- data.frame()
     
@@ -156,10 +161,8 @@ for(idom in c("full_domain", "district")) {
       settings_district <- rbind(settings_district,
                                  subset(temp_settings_district, 
                                         subset = id %in% idx))  
-    } 
-    
-    head(settings_district[order(settings_district$domain, settings_district$spp),])
-    
+    }
+    settings_district$iboat = rep(1:n_boats, times = ns_all)
     vars_to_save <- c(vars_to_save, "settings")
   }
   

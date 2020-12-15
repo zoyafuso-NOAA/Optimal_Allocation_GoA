@@ -38,132 +38,177 @@ load(paste0(github_dir, "/data/optimization_data.RData"))
 load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 
 ##################################################
-####   Constants to specify before doing optimization
+####   Create optimization scenarios
 ##################################################
-which_domain <- c("full_domain", "district")[2]
-district_vals <- switch(which_domain,
-                        "full_domain" = rep(1, n_cells), 
-                        "district" = district_vals)
-n_dom <- length(unique(district_vals))
-
-frame <- switch( which_domain,
-                 "full_domain" = frame_all,
-                 "district" = frame_district)[, c("domainvalue", "id", 
-                                                  "X1", "X2", "WEIGHT",
-                                                  paste0("Y", spp_idx_opt), 
-                                                  paste0("Y", spp_idx_opt,
-                                                         "_SQ_SUM"))]
-
-names(frame)[names(frame) %in% paste0("Y", spp_idx_opt)] <- 
-  paste0("Y", 1:ns_opt)
-names(frame)[names(frame) %in% paste0("Y", spp_idx_opt, "_SQ_SUM")] <- 
-  paste0("Y", 1:ns_opt, "_SQ_SUM")
+scen <- data.frame(nstrata = seq(from = 5, to = 20, by = 5),
+                   which_domain = c("district", rep("full_domain", 3)))
 
 ##################################################
-####   Run optimization
+####   Collect optimization results from each strata
 ##################################################
-par(mfrow = c(6,6), 
-    mar = c(2,2,0,0))
-
-#Choose a boat level
-isample <- 1
-istrata <- 1
-
-for (istrata in 1) {
-  
-  temp_strata <- rep(stratas[istrata], n_dom)
-  
-  ##Initial Condition
-  Run <- 1
-  current_n <- 0
-  # CV_constraints <- SRS_Pop_CV[, isample] 
-  
-  ## Initiate CVs to be those calculated under SRS
-  srs_stats <- SamplingStrata::buildStrataDF( 
-    dataset = cbind( subset(frame, select = -c(X1, X2)),
-                     X1 = 1))
-  
-  srs_n <- as.numeric(samples[isample] * table(district_vals) / n_cells)
-  
-  srs_var <- srs_stats[, paste0("S", 1:ns_opt)]^2 * (1 - srs_n / n_cells) / srs_n
-  srs_cv <- sqrt(srs_var) / srs_stats[, paste0("M", 1:ns_opt)]
-  # names(srs_cv) <- paste0("S", 1:ns_opt)
-  
-  cv <- list()
-  for (spp in 1:ns_opt) 
-    cv[[paste0("CV", spp)]] <- as.numeric(srs_cv[, spp])
-  cv[["DOM"]] <- 1:n_dom
-  cv[["domainvalue"]] <- 1:n_dom
-  cv <- as.data.frame(cv)
-  
-  
-  while (current_n <= c(280, 550, 820)[isample] ) {
+for (irow in 1:nrow(scen)) {
+  for(isample in 1:n_boats) {
     
-    #Set wd for output files, create a directory if it doesn"t exist yet
-    temp_dir = paste0(github_dir, 
-                      "results/", which_domain, "/Multi_Species_Optimization",
-                      "/boat", isample, "/Str", temp_strata, "Run", Run)
-    if(!dir.exists(temp_dir)) dir.create(temp_dir, recursive = T)
+    ##################################################
+    ####   Constants to specify before doing optimization
+    ##################################################
+    which_domain <- scen$which_domain[irow]
     
-    setwd(temp_dir)
+    frame <- switch( which_domain,
+                     "full_domain" = frame_all,
+                     "district" = frame_district)[, c("domainvalue", "id", 
+                                                      "X1", "X2", "WEIGHT",
+                                                      paste0("Y", spp_idx_opt), 
+                                                      paste0("Y", spp_idx_opt,
+                                                             "_SQ_SUM"))]
+    names(frame)[names(frame) %in% paste0("Y", spp_idx_opt)] <- 
+      paste0("Y", 1:ns_opt)
+    names(frame)[names(frame) %in% paste0("Y", spp_idx_opt, "_SQ_SUM")] <- 
+      paste0("Y", 1:ns_opt, "_SQ_SUM")
     
-    #Run optimization
-    solution <- optimStrata(method = "continuous",
-                            errors = cv, 
-                            framesamp = frame[],
-                            iter = 300,
-                            pops = 50,
-                            elitism_rate = 0.1,
-                            mut_chance = 1 / (temp_strata + 1),
-                            nStrata = temp_strata,
-                            showPlot = T,
-                            writeFiles = T)
+    n_dom <- length(unique(frame$domainvalue))
     
-    sum_stats <- summaryStrata(solution$framenew,
-                               solution$aggr_strata,
-                               progress=FALSE) 
+    temp_strata <- rep(x = scen$nstrata[irow], times = n_dom)
     
-    #Plot Solution
-    goa <- sp::SpatialPointsDataFrame(
-      coords = Extrapolation_depths[,c("E_km", "N_km")],
-      data = data.frame(Str_no = solution$framenew$STRATO) )
-    goa_ras <- raster::raster(x = goa, 
-                              resolution = 5)
-    goa_ras <- raster::rasterize(x = goa, 
-                                 y = goa_ras, 
-                                 field = "Str_no")
+    ##Initial Condition
+    run <- 1
+    current_n <- 0
     
-    png(filename = "solution.png", 
-        width = 5, 
-        height = 5, 
-        units = "in", 
-        res = 500)
-    plot(goa_ras, axes = F, 
-         col = terrain.colors(temp_strata)[sample(temp_strata)])
-    dev.off()
+    ## Load SRS information to initialize the starting points for the CVs
+    load(paste0(github_dir, "results/", which_domain, "/srs_pop_cv.RData"))
     
-    #Save Output
-    CV_constraints <- expected_CV(strata = solution$aggr_strata)
-    current_n <- sum(sum_stats$Allocation)
+    cv_constraints <- get(paste0("srs_pop_cv_", which_domain))[, , isample] 
+    cv_constraints <- cv_constraints[spp_idx_opt, ]
     
-    result_list <- list(solution = solution, 
-                        sum_stats = sum_stats, 
-                        CV_constraints = CV_constraints, 
-                        n = current_n)
-    save(list = "result_list", file = "result_list.RData")
-    
-    #Set up next run by changing upper CV constraints
-    Run <- Run + 1
-    
-    CV_constraints <- 0.95*CV_constraints + 0.05*(SS_STRS_Pop_CV[, isample]) 
-    
-    #Create CV dataframe in the formmat of SamplingStrata
     cv <- list()
     for (spp in 1:ns_opt) 
-      cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
-    cv[["DOM"]] <- 1
-    cv[["domainvalue"]] <- 1
+      cv[[paste0("CV", spp)]] <- as.numeric(cv_constraints[spp ,])
+    cv[["DOM"]] <- 1:n_dom
+    cv[["domainvalue"]] <- 1:n_dom
     cv <- as.data.frame(cv)
+    
+    load(paste0(github_dir, "results/", which_domain, 
+                "/Single_Species_Optimization/",
+                "optimization_knitted_results.RData"))
+    
+    ss_strs_pop_cv <- get(paste0("settings_", which_domain))
+    
+    ##################################################
+    ####   Run optimization
+    ##################################################
+    while (current_n <= c(280, 550, 820)[isample] ) {
+      
+      #Set wd for output files, create a directory if it doesn"t exist yet
+      temp_dir = switch(which_domain,
+                        "full_domain" = paste0(github_dir, 
+                                               "results/", which_domain, 
+                                               "/Multi_Species_Optimization",
+                                               "/boat", isample, "/Str",
+                                               temp_strata[1], "/Run", run),
+                        "district" = paste0(github_dir, 
+                                            "results/", which_domain, 
+                                            "/Multi_Species_Optimization",
+                                            "/boat", isample, "/Run", run)
+                        
+      )
+      if(!dir.exists(temp_dir)) dir.create(temp_dir, recursive = T)
+      
+      setwd(temp_dir)
+      
+      #Run optimization
+      if(which_domain == "full_domain") par(mfrow = c(6,6), mar = c(2,2,0,0))
+      
+      solution <- optimStrata(method = "continuous",
+                              errors = cv, 
+                              framesamp = frame,
+                              iter = 10,
+                              pops = 50,
+                              elitism_rate = 0.1,
+                              mut_chance = 1 / (temp_strata[1] + 1),
+                              nStrata = temp_strata,
+                              showPlot = T,
+                              writeFiles = T)
+      
+      sum_stats <- summaryStrata(solution$framenew,
+                                 solution$aggr_strata,
+                                 progress=FALSE) 
+      
+      #Plot Solution
+      plot_solution <- as.factor(paste(solution$framenew$DOMAINVALUE,
+                                       solution$framenew$STRATO))
+      plot_solution <- as.integer(plot_solution)
+      
+      goa <- sp::SpatialPointsDataFrame(
+        coords = Extrapolation_depths[,c("Lon", "Lat")],
+        data = data.frame(Str_no = plot_solution) )
+      goa_ras <- raster::raster(x = goa, 
+                                resolution = 0.075)
+      goa_ras <- raster::rasterize(x = goa, 
+                                   y = goa_ras, 
+                                   field = "Str_no")
+      
+      png(filename = "solution.png", 
+          width = 5, 
+          height = 5, 
+          units = "in", 
+          res = 500)
+      
+      par(mfrow = c(1, 1), 
+          mar = c(1, 1, 1, 1))
+      plot(goa_ras, 
+           axes = F, 
+           asp = 1,
+           col = colorRampPalette(
+             brewer.pal(n = 11, 
+                        name = "Paired"))(sum(temp_strata)) ) 
+      
+      rect(xleft = districts$W_lon,
+           xright = districts$E_lon,
+           ybottom = tapply(X = Extrapolation_depths$Lat, 
+                            INDEX = district_vals,
+                            FUN = min), 
+           ytop = tapply(X = Extrapolation_depths$Lat, 
+                         INDEX = district_vals,
+                         FUN = max))
+      
+      text(x = rowMeans(districts[, c("W_lon", "E_lon")]),
+           y = tapply(X = Extrapolation_depths$Lat, 
+                      INDEX = district_vals,
+                      FUN = max),
+           labels = districts$district,
+           pos = 3)
+      
+      box()
+      dev.off()
+      
+      #Save Output
+      cv_constraints <- expected_CV(strata = solution$aggr_strata)
+      current_n <- sum(sum_stats$Allocation)
+      
+      result_list <- list(solution = solution, 
+                          sum_stats = sum_stats, 
+                          cv_constraints = cv_constraints, 
+                          n = current_n)
+      save(list = "result_list", file = "result_list.RData")
+      
+      #Set up next run by changing upper CV constraints
+      run <- run + 1
+      
+      cv_constraints <- 
+        0.95*cv_constraints + 0.05*(ss_strs_pop_cv[spp_idx_opt, , isample]) 
+      
+      #Create CV dataframe in the formmat of SamplingStrata
+      cv <- list()
+      for (spp in 1:ns_opt) 
+        cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
+      cv[["DOM"]] <- 1
+      cv[["domainvalue"]] <- 1
+      cv <- as.data.frame(cv)
+    }
   }
 }
+
+
+
+
 
