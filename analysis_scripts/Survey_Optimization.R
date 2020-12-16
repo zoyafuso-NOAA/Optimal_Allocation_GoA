@@ -23,7 +23,7 @@ library(raster)
 ####   Set up directories based on whether the optimization is being conducted
 ####        on a multi-species or single-species level
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -46,7 +46,7 @@ scen <- data.frame(nstrata = c(3,5,10, 10,15,20),
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-for (irow in 1) {
+for (irow in 4) {
   for(isample in 1:n_boats) {
     
     ##################################################
@@ -96,9 +96,16 @@ for (irow in 1) {
                 "/Single_Species_Optimization/",
                 "optimization_knitted_results.RData"))
     
-    ss_strs_pop_cv <- t(subset(x = get(paste0("settings_", which_domain)),
-                               subset = iboat == isample & spp %in% spp_idx_opt,
-                               select = paste(1:5)))
+    ss_strs_pop_cv <- 
+      switch(which_domain,
+             "district" = t(subset(x = settings_district,
+                                   subset = iboat == isample & 
+                                     spp %in% spp_idx_opt,
+                                   select = paste(1:5))),
+             "full_domain" = unlist(subset(x = settings_agg_full_domain,
+                                           subset = iboat == isample & 
+                                             spp %in% spp_idx_opt,
+                                           select = cv)))
     
     ##################################################
     ####   Run optimization
