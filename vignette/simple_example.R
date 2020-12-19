@@ -74,25 +74,25 @@ head(frame)
 ##################################################
 CV_constraints = rep(0.1, n_spp)
 #Create CV dataframe
-cv <- list()
-for (spp in 1:n_spp) cv[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
-cv[["DOM"]] <- 1
-cv[["domainvalue"]] <- 1
-(cv <- as.data.frame(cv))
+cv_input <- list()
+for (spp in 1:n_spp) cv_input[[paste0("CV", spp)]] <- as.numeric(CV_constraints[spp])
+cv_input[["DOM"]] <- 1
+cv_input[["domainvalue"]] <- 1
+(cv_input <- as.data.frame(cv_input))
 
 ##################################################
 ####   Run optimization
 ####   If you want to save the output, first setwd() to the directory you want
 ####   the output saved to, then turn the writeFiles argumenet to TRUE
 ####   Iterations are set to 50 for speed but in practice should be in the 
-####   hundreds. Population size is 10 for speed but in practice should be 
-####   higher (e.g., 30 or 50). See ?SamplingStrata::optimStrata for 
-####   descriptions of the other arguments
+####   hundreds. Population size (number of candidate solutions) is 10 for 
+####   speed but in practice should be higher (e.g., 30 or 50). 
+####   See ?SamplingStrata::optimStrata for descriptions of the other arguments
 ##################################################
 num_of_strata = 10
 
 solution <- SamplingStrata::optimStrata(method = "continuous",
-                                        errors = cv, 
+                                        errors = cv_input, 
                                         framesamp = frame,
                                         iter = 50,
                                         pops = 10,
@@ -127,6 +127,7 @@ goa_ras <- raster::raster(goa,
 goa_ras <- raster::rasterize(x = goa, 
                              y = goa_ras, 
                              field = "Str_no")
+
 
 plot(goa_ras, 
      axes = F, 
