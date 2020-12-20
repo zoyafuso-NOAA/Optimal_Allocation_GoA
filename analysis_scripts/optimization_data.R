@@ -109,7 +109,7 @@ district_vals <- cut(x = Extrapolation_depths$Lon,
 
 ## Number of times to simulate survey
 n_iters <- 1000
-obs_cv <- c(0, 0.1, 0.25, 0.5, 1) #low to high sampling CVs
+obs_cv <- c(0, 0.25, 0.5, 1) #low to high sampling CVs
 n_obs_cv <- length(obs_cv)
 
 ##################################################
