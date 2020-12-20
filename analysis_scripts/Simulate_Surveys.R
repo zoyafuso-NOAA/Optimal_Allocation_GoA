@@ -81,6 +81,7 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 6) ),
                    domain = c("full_domain", 
                               rep(c("district", "full_domain"), each = 3)))
 
+n_iters = 500
 
 for (irow in 1:3) {
   ##################################################
@@ -116,8 +117,8 @@ for (irow in 1:3) {
   
   isurvey <- scen$survey_type[irow]
   
-  # for (iter in 1:Niters) {
-  for (iter in 1:200) {
+  for (iter in 1:n_iters) {
+  # for (iter in 1:200) {
     set.seed(1000 + iter)
     for (ierror in 1:n_obs_cv) {
       for (iboat in 1:3) {
