@@ -1,30 +1,6 @@
 ##################################
 ## Create function to calcualte a STRS and output mean, CV, and relative bias
 ##################################
-# input = list(
-#   "density" = D_gct[, , Years2Include],
-#   
-#   "cell_areas" = Extrapolation_depths$Area_km2,
-#   
-#   "obs_CV" = obs_CV[ierror],
-#   
-#   "solution" = switch(
-#     isurvey,
-#     "Current" = Extrapolation_depths$stratum_new_label,
-#     "STRS" = res_df[, iboat]),
-#   
-#   "allocation" = switch(
-#     isurvey,
-#     "Current" = allocations[, paste0("boat", iboat)],
-#     "STRS" = strata_list[[iboat]]$Allocation),
-#   
-#   "true_density" = true_mean,
-#   
-#   "true_index_district" = true_index_district,
-#   
-#   "post_strata" = district_vals
-# )
-
 do_STRS <- function(input){
   
   #Some constants
@@ -53,8 +29,8 @@ do_STRS <- function(input){
   strata_areas <- subset(strata_areas, solution %in% survey_detail$Stratum)
   
   #Result objects
-  mean_density <- cv <- rel_bias <- matrix(ncol = n_spp, 
-                                           nrow = n_time)
+  mean_density <- cv <- rel_bias <- rel_log_bias <- matrix(ncol = n_spp, 
+                                                           nrow = n_time)
   index_district <- array(dim = c(n_spp, n_time, n_dom))
   
   for (iyear in 1:n_time) {
@@ -120,6 +96,8 @@ do_STRS <- function(input){
       100 * (STRS_mean - input$true_density[, iyear]) / 
         input$true_density[, iyear])
     
+    rel_log_bias[iyear, ] <- log(STRS_mean / input$true_density[, iyear])
+    
     #Post-stratified indices of abundance
     index_df <- data.frame(Area_km2 = input$cell_areas,
                            stratum = input$solution,
@@ -141,7 +119,11 @@ do_STRS <- function(input){
   return(list("mean_denisty" = round(mean_density, 2),
               "cv" = round(cv, 4),
               "rel_bias" = round(rel_bias, 2),
+              "rel_log_bias" = round(rel_log_bias, 3),
               "bias_index_district" = 100 * 
                 (index_district - input$true_index_district) /
-                input$true_index_district ))
+                input$true_index_district,
+              "log_bias_index_district" = log(index_district / 
+                                                input$true_index_district))
+  )
 }

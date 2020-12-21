@@ -83,11 +83,11 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 6) ),
 
 n_iters = 500
 
-for (irow in 1:3) {
+for (irow in 7) {
   ##################################################
   ####   Result Objects
   ##################################################
-  STRS_sim_mean <- STRS_sim_cv <- STRS_rel_bias_est <-
+  STRS_sim_mean <- STRS_sim_cv <- STRS_rel_bias_est <- STRS_log_bias_est <-
     array(dim = c(n_obs_cv, n_years, ns_all, n_boats, n_iters), 
           dimnames = list(paste0("obsCV=", obs_cv), 
                           paste0("year_", 1:n_years), 
@@ -95,7 +95,8 @@ for (irow in 1:3) {
                           paste0("boat_", 1:n_boats), 
                           NULL ))
   
-  STRS_rel_bias_index_district <- STRS_index_district <- 
+  STRS_rel_bias_index_district <- STRS_log_bias_index_district <- 
+    STRS_index_district <- 
     array(dim = c(n_obs_cv, n_years, ns_all, n_boats, n_dom, n_iters),
           dimnames = list(paste0("obsCV=", obs_cv),
                           paste0("year_", 1:n_years),
@@ -118,7 +119,7 @@ for (irow in 1:3) {
   isurvey <- scen$survey_type[irow]
   
   for (iter in 1:n_iters) {
-  # for (iter in 1:200) {
+    # for (iter in 1:200) {
     set.seed(1000 + iter)
     for (ierror in 1:n_obs_cv) {
       for (iboat in 1:3) {
@@ -169,8 +170,11 @@ for (irow in 1:3) {
         STRS_sim_mean[ierror, , , iboat, iter] = sim_survey$mean_denisty
         STRS_sim_cv[ierror, , , iboat, iter] = sim_survey$cv
         STRS_rel_bias_est[ierror, , , iboat, iter] = sim_survey$rel_bias
+        STRS_log_bias_est[ierror, , , iboat, iter] = sim_survey$rel_log_bias
         STRS_rel_bias_index_district[ierror, , , iboat, , iter] <- 
           sim_survey$bias_index_district
+        STRS_log_bias_index_district[ierror, , , iboat, , iter] <- 
+          sim_survey$log_bias_index_district
       }
     }
     
@@ -208,12 +212,20 @@ for (irow in 1:3) {
       assign(value = STRS_sim_cv,
              x = paste0("SUR_", isurvey, "_", scen$domain[irow], "_STR_", 
                         scen$strata[irow], "_sim_cv"))
+      
       assign(value = STRS_rel_bias_est,
              x = paste0("SUR_", isurvey, "_", scen$domain[irow], "_STR_", 
                         scen$strata[irow], "_rb_agg"))
+      assign(value = STRS_log_bias_est,
+             x = paste0("SUR_", isurvey, "_", scen$domain[irow], "_STR_", 
+                        scen$strata[irow], "_log_rb_agg"))
+      
       assign(value = STRS_rel_bias_index_district,
              x = paste0("SUR_", isurvey, "_", scen$domain[irow], "_STR_", 
                         scen$strata[irow], "_rb_district"))
+      assign(value = STRS_log_bias_index_district,
+             x = paste0("SUR_", isurvey, "_", scen$domain[irow], "_STR_", 
+                        scen$strata[irow], "_log_rb_district"))
       
       assign(value = STRS_true_cv_array,
              x = paste0("SUR_", isurvey, "_", scen$domain[irow], "_STR_", 
@@ -224,8 +236,10 @@ for (irow in 1:3) {
       
       save(list = paste0(paste0("SUR_", isurvey, "_", scen$domain[irow],
                                 "_STR_", scen$strata[irow]), 
-                         c("_sim_mean", "_sim_cv", "_rb_agg",
-                           "_rb_district", "_true_cv", "_rrmse_cv") ),
+                         c("_sim_mean", "_sim_cv", 
+                           "_rb_agg", "_log_rb_agg",
+                           "_rb_district", "_log_rb_district", 
+                           "_true_cv", "_rrmse_cv") ),
            file = paste0(github_dir, "SUR_", isurvey, "_", 
                          scen$domain[irow], "_STR_", scen$strata[irow], 
                          "_simulation_results.RData"))
