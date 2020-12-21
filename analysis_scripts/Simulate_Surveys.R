@@ -81,9 +81,9 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 6) ),
                    domain = c("full_domain", 
                               rep(c("district", "full_domain"), each = 3)))
 
-n_iters = 500
+n_iters = 400
 
-for (irow in 7) {
+for (irow in 1:3) {
   ##################################################
   ####   Result Objects
   ##################################################
