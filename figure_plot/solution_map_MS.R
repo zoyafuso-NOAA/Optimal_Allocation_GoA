@@ -1,45 +1,47 @@
 ###############################################################################
-## Project:         Plot Single Species Optimization Solutions
+## Project:         Plot Multispecies Optimization Solutions
 ## Author:          Zack Oyafuso (zack.oyafuso@noaa.gov)
 ## Description:     
 ###############################################################################
 rm(list = ls())
 
 ##################################################
-####  Set up directories  
-##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[1]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
-                       "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/")
-
-output_dir <- paste0(c("/Users/zackoyafuso/", 
-                       "C:/Users/Zack Oyafuso/")[which_machine], 
-                     "Google Drive/MS_Optimizations/TechMemo/figures/")
-
-##################################################
-####  Import Libraries  
+####  Install a forked version of the SamplingStrata Package from 
+####  zoyafuso-NOAA's Github page
+####
+####  Import other required packages
 ##################################################
 library(sp)
-library(raster)
 library(RColorBrewer)
+library(raster)
 
 ##################################################
-####    Load predicted density and optimization results 
-####    Set up constants
+####   Set up directories based on whether the optimization is being conducted
+####        on a multi-species or single-species level
 ##################################################
-load(paste0(github_dir, "data/optimization_data.RData"), verbose = TRUE)
-load(paste0(github_dir, "/data/Extrapolation_depths.RData"), verbose = TRUE)
-load(paste0(github_dir, "results/Spatiotemporal_Optimization/",
-            "optimization_knitted_results.RData"), verbose = TRUE)
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
 
-common_names_opt <- gsub(common_names_opt, pattern = " ", replacement = "\n")
-common_names_opt[11] <- "blackspotted/\nrougheye\nrockfishes"
+github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
+                       "C:/Users/Zack Oyafuso/Documents",
+                       "C:/Users/zack.oyafuso/Work")[which_machine],
+                     "/GitHub/Optimal_Allocation_GoA/")
 
+output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/"),
+                     "MS_Optimizations/TechMemo/figures/")
+
+##################################################
+####   Load Data
+####   Load Population CVs for use in the thresholds
+##################################################
+load(paste0(github_dir, "data/optimization_data.RData"))
+load(paste0(github_dir, "data/Extrapolation_depths.RData"))
+load(paste0(github_dir, "results/MS_optimization_knitted_results.RData"))
+
+##################################################
+####   Constants
+##################################################
 x_range <- diff(range(Extrapolation_depths$E_km))
 y_range <- diff(range(Extrapolation_depths$N_km))
-
 
 ##################################################
 ####    Plot
@@ -53,83 +55,98 @@ y_range <- diff(range(Extrapolation_depths$N_km))
   
   par(mar = c(0, 0, 0, 0),
       mfcol = c(3, 2))
-
-  for (sample_survey in c(FALSE, TRUE)) { 
-    for (istrata in 1:NStrata) {
-      
+  
+  
+  for (idomain in c("district", "full_domain")) {
+    istrata <- list("district" = c(3, 5, 10),
+                    "full_domain" = c(10, 15, 20))[[idomain]][1]
+    
+    for(istrata in list("district" = c(3, 5, 10),
+                        "full_domain" = c(10, 15, 20))[[idomain]]) {
       #Base Plot layer
       plot(1, 
            type = "n",
            xlim = range(Extrapolation_depths$E_km),
            ylim = with(Extrapolation_depths, 
                        c(min(N_km), 
-                         max(N_km) + 1.5 * y_range)), 
+                         max(N_km) + 1.75 * y_range)), 
            axes = F,
            ann = F,
            asp = 1)
-      box()
+      
       
       #Strata label
-      mtext(side = 1,
-            line = -1.5,
+      mtext(side = 3,
+            line = -2,
             cex = 1.25,
             font = 2,
-            text = paste(stratas[istrata], "Strata"))
+            text = paste(istrata, 
+                         c("full_domain" = "Strata", 
+                           "district" = "Strata Per District")[idomain] ))
       
-      for (iboat in 1:3) {
-        #Which index to plot
-        idx = which(settings$boat == iboat & 
-                      settings$strata == stratas[istrata])
+      box()
+      
+      for (iboat in 1:n_boats) {
+        sol_idx <- paste0("sol_", (subset(x = settings, 
+                                          select = id,
+                                          subset = domain == idomain & 
+                                            strata == istrata & 
+                                            boat == iboat)))
         
-        #Plot Solution
-        goa <- SpatialPointsDataFrame(
+        goa <- sp::SpatialPointsDataFrame(
           coords = Extrapolation_depths[, c("E_km", "N_km")],
-          data = data.frame(Str_no = res_df[, 1 + idx]) )
-        
-        goa_ras <- raster(goa, 
-                          resolution = 5)
-        goa_ras <- rasterize(x = goa, 
-                             y = goa_ras, 
-                             field = "Str_no")
-        offset_y <- 0.70 * y_range * (iboat-1)
+          data = data.frame(Str_no = res_df[, sol_idx]) )
+        goa_ras <- raster::raster(x = goa, 
+                                  resolution = 10)
+        goa_ras <- raster::rasterize(x = goa, 
+                                     y = goa_ras, 
+                                     field = "Str_no")
+        offset_y <- 0.75 * y_range * (iboat - 1)
         goa_ras <- raster::shift(goa_ras, dy = offset_y )
         
-        image(goa_ras, 
-              axes = F,
-              ann = F,
-              asp = 1,
-              col = c(brewer.pal(n = 12, 
-                                 name = 'Paired'),
-                      brewer.pal(n = 12, 
-                                 name = 'Paired'))[1:nrow(strata_list[[idx]])],
-              add = T)
+        n_strata <- nrow(strata_list[[sol_idx]])
+        strata_colors <- 
+          colorRampPalette(brewer.pal(n = 11, 
+                                      name = "Paired"))(n_strata)
+        image(goa_ras,
+              add = TRUE,
+              col =  sample(strata_colors))
         
         #Sample Size label
-        text(x = min(Extrapolation_depths$E_km) + x_range*0.7,
-             y = min(Extrapolation_depths$N_km) + offset_y + y_range*0.6,
+        text(x = min(Extrapolation_depths$E_km) + x_range*0.15,
+             y = min(Extrapolation_depths$N_km) + offset_y + y_range*0.5,
              label = paste("n =", samples[iboat]),
-             cex = 1.5)
+             cex = 1.5,
+             font = 2)
         
-        if (sample_survey) {
-          #Simulate a sample solution
-          temp_samples <- c()
-          temp_strata <- nrow(strata_list[[idx]])
-          temp_solution <- res_df[, idx + 1]
-          temp_allocation <- strata_list[[idx]]$Allocation
-          
-          for (temp_istrata in 1:temp_strata) {
-            temp_samples = c(temp_samples,
-                             sample(x = which(temp_solution == temp_istrata),
-                                    size = temp_allocation[temp_istrata]) )
-          }
-          
-          temp_loc <- Extrapolation_depths[temp_samples, c("E_km", "N_km")]
-          temp_loc$N_km <- temp_loc$N_km + offset_y
-          
-          points(temp_loc,
-                 pch = 16,
-                 cex = 0.3)
+        rect(xleft = districts$W_UTM,
+             xright = districts$E_UTM,
+             ybottom = tapply(X = Extrapolation_depths$N_km, 
+                              INDEX = district_vals,
+                              FUN = min) + offset_y, 
+             ytop = tapply(X = Extrapolation_depths$N_km, 
+                           INDEX = district_vals,
+                           FUN = max) + offset_y)
+        
+        #Simulate a sample solution
+        temp_samples <- c()
+        temp_strata <- nrow(strata_list[[sol_idx]])
+        temp_solution <- res_df[, sol_idx]
+        temp_allocation <- strata_list[[sol_idx]]$Allocation
+        
+        for (temp_istrata in 1:temp_strata) {
+          temp_samples = c(temp_samples,
+                           sample(x = which(temp_solution == temp_istrata),
+                                  size = temp_allocation[temp_istrata]) )
         }
+        
+        temp_loc <- Extrapolation_depths[temp_samples, c("E_km", "N_km")]
+        temp_loc$N_km <- temp_loc$N_km + offset_y
+        
+        points(temp_loc,
+               pch = 16,
+               cex = 0.3)
+        
       }
     }
   }
