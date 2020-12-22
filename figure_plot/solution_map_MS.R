@@ -19,14 +19,14 @@ library(raster)
 ####   Set up directories based on whether the optimization is being conducted
 ####        on a multi-species or single-species level
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
-                       "C:/Users/Zack Oyafuso/Documents",
-                       "C:/Users/zack.oyafuso/Work")[which_machine],
+                       "C:/Users/Zack Oyafuso/Documents")[which_machine],
                      "/GitHub/Optimal_Allocation_GoA/")
 
-output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/"),
+output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/",
+                       "C:/Users/Zack Oyafuso/Google Drive/")[which_machine],
                      "MS_Optimizations/TechMemo/figures/")
 
 ##################################################
