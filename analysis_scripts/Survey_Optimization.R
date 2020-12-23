@@ -187,6 +187,60 @@ for (irow in 5) {
       box()
       dev.off()
       
+      png(filename = "solution_with_simulated_survey.png", 
+          width = 5, 
+          height = 3, 
+          units = "in", 
+          res = 500)
+      
+      par(mfrow = c(1, 1), 
+          mar = c(1, 1, 1, 1))
+      plot( goa_ras, 
+            axes = F, 
+            asp = 1,
+            col = colorRampPalette(
+              brewer.pal(n = 11, 
+                         name = "Paired"))(sum(temp_strata))[sample(1:sum(temp_strata))] ) 
+      
+      rect(xleft = districts$W_lon,
+           xright = districts$E_lon,
+           ybottom = tapply(X = Extrapolation_depths$Lat, 
+                            INDEX = district_vals,
+                            FUN = min), 
+           ytop = tapply(X = Extrapolation_depths$Lat, 
+                         INDEX = district_vals,
+                         FUN = max))
+      
+      text(x = rowMeans(districts[, c("W_lon", "E_lon")]),
+           y = tapply(X = Extrapolation_depths$Lat, 
+                      INDEX = district_vals,
+                      FUN = max),
+           labels = districts$district,
+           pos = 3)
+      
+      box()
+      
+      #Simulate a sample solution
+      temp_samples <- c()
+      temp_strata <- nrow(sum_stats)
+      temp_solution <- solution$framenew$STRATO
+      temp_allocation <- sum_stats$Allocation
+      
+      for (temp_istrata in 1:temp_strata) {
+        temp_samples = c(temp_samples,
+                         sample(x = which(temp_solution == temp_istrata),
+                                size = temp_allocation[temp_istrata]) )
+      }
+      
+      temp_loc <- Extrapolation_depths[temp_samples, c("Lon", "Lat")]
+      
+      points(temp_loc,
+             pch = 16,
+             cex = 0.25)
+      
+      
+      dev.off()
+      
       #Save Output
       cv_constraints <- expected_CV(strata = solution$aggr_strata)
       current_n <- sum(sum_stats$Allocation)
