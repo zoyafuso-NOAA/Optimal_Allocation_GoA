@@ -27,12 +27,12 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
 load(paste0(github_dir, 
             "data/optimization_data.RData"))
 
-load(paste0(github_dir, 
-            "results/Spatiotemporal_Optimization/",
-            "optimization_knitted_results.RData"))
+# load(paste0(github_dir, 
+#             "results/Spatiotemporal_Optimization/",
+#             "optimization_knitted_results.RData"))
 
-load(paste0(github_dir, 
-            "results/Population_Variances.RData"))
+# load(paste0(github_dir, 
+#             "data/Population_Variances.RData"))
 
 ##################################################
 ####  Import Observed DBEs, calculate ranges of sample CVs
@@ -41,7 +41,7 @@ DBE <- readRDS(paste0(github_dir2,
                       "GOA_biomass_indices_wnames.rds"))
 DBE <- subset(DBE, 
               SPECIES_NAME %in% sci_names_all &
-                YEAR %in% (1996:2019)[Years2Include])
+                YEAR %in% (1996:2019)[years_included])
 
 DBE$BIOMASS_CV <- sqrt(DBE$VAR_WGT_CPUE) / DBE$MEAN_WGT_CPUE
 DBE <- DBE[order(DBE$YEAR),]
@@ -62,7 +62,7 @@ vast_index <- subset(vast_index,
       units = "mm",
       res = 500)
   
-  par(mfrow = c(5, 4),
+  par(mfrow = c(7, 3),
       mar = c(0, 2.5, 1, 1),
       oma = c(4, 3.5, 0.5, 0))
   
@@ -87,11 +87,11 @@ vast_index <- subset(vast_index,
          ylim = c(0, 1.25 * max(cbind(with(temp_list$DBE, 
                                            BIOMASS_SD/TOTAL_BIOMASS),
                                       temp_list$VAST$cv))),
-         xlim = c(1995, 2025),
+         xlim = c(1995, 2020),
          axes = F)
     
     # Year label for the last row of plots
-    if(ispp %in% c(13, 16, 20, 22)) axis(side = 1, 
+    if(ispp %in% c(16, 20, 22)) axis(side = 1, 
                                          at = seq(1995, 2020, by = 5))
     axis(side = 2, las = 1)
     box()
@@ -106,13 +106,13 @@ vast_index <- subset(vast_index,
                        temp_list$VAST$cv) ,
              lty = 1,
              col = c("red", "black"))
-    boxplot(cbind(with(temp_list$DBE, BIOMASS_SD/TOTAL_BIOMASS),
-                  temp_list$VAST$cv),
-            add = T,
-            at = c(2022, 2024),
-            col = c("red", "white"),
-            axes = F,
-            pch = 16)
+    # boxplot(cbind(with(temp_list$DBE, BIOMASS_SD/TOTAL_BIOMASS),
+    #               temp_list$VAST$cv),
+    #         add = T,
+    #         at = c(2022, 2024),
+    #         col = c("red", "white"),
+    #         axes = F,
+    #         pch = 16)
     
     mtext(side = 3, 
           text = common_names_all[ispp], 
