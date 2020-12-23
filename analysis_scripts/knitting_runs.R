@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -69,9 +69,15 @@ for(irow in 1:nrow(scen)) {
             load(temp_dir)
             
             ## Solution: which strata is assigned to each extrapolation cell
-            solution <-as.factor(paste(
-               result_list$solution$framenew$DOMAINVALUE,
-               result_list$solution$framenew$STRATO))
+            solution <- 
+               switch(idom,
+                      "full_domain" = result_list$solution$indices$X1,
+                      "district" = as.factor(paste(
+                         result_list$solution$framenew$DOMAINVALUE,
+                         result_list$solution$framenew$STRATO))
+                      
+               )
+            
             solution <- as.integer(solution)
             master_res_df <- cbind(master_res_df, 
                                    solution )
