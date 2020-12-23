@@ -14,7 +14,7 @@ rm(list = ls())
 ##################################################
 ####    Set up directories here first 
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents",
                        "C:/Users/Zack Oyafuso/Documents",
@@ -62,7 +62,7 @@ ns_opt <- length(sci_names_opt)
 ## Scientific and common names not used in optimization, but evaluated
 ## when simulating surveys
 
-sci_names_eval <- c("Anoplopoma fimbria", "Beringraja spp.", "Octopus spp.",
+sci_names_eval <- c("Anoplopoma fimbria", "Beringraja spp", "Octopus spp",
                     "Pleurogrammus monopterygius", "Sebastes borealis",
                     # "Sebastes ruberrimus",
                     "Sebastes variegatus", "Squalus suckleyi")
@@ -101,14 +101,19 @@ districts <- data.frame("reg_area" = c("WRA", "CRA",
                         "domainvalue" = 1:5,
                         "W_lon" = c(-170, -159, -154, -147, -140),
                         "E_lon" = c(-159, -154, -147, -140, -132))
+
 n_dom <- nrow(districts)
 
 district_vals <- cut(x = Extrapolation_depths$Lon, 
                      breaks = c(-170, -159, -154, -147, -140, -132), 
                      labels = 1:5)
+districts[, c("W_UTM", "E_UTM")] <- 
+  do.call(rbind,tapply(X = Extrapolation_depths$E_km, 
+                         INDEX = district_vals, 
+                         FUN = range) )
 
 ## Number of times to simulate survey
-n_iters <- 1000
+n_iters <- 500
 obs_cv <- c(0, 0.25, 0.5, 1) #low to high sampling CVs
 n_obs_cv <- length(obs_cv)
 
