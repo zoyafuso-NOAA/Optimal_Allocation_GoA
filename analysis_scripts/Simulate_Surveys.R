@@ -213,7 +213,7 @@ for (irow in 1:3) {
       assign(value = STRS_sim_mean,
              x = paste0(scen_name, "sim_mean"))
       assign(value = STRS_sim_cv,
-             x = paste0(secn_name, "sim_cv"))
+             x = paste0(scen_name, "sim_cv"))
       
       assign(value = STRS_rel_bias_est,
              x = paste0(scen_name, "rb_agg"))
@@ -234,7 +234,7 @@ for (irow in 1:3) {
            file = paste0(github_dir, scen_name, "rb_district.RData"))
       
       save(list = paste0(scen_name, "log_rb_district" ),
-           file = paste0(github_dir, scen_name, "simulation_results.RData"))
+           file = paste0(github_dir, scen_name, "log_rb_district.RData"))
       
       save(list = paste0(scen_name, 
                          c("sim_mean", "sim_cv", "rb_agg", "log_rb_agg", 
