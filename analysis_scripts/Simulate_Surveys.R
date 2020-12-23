@@ -81,9 +81,7 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 6) ),
                    domain = c("full_domain", 
                               rep(c("district", "full_domain"), each = 3)))
 
-n_iters = 500
-
-for (irow in 1:3) {
+for (irow in 6) {
   
   isurvey <- scen$survey_type[irow]
   
