@@ -28,16 +28,35 @@ library(RColorBrewer)
 ####   Load Data
 ##################################################
 load(paste0(github_dir, "data/optimization_data.RData"))
-load(paste0(github_dir, "results/simulation_result.RData"))
+load(paste0(github_dir, "results/MS_optimization_knitted_results.RData"))
 source(paste0(github_dir, "modified_functions/plot_percentiles.R"))
+
+##################################################
+####   Load Optimization Scenario Simulations
+##################################################
+scen <- data.frame(survey_type = c("cur", rep("opt", 6) ),
+                   strata = c("cur", 3, 5, 10, 10, 15, 20),
+                   domain = c("full_domain", 
+                              rep(c("district", "full_domain"), each = 3)))
+
+for (irow in 1:nrow(scen)) {
+  scen_name <- paste0("SUR_", scen$survey_type[irow], "_", 
+                      scen$domain[irow], "_STR_", scen$strata[irow], "_")
+  file_name <- paste0(github_dir, "results/", 
+                      scen_name, "simulation_results.RData")
+  
+  load(file_name)
+  
+}
+
 
 ##################################################
 ####   Plot
 ##################################################
-for (spp_set in  c("opt", "eval")) {
+for (spp_set in  c("opt", "eval")[1]) {
   
-  ## Set up png file
-  png(filename = paste0(result_dir, 
+  # Set up png file
+  png(filename = paste0(result_dir,
                         "/Comparison_",
                         spp_set,
                         ".png"),
@@ -71,56 +90,52 @@ for (spp_set in  c("opt", "eval")) {
   ns = get(paste0("ns_", spp_set))
   spp_idx <- get(paste0("spp_idx_", spp_set))
   common_names <- get(paste0("common_names_", spp_set))
-  isample = 2 # 2-boat scenario 
+  isample <- 2 # 2-boat scenario 
   
   for (ispp in 1:ns) {
     
     ## Relative Bias
     par(mar = c(0.25, 1.75, 0.25, 1.75))
     
-    ylim_ <- max(abs(apply(
-      X = cbind(STRS_rel_bias_est["obsCV=0", 
-                                  1:NTime, 
-                                  spp_idx[ispp], 
-                                  isample,
-                                  1:Niters], 
-                Current_rel_bias_est["obsCV=0", 
-                                     1:NTime, 
-                                     spp_idx[ispp], 
-                                     isample,
-                                     1:Niters]),
-      MARGIN = 1,
-      FUN = quantile,
-      probs = c(0.025, 0.975),
-      na.rm = T)))
-  
+    ylim_ <- range(unlist(
+      lapply(X = lapply(X = grep(x = ls(), 
+                                 pattern = "^(?=.*_rb)(?!.*log)", 
+                                 value = TRUE, perl = TRUE), 
+                        FUN = function(x) get(x)["obsCV=0",
+                                                 1:n_years,
+                                                 spp_idx[ispp],
+                                                 paste0("boat_", isample),]),
+             
+             FUN = function(x) apply(x, MARGIN = 1, 
+                                     FUN = quantile, 
+                                     probs = c(0.05, 0.95), 
+                                     na.rm = T))
+    ))
+    
     plot(1,  
          type = "n",
-         ylim = c(-ylim_, ylim_),
-         xlim = c(1, 23),
+         ylim = ylim_,
+         xlim = c(1, 85),
          axes = F,
          ann = F)
     box()
     
-    plot_percentiles(
-      values = STRS_rel_bias_est["obsCV=0",
-                                 1:NTime,
-                                 spp_idx[ispp],
-                                 isample,
-                                 1:Niters],
-      xs = 1:11, 
-      inner_color = "cadetblue1",
-      outer_color = "dodgerblue")
-    
-    plot_percentiles(
-      values = Current_rel_bias_est["obsCV=0",
-                                    1:NTime,
-                                    spp_idx[ispp],
-                                    isample,
-                                    1:Niters],
-      xs = 13:23, 
-      inner_color = "tomato2",
-      outer_color =  "firebrick" )
+    for (irow in 1:nrow(scen)) {
+      rb <- get(paste0("SUR_", scen$survey_type[irow], "_", 
+                       scen$domain[irow], "_STR_", 
+                       scen$strata[irow], "_rb_agg"))
+      
+      plot_percentiles(
+        values = rb["obsCV=0",
+                    1:n_years,
+                    spp_idx[ispp],
+                    paste0("boat_", isample),
+                    ],
+        pt.cex = 0.5,
+        xs = (irow - 1) * 12 + 1:11, 
+        inner_color = "cadetblue1",
+        outer_color = "dodgerblue")
+    }
     
     if (ispp %in% c(1, c("opt" = 9, "eval" = 5)[spp_set])) {
       mtext(side = 3, 
@@ -132,32 +147,28 @@ for (spp_set in  c("opt", "eval")) {
     
     ## True CV
     par(mar = c(2, 1.75, 0.25, 1.5))
-    ylim_ <- max(abs(
-      cbind(STRS_true_cv_array["obsCV=0",
-                               1:NTime,
-                               spp_idx[ispp], 
-                               isample],
-            Current_true_cv_array["obsCV=0",
-                                  1:NTime,
-                                  spp_idx[ispp],
-                                  isample])))
+    merged_true_cv <- 
+      lapply(X = grep(x = ls(), 
+                      pattern = "^(?=.*true_cv)(?!.*merged)", 
+                      value = TRUE,
+                      perl = TRUE), 
+             FUN = function(x) get(x)["obsCV=0",
+                                      1:n_years,
+                                      spp_idx[ispp],
+                                      paste0("boat_", isample)])
+    ylim_ <- max(unlist(merged_true_cv))
     
-    boxplot(cbind(STRS_true_cv_array["obsCV=0",
-                                     1:NTime,
-                                     spp_idx[ispp],
-                                     isample],
-                  Current_true_cv_array["obsCV=0",
-                                        1:NTime,
-                                        spp_idx[ispp],
-                                        isample]),
+    boxplot(merged_true_cv,
             ylim = c(0, 1.25 * ylim_),
             las = 1,
             axes = F,
             pch = 16,
-            col  = c("dodgerblue", "firebrick"))
+            col  = "white", #c("dodgerblue", "firebrick")
+            cex = 0.5  )
     box()
     axis(side = 2, 
          las = 1)
+    
     if (ispp %in% c(1, c("opt" = 9, "eval" = 5)[spp_set])) {
       mtext(side = 3, 
             text = "True\nCV", 
@@ -165,31 +176,26 @@ for (spp_set in  c("opt", "eval")) {
     }
     
     ## RRMSE of CV
-    ylim_ <- max(abs(cbind(
-      STRS_rrmse_cv_array["obsCV=0", 
-                          1:NTime,
-                          spp_idx[ispp],
-                          isample],
-      Current_rrmse_cv_array["obsCV=0", 
-                             1:NTime,
-                             spp_idx[ispp], 
-                             isample])))
+    merged_rrmse_cv <- 
+      lapply(X = grep(x = ls(), 
+                      pattern = "^(?=.*rrmse_cv)(?!.*merged)", 
+                      value = TRUE,
+                      perl = TRUE), 
+             FUN = function(x) get(x)["obsCV=0",
+                                      1:n_years,
+                                      spp_idx[ispp],
+                                      paste0("boat_", isample)])
+    ylim_ <- max(unlist(merged_rrmse_cv))
     
-    boxplot(cbind(
-      STRS_rrmse_cv_array["obsCV=0", 
-                          1:NTime, 
-                          spp_idx[ispp], 
-                          isample],
-      Current_rrmse_cv_array["obsCV=0",
-                             1:NTime,
-                             spp_idx[ispp],
-                             isample]),
+    boxplot(merged_rrmse_cv,
       ylim = c(0, 1.25 * ylim_),
       las = 1,
       names = NA,
       axes = F,
       pch = 16,
-      col = c("dodgerblue", "firebrick"))
+      col = "white", #c("dodgerblue", "firebrick"),
+      cex = 0.5)
+    
     box()
     axis(side = 2, 
          las = 1)
