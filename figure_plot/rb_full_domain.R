@@ -1,16 +1,23 @@
+##############################################################################
+# Project:       Sensitivity: Observation Error
+# Author:        Zack Oyafuso (zack.oyafuso@noaa.gov)
+# Description:   Compare Relative Bias across species
+#                for current and optimized STRS surveys
+##############################################################################
 rm(list = ls())
 
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[1]
 
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
+github_dir <- paste0(c("/Users/zackoyafuso/Documents/",
                        "C:/Users/Zack Oyafuso/Documents/",
-                       "C:/Users/zack.oyafuso/Work/")[which_machine], 
+                       "C:/Users/zack.oyafuso/Work/")[which_machine],
                      "GitHub/Optimal_Allocation_GoA/")
 
-output_dir <- paste0(c("C:/Users/Zack Oyafuso/"),
+output_dir <- paste0(c("/Users/zackoyafuso/",
+                       "C:/Users/Zack Oyafuso/")[which_machine],
                      "Google Drive/MS_Optimizations/TechMemo/figures/")
 
 ##################################
@@ -26,99 +33,145 @@ load(paste0(github_dir, '/data/Extrapolation_depths.RData'))
 
 scen <- data.frame(survey_type = c("cur", rep("opt", 6) ),
                    strata = c("cur", 3, 5, 10, 10, 15, 20),
-                   domain = c("full_domain", 
+                   domain = c("full_domain",
                               rep(c("district", "full_domain"), each = 3)))
 
 for (irow in 1:7) {
-  scen_name <- paste0("SUR_", scen$survey_type[irow], "_", 
-                      scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  file_name <- paste0(github_dir, "results/", 
-                      scen_name, "simulation_results.RData")
-  
-  load(file_name)
-  
-}
-
-{png(filename = paste0(output_dir, "RB_full_domain.png"), 
-     width = 190, 
-     height = 200,
-     units = "mm", 
-     res = 500)
-  
-par(mar = c(0.5, 0, 0.5, 0),
-    mfcol = c(6, 7),
-    oma = c(0, 5, 5, 0))
-
-for (irow in 1:7) {
-  
   scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
                       scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  rb_agg <- get(paste0(scen_name, "rb_agg"))
+  file_name <- paste0(github_dir, "results/",
+                      scen_name, "simulation_results.RData")
+
+  load(file_name)
+}
+
+##################################
+## General layout of plots
+##################################
+gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
+
+png(filename = paste0(output_dir, "RB_full_domain.png"),
+    width = 190,
+    height = 220,
+    units = "mm",
+    res = 500)
+
+par(mar = c(.25, 0, .25, 0), oma = c(1,5,0,0))
+plot_layout <- rbind(
+  cbind(gen_layout + 5 * 0, gen_layout + 5 * 1, 
+        gen_layout + 5 * 2, gen_layout + 5 * 3, gen_layout + 5 * 4),
+  cbind(gen_layout + 5 * 5, gen_layout + 5 * 6, 
+        gen_layout + 5 * 7, gen_layout + 5 * 8, gen_layout + 5 * 9),
+  cbind(gen_layout + 5 * 10, gen_layout + 5 * 11, 
+        gen_layout + 5 * 12, gen_layout + 5 * 13, gen_layout + 5 * 14),
+  cbind(gen_layout + 5 * 15, gen_layout + 5 * 16, 
+        gen_layout + 5 * 17, gen_layout + 5 * 18, gen_layout + 5 * 19),
+  cbind(gen_layout + 5 * 20, gen_layout + 5 * 21, 
+        gen_layout + 5 * 22, gen_layout + 5 * 23, gen_layout + 5 * 24)
+)
+layout(mat =  plot_layout, 
+       widths = c(1,0.4, 1,0.4, 1,0.4, 1,0.4, 1,0.1),
+       heights = rep(c(0.75,1,1,1), times = 5 ))
+
+## Loop over species
+for (ispp in c(spp_idx_opt, spp_idx_eval) ) {
+  ## Loop over three survey scenarios
+  ## 1) Current
+  ## 5) Gulf-wide optiization, 10 strata
+  ## 2) District-level optimiztion, 3 strata per district
   
-  for (ispp in c(2, 5, 14, 18, 15, 21)) {#, spp_idx_eval)) {
+  y_max <- max(abs(unlist(
+    lapply(X = lapply(X = c(1, 5, 2),
+                      FUN = function(x) get(paste0("SUR_", 
+                                                   scen$survey_type[irow], 
+                                                   "_",
+                                                   scen$domain[irow], 
+                                                   "_STR_", 
+                                                   scen$strata[irow], 
+                                                   "_rb_agg"))["obsCV=0",
+                                                               ,
+                                                               ispp,
+                                                               "boat_2" ,
+                                                               ] ),
+           FUN = function(x) apply(x, MARGIN = 1, 
+                                   FUN = quantile, 
+                                   probs = c(0.05, 0.95),
+                                   na.rm = T))))) 
+  
+  y_max <- max(y_max, 25)
+  
+  for (irow in c(1, 5, 2) ) {
+    ## subset result object based on survey scenario
+    scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
+                        scen$domain[irow], "_STR_", scen$strata[irow], "_")
+    rb_agg <- get(paste0(scen_name, "rb_agg"))["obsCV=0",
+                                               ,
+                                               ispp,
+                                               "boat_2" ,
+                                               ]
     
-    ## Inner lapply: knits together all the relative bias arrays into a list
-    ##               and extract the 0 obs CV, species ispp, 2-boat soln's
-    ## Outer lapply: calculate 5% and 95% percentiles on each sub-list across
-    ##               simulated surveys
-    ## Then calculate the most extreme values and use as symmetrical y-limits
-    y_range <- range(unlist(
-      lapply(X = lapply(X = grep(x = ls(), 
-                                 pattern = "_rb_agg", 
-                                 value = TRUE), 
-                        FUN = function(x) get(x)["obsCV=0", 
-                                                 ,
-                                                 ispp     ,
-                                                 "boat_2" ,
-                                                 ]),
-             
-             FUN = function(x) apply(x, MARGIN = 1, 
-                                     FUN = quantile, 
-                                     probs = c(0.05, 0.95), 
-                                     na.rm = T))
-    ))
-    
-    plot(1, 
+    ## Base plot
+    plot(1,
          type = "n",
-         xlim = c(1, 11),
-         ylim = y_range,
+         xlim = c(0, 12),
+         ylim = c(-y_max, y_max),
          axes = F,
          ann = F)
     box()
     
-    if (irow == 1) axis(side = 2, las = 1)
+    ## Color of the background determines the survey type
+    rect(xleft = -5, 
+         xright = 15, 
+         ybottom = -500, 
+         ytop = 500, 
+         col = ifelse(irow %in% 1, 
+                      "white",
+                      ifelse(irow %in% 5, "grey90", 
+                             "grey50")))
+    ## Time axis
+    axis(side = 1,
+         at = 1:11,
+         labels = NA,
+         tck = -0.05)
     
-    if (ispp == 2)
-      mtext(side = 3, 
-            text = with(scen[irow,], 
-                        paste0(survey_type, " Survey\n", domain, "\n",
-                               strata, " Strata")))
+    if(irow == 2) {
+    axis(side = 1, 
+         at = c(1, 11), 
+         labels = c("Yr 1", "Yr 11"),
+         lwd = F, 
+         tick = F, 
+         line = -1., 
+         cex.axis = 0.75)
+    }
     
-    plot_percentiles(values = rb_agg["obsCV=0", 
-                                     ,
-                                     sci_names_all[ispp], 
-                                     "boat_2" ,
-                                     ],
-                     xs = 1:11)
-    abline(h = 0)
+    plot_percentiles(values = rb_agg,
+                     xs = 1:11, 
+                     pt.cex = 0.5,
+                     pt.colors = "black")
     
-    if (irow == 4)
-      mtext(side = 3, 
-            text = gsub(x = sci_names_all[ispp], 
-                        pattern = " ", 
-                        replacement = "\n"), 
-            line = -4)
+    axis(side = 2,
+         las = 1,
+         cex.axis = 0.75,
+         at = pretty(x = c(-y_max, y_max), n = 3) )
+    
+    abline(h = 0, lwd = 0.5, lty = "dotted")
+    
   }
   
+  plot(1,type = "n", axes = F, ann = F)  
+  plot(1,type = "n", axes = F, ann = F, xlim = c(0, 1), ylim = c(0, 1))
+  text(x = 0.5,
+       y = 0.4, 
+       labels = common_names_all[ispp], 
+       col = ifelse(ispp %in% spp_idx_opt, "black", "grey"),
+       cex = 1, 
+       font = 2, 
+       xpd = NA)
 }
 
-mtext(side = 2,
-      outer = T,
-      line = 3,
-      text = "Relative Percent Bias (100% (Sim - True) / True)")
-
+mtext(side = 2, 
+      outer = T, 
+      text = "Relative Percent Bias (100% (Sim - True) / True)", 
+      line = 3, 
+      font = 2)
 dev.off()
-}
-
-
-

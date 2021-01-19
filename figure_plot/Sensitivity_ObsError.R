@@ -24,22 +24,51 @@ result_dir <- paste0(c("/Users/zackoyafuso/",
 ####   Load Data
 ##################################################
 load(paste0(github_dir, "data/optimization_data.RData"))
-load(paste0(github_dir, "results/simulation_result.RData"))
+load(paste0(github_dir, "results/MS_optimization_knitted_results.RData"))
 source(paste0(github_dir, "modified_functions/plot_percentiles.R"))
+
+scen <- data.frame(survey_type = c("cur", "opt", "opt"),
+                   strata = c("cur", 5, 15),
+                   domain = c("full_domain", "district", "full_domain"))
+
+for (irow in 1:nrow(scen)) {
+  scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
+                      scen$domain[irow], "_STR_", scen$strata[irow], "_")
+  file_name <- paste0(github_dir, "results/",
+                      scen_name, "simulation_results.RData")
+  
+  load(file_name)
+}
 
 ##################################################
 ####   Plot
 ##################################################
+spp_set = "opt"
+
+irow = 2
+
+rb <- with(scen[irow, ], 
+           get(paste0("SUR_", survey_type, "_", domain, 
+                      "_STR_", strata, "_rb_agg")))
+true_cv <- with(scen[irow, ], 
+                get(paste0("SUR_", survey_type, "_", domain, 
+                           "_STR_", strata, "_true_cv")))
+rrmse_cv <- with(scen[irow, ], 
+                 get(paste0("SUR_", survey_type, "_", domain, 
+                            "_STR_", strata, "_rrmse_cv")))
+
+
+
 for (spp_set in  c("opt", "eval")) {
   
   ## Set up png file
-  png(filename = paste0(result_dir, 
-                        "/Sensitivity_ObsError_", spp_set,
-                        ".png"),
-      width = 190,
-      height = c("opt" = 220, "eval" = 120)[spp_set],
-      units = "mm",
-      res = 500)
+  # png(filename = paste0(result_dir, 
+  #                       "/Sensitivity_ObsError_", spp_set,
+  #                       ".png"),
+  #     width = 190,
+  #     height = c("opt" = 220, "eval" = 120)[spp_set],
+  #     units = "mm",
+  #     res = 500)
   
   ## Set up plot layout based on which species to plot
   layout(mat = matrix(data = list(
@@ -65,21 +94,20 @@ for (spp_set in  c("opt", "eval")) {
   ns = get(paste0("ns_", spp_set))
   spp_idx <- get(paste0("spp_idx_", spp_set))
   common_names <- get(paste0("common_names_", spp_set))
-  isample <- 2
   
   for (ispp in 1:ns) {
     ## Relative Bias
     par(mar = c(0.25, 1.75, 0.25, 1.75))
-    opt_ylim <- 1.6 * max(abs(apply(
-      X = STRS_rel_bias_est[paste0("obsCV=", c(0, 1)), 
-                            1:NTime, 
-                            spp_idx[ispp], 
-                            isample,
-                            1:Niters],
-      MARGIN = 1,
-      FUN = quantile,
-      probs = c(0.025, 0.975),
-      na.rm = T))) 
+    
+    opt_ylim <- 1.0 * max(abs(apply( X = rb[paste0("obsCV=", c(0, 1)), 
+                                            1:n_years, 
+                                            spp_idx[ispp], 
+                                            "boat_2",
+                                            ],
+                                     MARGIN = 1:2,
+                                     FUN = quantile,
+                                     probs = c(0.025, 0.975),
+                                     na.rm = T))) 
     
     plot(1,  
          type = "n",
@@ -88,26 +116,26 @@ for (spp_set in  c("opt", "eval")) {
          axes = F,
          ann = F)
     
-    if (ispp %in% c(1, c("opt" = 9, "eval" = 5)[spp_set])) {
-      mtext(side = 3, 
-            text = "Percent\nBias", 
-            font = 2)
-    }
+    # if (ispp %in% c(1, c("opt" = 9, "eval" = 5)[spp_set])) {
+    #   mtext(side = 3, 
+    #         text = "Percent\nBias", 
+    #         font = 2)
+    # }
     
-    plot_percentiles(values = STRS_rel_bias_est["obsCV=0", 
-                                                1:NTime, 
-                                                spp_idx[ispp], 
-                                                isample,
-                                                1:Niters],
+    plot_percentiles(values = rb[paste0("obsCV=0"), 
+                                 1:n_years, 
+                                 spp_idx[ispp], 
+                                 "boat_2",
+                                 ],
                      xs = 1:11,
                      inner_color = "cadetblue1",
                      outer_color = "dodgerblue")
     
-    plot_percentiles(values = STRS_rel_bias_est["obsCV=1", 
-                                                1:NTime, 
-                                                spp_idx[ispp], 
-                                                isample,
-                                                1:Niters],
+    plot_percentiles(values = rb["obsCV=1", 
+                                 1:n_years, 
+                                 spp_idx[ispp], 
+                                 "boat_2",
+                                 ],
                      xs = 13:23,
                      inner_color = "chartreuse3",
                      outer_color = "palegreen4")
@@ -124,104 +152,104 @@ for (spp_set in  c("opt", "eval")) {
     
     ##  True CV
     par(mar = c(1.75, 1.5, 0.5, 1.25))
-    boxplot(t(STRS_true_cv_array[paste0("obsCV=", c(0, 0.1, 0.25, 0.5, 1)),
-                                 1:NTime,
-                                 spp_idx[ispp], 
-                                 isample]),
-            xlim = c(-1, 10),
+    boxplot(t(true_cv[paste0("obsCV=", c(0, 0.25, 0.5, 1)),
+                      1:n_years,
+                      spp_idx[ispp], 
+                      "boat_2"]),
+            xlim = c(-1, 8),
             ylim = c(0, 
                      1.25 * 
-                       max(STRS_true_cv_array[paste0("obsCV=", 
-                                                     c(0, 0.1, 0.25, 0.5, 1)),
-                                              1:NTime,
-                                              spp_idx[ispp],
-                                              isample])),
+                       max(true_cv[paste0("obsCV=", c(0, 0.25, 0.5, 1)),
+                                   1:n_years,
+                                   spp_idx[ispp],
+                                   "boat_2"])),
             las = 1,
             lwd = 0.5,
             col = c("dodgerblue", 
-                    "white", "white", "white",
+                    "white", "white",
                     "chartreuse3"),
             axes = F,
             pch = 16,
             cex = 0.25,
-            at = seq(from = 0.5, to = 8.5, by = 2))
+            at = seq(from = 0.5, to = 6.5, by = 2))
     box()
     axis(side = 2, 
          las = 1,
          cex.axis = 0.9)
     axis(side = 1,
-         at = seq(from = 0.5, to = 8.5, by = 2),
+         at = seq(from = 0.5, to = 6.5, by = 2),
          labels = NA, 
          tcl = -0.15)
-    text(x = seq(from = 1.25, to = 9.25, by = 2),
-         y = max(STRS_true_cv_array[paste0("obsCV=", c(0, 0.1, 0.25, 0.5, 1)),
-                                    1:NTime,
-                                    spp_idx[ispp], 
-                                    isample]) * 
+    text(x = seq(from = 1.25, to = 7.25, by = 2),
+         y = max(true_cv[paste0("obsCV=", c(0, 0.25, 0.5, 1)),
+                         1:n_years,
+                         spp_idx[ispp], 
+                         "boat_2"]) * 
            -c(0.175, 0.35)[c(1, 2, 1, 2, 1)] ,
-         labels = paste0(c(0, 10, 25, 50, 100), "%"),
+         labels = paste0(c(0, 25, 50, 100), "%"),
          cex = 0.7,
          col = c("blue", 
-                 "black", "black", "black",
+                 "black", "black",
                  "chartreuse3"),
          xpd = NA)
     
-    if (ispp %in% c(1, c("opt" = 9, "eval" = 5)[spp_set])) {
-      mtext(side = 3, 
-            "True\nCV", 
-            font = 2, 
-            line = 0.25)}
+    # if (ispp %in% c(1, c("opt" = 9, "eval" = 5)[spp_set])) {
+    #   mtext(side = 3, 
+    #         "True\nCV", 
+    #         font = 2, 
+    #         line = 0.25)}
     
     ## RRMSE of CV
-    boxplot(t(STRS_rrmse_cv_array[paste0("obsCV=", c(0, 0.1, 0.25, 0.5, 1)),
-                                  1:NTime,
-                                  spp_idx[ispp],
-                                  isample]),
-            xlim = c(-1, 10),
+    
+    boxplot(t(rrmse_cv[paste0("obsCV=", c(0, 0.25, 0.5, 1)),
+                       1:n_years,
+                       spp_idx[ispp],
+                       "boat_2"]),
+            xlim = c(-1, 8),
             ylim = c(0, 
                      1.25 * max(
-                       STRS_rrmse_cv_array[paste0("obsCV=", 
-                                                  c(0, 0.1, 0.25, 0.5, 1)),
-                                           1:NTime,
-                                           spp_idx[ispp],
-                                           isample])),
+                       rrmse_cv[paste0("obsCV=", 
+                                       c(0, 0.25, 0.5, 1)),
+                                1:n_years,
+                                spp_idx[ispp],
+                                "boat_2"])),
             las = 1,
             axes = F,
             lwd = 0.5,
             col = c("dodgerblue", 
-                    "white", "white", "white",
+                    "white", "white", 
                     "chartreuse3"),
             pch = 16,
             cex = 0.25,
-            at = seq(from = 0.5, to = 8.5, by = 2))
+            at = seq(from = 0.5, to = 6.5, by = 2))
     box()
     axis(side = 2, 
          las = 1, 
          cex.axis = 0.9)
     axis(side = 1,
-         at = seq(from = 0.5, to = 8.5, by = 2),
+         at = seq(from = 0.5, to = 6.5, by = 2),
          labels = NA, 
          tcl = -0.15)
     
     ## CV Label
-    text(x = seq(from = 1.25, to = 9.25, by = 2),
+    text(x = seq(from = 1.25, to = 7.25, by = 2),
          y = c(-0.175, -0.35)[c(1, 2, 1, 2, 1)] * 
-           max(STRS_rrmse_cv_array[,
-                                   1:NTime,
-                                   spp_idx[ispp],
-                                   isample]),
-         labels = paste0(c(0, 10, 25, 50, 100), "%"),
+           max(rrmse_cv[,
+                        1:n_years,
+                        spp_idx[ispp],
+                        "boat_2"]),
+         labels = paste0(c(0, 25, 50, 100), "%"),
          cex = 0.7,
          col = c("blue", 
-                 "black", "black", "black",
+                 "black", "black",
                  "darkgreen"),
          xpd = NA)
     
-    if (ispp %in% c(1, c("opt" = 9, "eval" = 5)[spp_set])) {
-      mtext(side = 3, 
-            text = "RRMSE\nCV", 
-            font = 2, 
-            line = 0.25)}
+    # if (ispp %in% c(1, c("opt" = 9, "eval" = 5)[spp_set])) {
+    #   mtext(side = 3, 
+    #         text = "RRMSE\nCV", 
+    #         font = 2, 
+    #         line = 0.25)}
   }
   
   ## Legend
@@ -264,6 +292,6 @@ for (spp_set in  c("opt", "eval")) {
        y = 0.65,
        labels = c(1996, 2019) )
   
-  dev.off()
+  # dev.off()
 }
 
