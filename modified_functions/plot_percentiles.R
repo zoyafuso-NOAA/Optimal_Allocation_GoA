@@ -1,7 +1,11 @@
 plot_percentiles <- function(values = NULL,
                              xs = NULL,
                              inner_color = "cadetblue1",
-                             outer_color = "dodgerblue"){
+                             outer_color = "dodgerblue",
+                             pt.cex = 1,
+                             pt.colors = rev(grey.colors(11,
+                                                         start = 0, 
+                                                         end = 0.9))){
  
  if(is.null(values)) stop("Must supply values")
  
@@ -23,5 +27,6 @@ plot_percentiles <- function(values = NULL,
  points(y = temp_quants["50%", ],
         x = xs,
         pch = 15,
-        col = rev(grey.colors(11, start = 0, end = 0.9)) )
+        cex = pt.cex,
+        col = pt.colors )
 }
