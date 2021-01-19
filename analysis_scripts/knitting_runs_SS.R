@@ -8,7 +8,7 @@ rm(list = ls())
 ###############################
 ## Set up directories
 ###############################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -27,7 +27,7 @@ library(SamplingStrata)
 ###########################
 load(paste0(github_dir, "/data/optimization_data.RData"))
 
-for(idom in c("full_domain", "district")[2]) {
+for(idom in c("full_domain", "district")) {
   
   frame <- switch( idom,
                    "full_domain" = frame_all,
@@ -97,12 +97,20 @@ for(idom in c("full_domain", "district")[2]) {
           )
           
           #master_res_df: solution (which cell belongs to which stratum?)
-          plot_solution <- with(result_list$solution$framenew,
-                                as.factor(paste(DOMAINVALUE, STRATO)))
-          plot_solution <- as.integer(plot_solution)
+          ## Solution: which strata is assigned to each extrapolation cell
+          solution <- 
+            switch(idom,
+                   "full_domain" = result_list$solution$indices$X1,
+                   "district" = as.factor(paste(
+                     result_list$solution$framenew$DOMAINVALUE,
+                     result_list$solution$framenew$STRATO))
+                   
+            )
+          
+          solution <- as.integer(solution)
           
           master_res_df <- cbind(master_res_df,
-                                 plot_solution)
+                                 solution)
           
           #master_strata_list: stratum-level details of solution
           master_strata_list <- c(master_strata_list, 
