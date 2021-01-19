@@ -54,7 +54,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
   par(mfrow = c(1,2),
       mar = c(0,0,0,0))
   
-  for (idomain in c("full_domain", "district")) {
+  for (idomain in c("full_domain", "district")[1]) {
     
     load(paste0(github_dir, "results/", idomain, 
                 "/Single_Species_Optimization/", 
@@ -83,11 +83,11 @@ y_range <- diff(range(Extrapolation_depths$N_km))
       
       #Which index to plot
       idx = which(settings$iboat == isample & 
-                    settings$spp == ispp)
+                    settings$spp == spp_idx_opt[ispp])
       
       #Plot Solution
       goa <- SpatialPointsDataFrame(
-        coords = Extrapolation_depths[,c("E_km", "N_km")],
+        coords = Extrapolation_depths[, c("E_km", "N_km")],
         data = data.frame(Str_no = res_df[, idx]) )
       
       goa_ras <- raster(goa, 
