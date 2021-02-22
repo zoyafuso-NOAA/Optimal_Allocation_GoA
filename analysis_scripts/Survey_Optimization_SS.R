@@ -41,7 +41,8 @@ load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 ####   Constants to specify before doing optimization
 ##################################################
 which_domain <- c("full_domain", "district")[1]
-for (which_species in 18) {
+
+for (which_species in 1) {
   
   ##################################################
   ####   Constants to set up based on which_domain and which_species
@@ -60,7 +61,8 @@ for (which_species in 18) {
                       "district" = rep(5, n_dom))
   
   result_dir = paste0(github_dir, 
-                      "results/", which_domain, "/Single_Species_Optimization/", 
+                      "results/", which_domain, 
+                      "/Single_Species_Optimization/", 
                       gsub(x = sci_names_all[which_species], 
                            pattern = ' ', 
                            replacement = '_'), '/')
@@ -188,9 +190,5 @@ for (which_species in 18) {
     cv[["DOM"]] <- 1:n_dom
     cv[["domainvalue"]] <- 1:n_dom
     cv <- as.data.frame(cv)
-    
   }
-  
 }
-
-
