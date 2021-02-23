@@ -25,7 +25,7 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
 ####   Load the true density, true index, and spatial domain dataset
 ##################################################
 load(paste0(github_dir,  "data/fit_density.RData"))
-load(paste0(github_dir,  "data/fit_Index.RData"))
+load(paste0(github_dir,  "data/fit_index.RData"))
 load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 
 ##################################################
@@ -109,8 +109,8 @@ district_vals <- cut(x = Extrapolation_depths$Lon,
                      labels = 1:5)
 districts[, c("W_UTM", "E_UTM")] <- 
   do.call(rbind,tapply(X = Extrapolation_depths$E_km, 
-                         INDEX = district_vals, 
-                         FUN = range) )
+                       INDEX = district_vals, 
+                       FUN = range) )
 
 ## Number of times to simulate survey
 n_iters <- 500
@@ -133,23 +133,24 @@ n_obs_cv <- length(obs_cv)
 ####   Y1_SQ_SUM, Y2_SQ_SUM, ... : density-squared for a given cell, 
 ####           summed across observed years
 ##################################################
-frame_all <- cbind(data.frame(domainvalue = 1,
-                              id = 1:n_cells,
-                              X1 = with(Extrapolation_depths, E_km - min(E_km)),
-                              X2 = Extrapolation_depths$DEPTH_EFH,
-                              WEIGHT = n_years),
-                   
-                   matrix(data = apply(X = D_gct[, , years_included],
-                                       MARGIN = c(1, 2), 
-                                       FUN = sum),
-                          ncol = ns_all,
-                          dimnames = list(NULL, paste0("Y", 1:ns_all))),
-                   
-                   matrix(data = apply(X = D_gct[, , years_included],
-                                       MARGIN = c(1, 2), 
-                                       FUN = function(x) sum(x^2)),
-                          ncol = ns_all,
-                          dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
+frame_all <- cbind(
+  data.frame(domainvalue = 1,
+             id = 1:n_cells,
+             X1 = with(Extrapolation_depths, E_km - min(E_km)),
+             X2 = Extrapolation_depths$DEPTH_EFH,
+             WEIGHT = n_years),
+  
+  matrix(data = apply(X = D_gct[, , years_included],
+                      MARGIN = c(1, 2), 
+                      FUN = sum),
+         ncol = ns_all,
+         dimnames = list(NULL, paste0("Y", 1:ns_all))),
+  
+  matrix(data = apply(X = D_gct[, , years_included],
+                      MARGIN = c(1, 2), 
+                      FUN = function(x) sum(x^2)),
+         ncol = ns_all,
+         dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
 )
 
 frame_district <- cbind(data.frame(
