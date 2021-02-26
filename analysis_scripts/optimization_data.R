@@ -76,11 +76,9 @@ common_names_eval_labels <- c("sablefish", "skates spp.", "Octopus spp.",
 ns_eval <- length(sci_names_eval)
 
 ## In case we need it, all species names together
-sci_names_all <- c(sci_names_opt, sci_names_eval)
-common_names_all <- c(common_names_opt, 
-                      common_names_eval)
-common_names_all_labels <- c(common_names_opt, 
-                             common_names_eval_labels)
+sci_names_all <- sort(c(sci_names_opt, sci_names_eval))
+common_names_all <- c(common_names_opt, common_names_eval)[order(c(sci_names_opt, sci_names_eval))]
+common_names_all_labels <- c(common_names_opt, common_names_eval_labels)[order(c(sci_names_opt, sci_names_eval))]
 
 ns_all <- ns_opt + ns_eval
 
@@ -96,10 +94,9 @@ stratas <- c(10, 15, 20)
 n_strata <- length(stratas)
 
 ## Specify Management Districts
-districts <- data.frame("reg_area" = c("WRA", "CRA", 
-                                       "CRA", "ERA", "ERA"),
-                        "district" = c("West", "Chirikof", 
-                                       "Kodiak", "Yakutat", "Southeast"),
+districts <- data.frame("reg_area" = c("WRA", "CRA", "CRA", "ERA", "ERA"),
+                        "district" = c("West", "Chirikof", "Kodiak", 
+                                       "Yakutat", "Southeast"),
                         "domainvalue" = 1:5,
                         "W_lon" = c(-170, -159, -154, -147, -140),
                         "E_lon" = c(-159, -154, -147, -140, -132))
