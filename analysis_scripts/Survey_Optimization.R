@@ -23,7 +23,7 @@ library(raster)
 ####   Set up directories based on whether the optimization is being conducted
 ####        on a multi-species or single-species level
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -40,13 +40,13 @@ load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 ##################################################
 ####   Create optimization scenarios
 ##################################################
-scen <- data.frame(nstrata = c(3,5,10, 10,15,20),
-                   which_domain = rep(c("district", "full_domain"), each = 3))
+scen <- data.frame(nstrata = c(3,5, 10,15),
+                   which_domain = rep(c("district", "full_domain"), each = 2))
 
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-for (irow in 5) {
+for (irow in 3) {
   for(isample in 1:n_boats) {
     
     ##################################################
@@ -74,13 +74,17 @@ for (irow in 5) {
     run <- 1
     current_n <- 0
     
-    ## Load SRS information to initialize the starting points for the CVs
-    load(paste0(github_dir, "results/", which_domain, "/srs_pop_cv.RData"))
+    ## Initiate CVs to be those calculated under SRS
+    srs_stats <- SamplingStrata::buildStrataDF( 
+      dataset = cbind( subset(frame, select = -c(X1, X2)),
+                       X1 = 1))
     
-    cv_constraints <- get(paste0("srs_pop_cv_", which_domain))[, , isample] 
-    cv_constraints <- switch(which_domain, 
-                             "district" = cv_constraints[spp_idx_opt, ],
-                             "full_domain" = cv_constraints[spp_idx_opt])
+    srs_n <- as.numeric(samples[isample] * table(frame$domainvalue) / n_cells)
+    srs_var <- as.numeric(srs_stats[, paste0("S", 1:ns_opt)])^2
+    srs_var <-  srs_var * (1 - srs_n / n_cells) / srs_n 
+    srs_cv <- sqrt(srs_var) / as.numeric(srs_stats[, paste0("M", 1:ns_opt)])
+    
+    cv_constraints <- srs_cv
     
     cv <- list()
     for (spp in 1:ns_opt) 
@@ -103,7 +107,7 @@ for (irow in 5) {
                                      spp %in% spp_idx_opt,
                                    select = paste(1:5))),
              "full_domain" = unlist(subset(x = settings_agg_full_domain,
-                                           subset = iboat == isample & 
+                                           subset = boat == isample & 
                                              spp %in% spp_idx_opt,
                                            select = cv)))
     
@@ -122,7 +126,8 @@ for (irow in 5) {
       setwd(temp_dir)
       
       #Run optimization
-      if(which_domain == "full_domain") par(mfrow = c(6,6), mar = c(2,2,0,0))
+      if(which_domain == "full_domain") par(mfrow = c(6,6), 
+                                            mar = c(2,2,0,0))
       
       solution <- optimStrata(method = "continuous",
                               errors = cv, 
