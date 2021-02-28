@@ -46,7 +46,7 @@ scen <- data.frame(nstrata = c(3,5, 10,15),
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-for (irow in 3) {
+for (irow in 1) {
   for(isample in 1:n_boats) {
     
     ##################################################
@@ -80,9 +80,14 @@ for (irow in 3) {
                        X1 = 1))
     
     srs_n <- as.numeric(samples[isample] * table(frame$domainvalue) / n_cells)
-    srs_var <- as.numeric(srs_stats[, paste0("S", 1:ns_opt)])^2
-    srs_var <-  srs_var * (1 - srs_n / n_cells) / srs_n 
-    srs_cv <- sqrt(srs_var) / as.numeric(srs_stats[, paste0("M", 1:ns_opt)])
+    srs_var <- as.matrix(srs_stats[, paste0("S", 1:ns_opt)])^2
+    
+    srs_var <- sweep(x = srs_var, 
+                     MARGIN = 2, 
+                     STATS = (1 - srs_n / n_cells) / srs_n, 
+                     FUN = "*")
+    
+    srs_cv <- sqrt(srs_var) / srs_stats[, paste0("M", 1:ns_opt)]
     
     cv_constraints <- srs_cv
     
@@ -90,7 +95,7 @@ for (irow in 3) {
     for (spp in 1:ns_opt) 
       cv[[paste0("CV", spp)]] <- 
       as.numeric(switch(which_domain, 
-                        "district" = cv_constraints[spp, ],
+                        "district" = cv_constraints[, spp],
                         "full_domain" = cv_constraints[spp]))
     cv[["DOM"]] <- 1:n_dom
     cv[["domainvalue"]] <- 1:n_dom
@@ -102,9 +107,9 @@ for (irow in 3) {
     
     ss_strs_pop_cv <- 
       switch(which_domain,
-             "district" = t(subset(x = settings_district,
-                                   subset = iboat == isample & 
-                                     spp %in% spp_idx_opt,
+             "district" = t(subset(x = settings_district_district,
+                                   subset = (boat == isample) & 
+                                     (spp %in% spp_idx_opt),
                                    select = paste(1:5))),
              "full_domain" = unlist(subset(x = settings_agg_full_domain,
                                            subset = boat == isample & 
