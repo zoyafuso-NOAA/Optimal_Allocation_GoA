@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[1]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -26,16 +26,16 @@ library(SamplingStrata)
 ##################################################
 load(paste0(github_dir, "data/optimization_data.RData"))
 
-scen <- data.frame(domain = rep(c("district", "full_domain"), each = 3),
-                   strata = c(3, 5, 10, 10, 15, 20))
+scen <- data.frame(domain = rep(c("district", "full_domain"), each = 2),
+                   strata = c(3, 5, 10, 15))
 
 ###########################
 ## Empty Result objects
 ###########################
 master_res_df <- data.frame(id = 1:n_cells)
-master_settings <- master_settings_district <- data.frame()
+master_settings <- #master_settings_district 
+   data.frame()
 master_strata_list <- master_strata_stats_list <- list()
-master_tradeoff <- list()
 
 idx <- 0
 for(irow in 1:nrow(scen)) {
@@ -75,7 +75,6 @@ for(irow in 1:nrow(scen)) {
                       "district" = as.factor(paste(
                          result_list$solution$framenew$DOMAINVALUE,
                          result_list$solution$framenew$STRATO))
-                      
                )
             
             solution <- as.integer(solution)
@@ -88,8 +87,11 @@ for(irow in 1:nrow(scen)) {
                                     list(result_list[[2]]))
             
             ## Strata statistics (mean and variance)
+            temp_strata_stats_list <- result_list[[1]]$aggr_strata
+            strata_order <- order(as.integer(temp_strata_stats_list$STRATO))
+            temp_strata_stats_list <- temp_strata_stats_list[strata_order, ]
             master_strata_stats_list <- c(master_strata_stats_list, 
-                                          list(result_list[[1]]$aggr_strata))
+                                          list(temp_strata_stats_list))
             
             ## High-level settings: total sample size and expected CV across
             ## species
@@ -129,17 +131,17 @@ for(irow in 1:nrow(scen)) {
             attributes(species_cv)$dimnames[[1]] <- rep("", n_dom)
             attributes(species_cv)$dimnames[[2]] <- paste0("CV_", 1:ns_opt)
             
-            master_settings_district <- rbind(
-               master_settings_district,
-               cbind(data.frame(id = idx,
-                                boat = iboat,
-                                strata = istrata,
-                                domain = idom,
-                                domain_no = 1:n_dom,
-                                n = tapply(X = result_list$sum_stats$Allocation, 
-                                           INDEX = result_list$sum_stats$Domain, 
-                                           FUN = sum), species_cv))
-            )
+            # master_settings_district <- rbind(
+            #    master_settings_district,
+            #    cbind(data.frame(id = idx,
+            #                     boat = iboat,
+            #                     strata = istrata,
+            #                     domain = idom,
+            #                     domain_no = 1:n_dom,
+            #                     n = tapply(X = result_list$sum_stats$Allocation, 
+            #                                INDEX = result_list$sum_stats$Domain, 
+            #                                FUN = sum), species_cv))
+            # )
          }
       }
    }
@@ -166,19 +168,23 @@ idx <-  as.vector(
    )
 )
 
-settings <- subset(master_settings, id %in% idx)
-settings_district <- subset(master_settings_district, id %in% idx)
+settings <- subset(x = master_settings, 
+                   subset = id %in% idx,
+                   select = -id)
+# settings_district <- subset(x = master_settings_district, 
+#                             subset = id %in% idx, 
+#                             select = -id)
 res_df <- master_res_df[, 1 + idx]
 strata_list <- master_strata_list[idx]
 strata_stats_list <- master_strata_stats_list[idx]
 
 names(res_df) <- names(strata_list) <- names(strata_stats_list) <- 
-   paste0("sol_", idx)
+   paste0("sol_", 1:nrow(settings))
 
 ##################################################
 ####   Save Objects
 ##################################################
-save(list = c("res_df", "settings", "settings_district", 
+save(list = c("res_df", "settings",
               "strata_list", "strata_stats_list"),
      file = paste0(github_dir,
                    "results/MS_optimization_knitted_results.RData"))

@@ -46,8 +46,8 @@ scen <- data.frame(nstrata = c(3,5, 10,15),
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-for (irow in 3) {
-  for(isample in 1:n_boats) {
+for (irow in 1) {
+  for(isample in 2:n_boats) {
     
     ##################################################
     ####   Constants to specify before doing optimization
@@ -80,9 +80,14 @@ for (irow in 3) {
                        X1 = 1))
     
     srs_n <- as.numeric(samples[isample] * table(frame$domainvalue) / n_cells)
-    srs_var <- as.numeric(srs_stats[, paste0("S", 1:ns_opt)])^2
-    srs_var <-  srs_var * (1 - srs_n / n_cells) / srs_n 
-    srs_cv <- sqrt(srs_var) / as.numeric(srs_stats[, paste0("M", 1:ns_opt)])
+    srs_var <- as.matrix(srs_stats[, paste0("S", 1:ns_opt)])^2
+    
+    srs_var <- sweep(x = srs_var, 
+                     MARGIN = 1, 
+                     STATS = (1 - srs_n / n_cells) / srs_n, 
+                     FUN = "*")
+    
+    srs_cv <- sqrt(srs_var) / srs_stats[, paste0("M", 1:ns_opt)]
     
     cv_constraints <- srs_cv
     
@@ -90,7 +95,7 @@ for (irow in 3) {
     for (spp in 1:ns_opt) 
       cv[[paste0("CV", spp)]] <- 
       as.numeric(switch(which_domain, 
-                        "district" = cv_constraints[spp, ],
+                        "district" = cv_constraints[, spp],
                         "full_domain" = cv_constraints[spp]))
     cv[["DOM"]] <- 1:n_dom
     cv[["domainvalue"]] <- 1:n_dom
@@ -102,9 +107,9 @@ for (irow in 3) {
     
     ss_strs_pop_cv <- 
       switch(which_domain,
-             "district" = t(subset(x = settings_district,
-                                   subset = iboat == isample & 
-                                     spp %in% spp_idx_opt,
+             "district" = t(subset(x = settings_district_district,
+                                   subset = (boat == isample) & 
+                                     (spp %in% spp_idx_opt),
                                    select = paste(1:5))),
              "full_domain" = unlist(subset(x = settings_agg_full_domain,
                                            subset = boat == isample & 
@@ -192,59 +197,59 @@ for (irow in 3) {
       box()
       dev.off()
       
-      png(filename = "solution_with_simulated_survey.png", 
-          width = 5, 
-          height = 3, 
-          units = "in", 
-          res = 500)
-      
-      par(mfrow = c(1, 1), 
-          mar = c(1, 1, 1, 1))
-      plot( goa_ras, 
-            axes = F, 
-            asp = 1,
-            col = colorRampPalette(
-              brewer.pal(n = 11, 
-                         name = "Paired"))(sum(temp_strata))[sample(1:sum(temp_strata))] ) 
-      
-      rect(xleft = districts$W_lon,
-           xright = districts$E_lon,
-           ybottom = tapply(X = Extrapolation_depths$Lat, 
-                            INDEX = district_vals,
-                            FUN = min), 
-           ytop = tapply(X = Extrapolation_depths$Lat, 
-                         INDEX = district_vals,
-                         FUN = max))
-      
-      text(x = rowMeans(districts[, c("W_lon", "E_lon")]),
-           y = tapply(X = Extrapolation_depths$Lat, 
-                      INDEX = district_vals,
-                      FUN = max),
-           labels = districts$district,
-           pos = 3)
-      
-      box()
-      
-      #Simulate a sample solution
-      temp_samples <- c()
-      temp_strata <- nrow(sum_stats)
-      temp_solution <- solution$framenew$STRATO
-      temp_allocation <- sum_stats$Allocation
-      
-      for (temp_istrata in 1:temp_strata) {
-        temp_samples = c(temp_samples,
-                         sample(x = which(temp_solution == temp_istrata),
-                                size = temp_allocation[temp_istrata]) )
-      }
-      
-      temp_loc <- Extrapolation_depths[temp_samples, c("Lon", "Lat")]
-      
-      points(temp_loc,
-             pch = 16,
-             cex = 0.25)
-      
-      
-      dev.off()
+      # png(filename = "solution_with_simulated_survey.png", 
+      #     width = 5, 
+      #     height = 3, 
+      #     units = "in", 
+      #     res = 500)
+      # 
+      # par(mfrow = c(1, 1), 
+      #     mar = c(1, 1, 1, 1))
+      # plot( goa_ras, 
+      #       axes = F, 
+      #       asp = 1,
+      #       col = colorRampPalette(
+      #         brewer.pal(n = 11, 
+      #                    name = "Paired"))(sum(temp_strata))[sample(1:sum(temp_strata))] ) 
+      # 
+      # rect(xleft = districts$W_lon,
+      #      xright = districts$E_lon,
+      #      ybottom = tapply(X = Extrapolation_depths$Lat, 
+      #                       INDEX = district_vals,
+      #                       FUN = min), 
+      #      ytop = tapply(X = Extrapolation_depths$Lat, 
+      #                    INDEX = district_vals,
+      #                    FUN = max))
+      # 
+      # text(x = rowMeans(districts[, c("W_lon", "E_lon")]),
+      #      y = tapply(X = Extrapolation_depths$Lat, 
+      #                 INDEX = district_vals,
+      #                 FUN = max),
+      #      labels = districts$district,
+      #      pos = 3)
+      # 
+      # box()
+      # 
+      # #Simulate a sample solution
+      # temp_samples <- c()
+      # temp_strata <- nrow(sum_stats)
+      # temp_solution <- solution$framenew$STRATO
+      # temp_allocation <- sum_stats$Allocation
+      # 
+      # for (temp_istrata in 1:temp_strata) {
+      #   temp_samples = c(temp_samples,
+      #                    sample(x = which(temp_solution == temp_istrata),
+      #                           size = temp_allocation[temp_istrata]) )
+      # }
+      # 
+      # temp_loc <- Extrapolation_depths[temp_samples, c("Lon", "Lat")]
+      # 
+      # points(temp_loc,
+      #        pch = 16,
+      #        cex = 0.25)
+      # 
+      # 
+      # dev.off()
       
       #Save Output
       cv_constraints <- expected_CV(strata = solution$aggr_strata)

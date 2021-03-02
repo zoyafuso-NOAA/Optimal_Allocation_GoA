@@ -76,12 +76,12 @@ allocations <- rbind(data.frame(Stratum = 0, boat3 = 0, boat2 = 0, boat1 = 0),
 
 allocations$Stratum <- 1:nrow(allocations)
 
-scen <- data.frame(survey_type = c("cur", rep("opt", 6) ),
-                   strata = c("cur", 3, 5, 10, 10, 15, 20),
+scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
+                   strata = c("cur", 3, 5, 10, 15),
                    domain = c("full_domain", 
-                              rep(c("district", "full_domain"), each = 3)))
+                              rep(c("district", "full_domain"), each = 2)))
 
-for (irow in 6) {
+for (irow in 1:nrow(scen)) {
   
   isurvey <- scen$survey_type[irow]
   
@@ -121,9 +121,8 @@ for (irow in 6) {
   ##################################################
   
   for (iter in 1:n_iters) {
-    # for (iter in 1:200) {
     set.seed(1000 + iter)
-    for (ierror in 1:n_obs_cv) {
+    for (ierror in 1) {
       for (iboat in 1:3) {
         
         sim_survey <- 
@@ -139,26 +138,22 @@ for (irow in 6) {
                 isurvey,
                 "cur" = Extrapolation_depths$stratum_new_label,
                 "opt" = {
-                  idx <- subset(
-                    x = settings, 
-                    subset = strata == as.numeric(scen$strata[irow]) &
-                      boat == iboat &
-                      domain == scen$domain[irow])$id
+                  idx <- which(settings$strata == as.numeric(scen$strata[irow]) &
+                      settings$boat == iboat &
+                      settings$domain == scen$domain[irow])
                   
-                  res_df[, paste0("sol_", idx)]
+                  res_df[, idx]
                 }),
               
               "allocation" = switch(
                 isurvey,
                 "cur" = allocations[, paste0("boat", iboat)],
                 "opt" = {
-                  idx <- subset(
-                    x = settings, 
-                    subset = strata == as.numeric(scen$strata[irow]) &
-                      boat == iboat &
-                      domain == scen$domain[irow])$id
+                  idx <- which(settings$strata == as.numeric(scen$strata[irow]) &
+                                 settings$boat == iboat &
+                                 settings$domain == scen$domain[irow])
                   
-                  strata_list[[paste0("sol_", idx)]]$Allocation
+                  strata_list[[idx]]$Allocation
                 }),
               
               "true_density" = true_mean,
