@@ -1,8 +1,8 @@
 ###############################################################################
-## Project:         Extract table of strata boundaries
+## Project:         MS Solutions with strata boundary breakdowns
 ## Author:          Zack Oyafuso (zack.oyafuso@noaa.gov)
-## Description:     Extract the longitude and depth boundaries for 
-##                  recommended optimization solutions
+## Description:     Plot MS solutions with where the boundaries are with 
+##                  respect to bathymetry and longitude
 ###############################################################################
 rm(list = ls())
 
@@ -14,38 +14,253 @@ which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[1]
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
                      "GitHub/Optimal_Allocation_GoA/")
+output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/",
+                       "C:/Users/Zack Oyafuso/Google Drive/")[which_machine],
+                     "MS_Optimizations/TechMemo/figures/")
+
+##################################################
+####  Imported Libraries
+##################################################
+library(RColorBrewer)
+
+##################################################
+####  Transparent colors fn from Mark Gardener 2015 www.dataanalytics.org.uk
+##################################################
+t_col <- function(color, percent = 50, name = NULL) {
+  #      color = color name
+  #    percent = % transparency
+  #       name = an optional name for the color
+  
+  ## Get RGB values for named color
+  rgb.val <- col2rgb(color)
+  
+  ## Make new color using input color as base and alpha set by transparency
+  t.col <- rgb(rgb.val[1], rgb.val[2], rgb.val[3],
+               max = 255,
+               alpha = (100 - percent) * 255 / 100,
+               names = name)
+  
+  ## Save the color
+  invisible(t.col)
+}
 
 ##################################################
 ####  Load Data
 ##################################################
 load(paste0(github_dir, 
+            "data/optimization_data.RData"))
+load(paste0(github_dir, 
             "data/Extrapolation_depths.RData"))
 load(paste0(github_dir,
             "results/MS_optimization_knitted_results.RData"))
 
-## Index for district-level, 2 boat, 3 and 5 districts per strata solutions
-idx <- c(2, 5)
+##################################################
+####  Constants
+##################################################
+seed <- 234233
+x_range <- diff(range(Extrapolation_depths$E_km))
+y_range <- diff(range(Extrapolation_depths$N_km))
 
-## Subset stratum settings here
-strata_list <- strata_list[idx]
-
+##################################################
 ## Rescale UTM eastings back to UTM 5N
+##################################################
 strata_list <- 
- lapply(X = strata_list,
-        FUN = function(x) {
-         x[, c("Lower_X1", "Upper_X1")] <- 
-          x[, c("Lower_X1", "Upper_X1")] + min(Extrapolation_depths$E_km)
-         
-         x$Lower_X1 <- 
-          Extrapolation_depths$Lon[match(x = round(x$Lower_X1), 
-                                         table = round(Extrapolation_depths$E_km))]
-         x$Upper_X1 <- 
-          Extrapolation_depths$Lon[match(x = round(x$Upper_X1), 
-                                         table = round(Extrapolation_depths$E_km))]
-         
-         x[, c("Lower_X1", "Upper_X1", "Lower_X2", "Upper_X2")] <- 
-          round(x[, c("Lower_X1", "Upper_X1", "Lower_X2", "Upper_X2")], 1)
-         
-         return(x)
-        })
+  lapply(X = strata_list,
+         FUN = function(x) {
+           x[, c("Lower_X1", "Upper_X1")] <- 
+             x[, c("Lower_X1", "Upper_X1")] + min(Extrapolation_depths$E_km)
+           
+           temp_idx <- match(x = round(x$Lower_X1), 
+                             table = round(Extrapolation_depths$E_km))
+           x$Lower_X1 <- Extrapolation_depths$Lon[temp_idx]
+           
+           temp_idx <- match(x = round(x$Upper_X1), 
+                             table = round(Extrapolation_depths$E_km))
+           x$Upper_X1 <- Extrapolation_depths$Lon[temp_idx]
+           
+           x[, c("Lower_X1", "Upper_X1", "Lower_X2", "Upper_X2")] <- 
+             round(x[, c("Lower_X1", "Upper_X1", "Lower_X2", "Upper_X2")], 1)
+           
+           return(x)
+         })
 
+##################################################
+## Function to plot the strata boundary plot
+##################################################
+plot_strata_boundary <- function(
+  strata = strata_list[[idx]],
+  sol = res_df[, idx],
+  extrapolation_grid = Extrapolation_depths,
+  seed_value = seed) {
+  
+  ## Calculate number of strata
+  n_strata <- nrow(strata)
+  
+  ## Create strata colors 
+  strata_cols <- colorRampPalette(
+    c(brewer.pal(n = 11, name = "Paired"),
+      brewer.pal(n = 11, name = "Spectral")))(n_strata)
+  
+  set.seed(seed_value)
+  strata_cols <- sample(strata_cols, replace = F)
+  
+  ## Calculate ECDF of depth (used to scale y-axis)
+  ecdf_depth <- ecdf(extrapolation_grid$DEPTH_EFH)
+  
+  ## Base plot
+  plot(1, 
+       type = "n", 
+       xlim = range(extrapolation_grid$Lon), 
+       ylim = c(1, 0), 
+       las = 1,
+       xlab = "",
+       ylab = "",
+       yaxt = "n")
+  
+  ## y-axis for depth
+  axis(side = 2,
+       at = ecdf_depth(c(0, 50, 100, 150, 200, 300, 1000)),
+       labels =        c(0, 50, 100, 150, 200, 300, 1000), 
+       las = 1)
+  
+  ## Loop over strata
+  for (istrata in 1:n_strata) {
+    
+    ## Calculate a version of the stratum with more transparency
+    temp_col <- t_col(strata_cols[istrata], percent = 50)
+    
+    ## add extrapolation grid locations
+    with(extrapolation_grid[sol == istrata, ],
+         points(y = ecdf_depth(DEPTH_EFH), 
+                x = Lon,
+                pch = 16,
+                col = temp_col,
+                cex = 0.5)
+    )
+  }
+  
+  ## Draw stratua boundaries
+  rect(xleft = strata$Lower_X1,
+       xright = strata$Upper_X1,
+       ybottom = ecdf_depth(strata$Lower_X2),
+       ytop = ecdf_depth(strata$Upper_X2),
+       lwd = 1,
+       border = 'black')
+  
+  ## Add labels for stratum labels
+  text(x = tapply(extrapolation_grid$Lon, 
+                  res_df[, idx],
+                  FUN = median),
+       y = ecdf_depth(tapply(extrapolation_grid$DEPTH_EFH, 
+                             sol,
+                             FUN = median)),
+       labels = 1:n_strata,
+       font = 2,
+       cex = 0.75,
+       col = "gray28")
+}
+
+##################################################
+## Plot
+##################################################
+{
+  png(filename = paste0(output_dir, "strata_boundaries.png"),
+      height = 170,
+      width = 170,
+      units = "mm",
+      res = 500)
+  
+  ## Plot layout
+  layout(mat = matrix(data = 1:8, ncol = 2),
+         heights = c(0.5, 1, 0.5, 1))
+  par(oma = c(2.5, 1, 0, 0))
+  
+  ## Loop over district level (3 and 5 strata per district) and the gulf-wide
+  ## (10 and 15 strata total) solutions. idx refers to the index of the solution
+  ## in the settings dataframe
+  
+  for (idx in c(2, 5, 11, 14)) {
+    
+    ## Plot solution map
+    par(mar = c(0, 4.75, 0, 1.75))
+    
+    ## Set up spatial object
+    goa <- sp::SpatialPointsDataFrame(
+      coords = Extrapolation_depths[, c("E_km", "N_km")],
+      data = data.frame(Str_no = res_df[, idx]) )
+    goa_ras <- raster::raster(x = goa, 
+                              resolution = 10)
+    goa_ras <- raster::rasterize(x = goa, 
+                                 y = goa_ras, 
+                                 field = "Str_no")
+    
+    ## set up colors
+    strata_cols <- colorRampPalette(
+      c(brewer.pal(n = 11, name = "Paired"),
+        brewer.pal(n = 11, name = "Spectral")))(nrow(strata_list[[idx]]))
+    set.seed(seed)
+    strata_cols <- sample(strata_cols, replace = F)
+    
+    ## Plot image
+    raster::image(goa_ras,
+                  asp = 1,
+                  col = strata_cols,
+                  axes = F,
+                  ann = F)
+    
+    ## Stratum labels
+    text(x = tapply(Extrapolation_depths$E_km, 
+                    res_df[, idx],
+                    median),
+         y = tapply(Extrapolation_depths$N_km, 
+                    res_df[, idx],
+                    median),
+         labels = 1:nrow(strata_list[[idx]]),
+         font = 2,
+         cex = 0.75)
+    
+    ## District labels
+    segments(x0 = districts$W_UTM,
+             x1 = districts$E_UTM,
+             y0 = tapply(X = Extrapolation_depths$N_km,
+                         INDEX = district_vals,
+                         FUN = min) - 100,
+             xpd = NA,
+             lwd = 2)
+    
+    text(x = rowMeans(cbind(districts$W_UTM, districts$E_UTM)),
+         y = tapply(X = Extrapolation_depths$N_km,
+                    INDEX = district_vals,
+                    FUN = min) - 150,
+         cex = 0.90,
+         labels = districts$district,
+         pos = 3)
+    
+    ## Solution label
+    text(x = min(Extrapolation_depths$E_km) + x_range*0.15,
+         y = min(Extrapolation_depths$N_km) + y_range*0.7,
+         font = 2,
+         labels = paste0(ifelse(test = settings$domain[idx] == "district",
+                                yes = "District-Level\n",
+                                no = "Gulf-Wide\n"),
+                         ifelse(test = settings$domain[idx] == "district",
+                                yes = paste0(settings$strata[idx], 
+                                             " Strata\nper District"),
+                                no = paste0(settings$strata[idx], 
+                                            " Strata"))))
+    
+    ## Solution boundary map
+    par(mar = c(1, 4, 0, 1))
+    plot_strata_boundary( strata = strata_list[[idx]],
+                          sol = res_df[, idx],
+                          extrapolation_grid = Extrapolation_depths)
+    
+    
+  }
+  
+  ## Outer axes labels
+  mtext(side = 1, text = "Longitude", outer = T, line = 1.25)
+  mtext(side = 2, text = "Bottom Depth (m)", outer = T, line = -0.5)
+  
+  dev.off()
+}
