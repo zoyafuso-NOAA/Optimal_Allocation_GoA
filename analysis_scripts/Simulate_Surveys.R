@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[3]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -122,7 +122,7 @@ for (irow in 1:nrow(scen)) {
   
   for (iter in 1:n_iters) {
     set.seed(1000 + iter)
-    for (ierror in 1) {
+    for (ierror in 1:n_obs_cv) {
       for (iboat in 1:3) {
         
         sim_survey <- 
