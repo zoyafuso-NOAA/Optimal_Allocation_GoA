@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories  
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[1]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
@@ -179,7 +179,7 @@ plot_strata_boundary <- function(
   ## (10 and 15 strata total) solutions. idx refers to the index of the solution
   ## in the settings dataframe
   
-  for (idx in c(2, 5, 11, 14)) {
+  for (idx in c(2, 5, 8, 11)) {
     
     ## Plot solution map
     par(mar = c(0, 4.75, 0, 1.75))
@@ -217,7 +217,7 @@ plot_strata_boundary <- function(
                     median),
          labels = 1:nrow(strata_list[[idx]]),
          font = 2,
-         cex = 0.75)
+         cex = 0.5)
     
     ## District labels
     segments(x0 = districts$W_UTM,

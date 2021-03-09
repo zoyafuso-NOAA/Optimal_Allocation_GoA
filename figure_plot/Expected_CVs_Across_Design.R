@@ -1,7 +1,7 @@
 ###############################################################################
 ## Project:         Plot Expected CVs of different sampling designs
 ## Author:          Zack Oyafuso (zack.oyafuso@noaa.gov)
-## Description:     
+## Description:     Show only two-boat solutions
 ###############################################################################
 rm(list = ls())
 
@@ -41,16 +41,10 @@ load(paste0(github_dir,
 load(paste0(github_dir, 
             "results/full_domain/Single_Species_Optimization",
             "/optimization_knitted_results.RData"))
-load(paste0(github_dir, 
-            "results/full_domain/srs_pop_cv.RData"))
 
-GOA_allocations <- readxl::read_xlsx(
+goa_allocations <- readxl::read_xlsx(
   path = paste0(github_dir, 
                 '/data/GOA 2019 stations by stratum.xlsx'))
-
-GOA_allocations3 <- readxl::read_xlsx(
-  path = paste0(github_dir, 
-                '/data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')) 
 
 ##################################################
 ####  Current survey allocation
@@ -62,22 +56,15 @@ names(new_strata_labels) <- sort(unique(Extrapolation_depths$stratum))
 Extrapolation_depths$stratum_new_label <- 
   new_strata_labels[paste(Extrapolation_depths$stratum)]
 
-allocations <- data.frame(Stratum = sort(unique(GOA_allocations3$stratum)),
-                          boat3 = aggregate(id ~ stratum, 
-                                            data = GOA_allocations3, 
-                                            FUN = length)$id,
-                          boat2 = c(GOA_allocations$`Number stations`,
-                                    rep(0, 5)))
-allocations$boat1 <- ceiling(allocations$boat2 / 2)
+allocations <- data.frame(stratum = sort(unique(goa_allocations$Stratum)),
+                          nh = c(goa_allocations$`Number stations`))
 
-allocations$boat1 <- ifelse(allocations$boat1 == 0, 0, 
-                            ifelse(allocations$boat1 == 1, 2, 
-                                   allocations$boat1))
+allocations <- rbind(data.frame(stratum = 0, nh = 0),
+                     allocations,
+                     data.frame(stratum = c(510, 520, 530, 540, 550), 
+                                nh = rep(0, 5)))
 
-allocations <- rbind(data.frame(Stratum = 0, boat3 = 0, boat2 = 0, boat1 = 0),
-                     allocations)
-
-allocations$Stratum <- 1:nrow(allocations)
+allocations$stratum <- 1:nrow(allocations)
 
 ##################################################
 ####   General dataframe used to calculate CVs
@@ -100,40 +87,48 @@ frame <- cbind(data.frame(domainvalue = 1,
 )
 
 ##################################################
+####   Calculate Expected CV under Simple RS across ALL species
+##################################################
+srs_stats <- SamplingStrata::buildStrataDF( 
+  dataset = cbind( frame, X1 = 1))
+
+srs_n <- samples[2]
+srs_var <- as.numeric((srs_stats[, paste0("S", 1:ns_all)])^2) * (1 - srs_n / n_cells) / srs_n
+srs_mean <- as.numeric(srs_stats[, paste0("M", 1:ns_all)])
+
+srs_cv <- as.numeric(sqrt(srs_var) / srs_mean)
+
+##################################################
 ####  Calculate Expected CV of current design across ALL species
 ##################################################
-current_pop_cv <- matrix(nrow = ns_all, 
-                         ncol = n_boats)
+frame$X1 <- Extrapolation_depths$stratum_new_label
+strata_stats <- SamplingStrata::buildStrataDF(dataset = frame)
+strata_stats <- strata_stats[order(as.numeric(strata_stats$STRATO)), ]
+strata_stats$SOLUZ <-  allocations$nh
+strata_stats <- subset(strata_stats, SOLUZ > 0)
+temp_cv <- unlist(SamplingStrata::expected_CV(strata = strata_stats))
 
-for (isol in 1:n_boats) {
-  frame$X1 <- Extrapolation_depths$stratum_new_label
-  strata_stats <- SamplingStrata::buildStrataDF(dataset = frame)
-  strata_stats <- strata_stats[order(as.numeric(strata_stats$STRATO)), ]
-  strata_stats$SOLUZ <-  allocations[, paste0("boat", isol)]
-  strata_stats <- subset(strata_stats, SOLUZ > 0)
-  temp_cv <- unlist(SamplingStrata::expected_CV(strata = strata_stats))
-  
-  current_pop_cv[, isol] <- temp_cv
-}
+current_strs_cv <- as.numeric(temp_cv)
+
 
 ##################################################
 ####  Calculate expected CV for all species for the 
-####  gulf-wide (full_domain) 15 strata solution (isol == 11)
+####  gulf-wide (full_domain) 15 strata solution (isol == 8)
 ##################################################
-isol <- 14
+isol <- 8
 frame$X1 <- res_df[, isol]
 strata_stats <- SamplingStrata::buildStrataDF(dataset = frame)
-# strata_stats <- strata_stats[order(as.numeric(strata_stats$STRATO)), ]
+strata_stats <- strata_stats[order(as.numeric(strata_stats$STRATO)), ]
 strata_stats$SOLUZ <- strata_stats_list[[isol]][, "SOLUZ"] 
-strs_pop_cv <- unlist(SamplingStrata::expected_CV(strata = strata_stats))
+strs_pop_cv <- as.numeric(SamplingStrata::expected_CV(strata = strata_stats))
 
 ##################################################
 ####  Plot
 ##################################################
 {
   png(filename = paste0(output_dir, "Expected_CVs_Across_Design.png"),
-      width = 190,
-      height = 200,
+      width = 170,
+      height = 130,
       units = "mm",
       res = 500)
   
@@ -162,35 +157,36 @@ strs_pop_cv <- unlist(SamplingStrata::expected_CV(strata = strata_stats))
   axis(side = 1, at = seq(from = 0, to = 1, by = 0.05))
   axis(side = 2, 
        labels = common_names_all[c(spp_idx_opt)], 
-       at = 1:ns_opt,
+       at = ns_all:(ns_all-ns_opt+1),
        col = "black",
        las = 1)
   axis(side = 2, 
        labels = common_names_all[spp_idx_eval], 
-       at = (ns_opt + 1):ns_all,
+       at = ns_eval:1,
        col.axis = "darkgrey",
        las = 1)
   
   ## Plot Expected CVs
-  matpoints(y = 1:ns_all,
-            x = cbind(srs_pop_cv_full_domain[c(spp_idx_opt, spp_idx_eval), 1, 2], 
+  matpoints(y = ns_all:1,
+            x = cbind(srs_cv[c(spp_idx_opt, spp_idx_eval)], 
                       strs_pop_cv[c(spp_idx_opt, spp_idx_eval)],
-                      current_pop_cv[c(spp_idx_opt, spp_idx_eval), 2] ),
+                      current_strs_cv[c(spp_idx_opt, spp_idx_eval)]),
             pch = 16,
-            col = c("black", "blue", "green"),
+            col = c("black", "orange", "green"),
             cex = 1)
-  points(y = 1:ns_all,
+  
+  points(y = ns_all:1,
          x = subset(x = settings_agg_full_domain,
-                    subset = iboat == 2)[c(spp_idx_opt, 
+                    subset = boat == 2)[c(spp_idx_opt, 
                                            spp_idx_eval), "cv"],
          pch = 16,
          col = "red",
          cex = 1)
   
   ## Legend
-  legend("bottomright",
+  legend("topright",
          pch = 16,
-         col = c("red", "green", "blue", "black"),
+         col = c("red", "green", "orange", "black"),
          legend = c("SS STRS", "Current STRS", "Optimized STRS", "SRS"),
          cex = 1)
   

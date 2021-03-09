@@ -76,12 +76,12 @@ allocations$Stratum <- 1:nrow(allocations)
 ##################################################
 ####   Import simulation results
 ##################################################
-scen <- data.frame(survey_type = c("cur", rep("opt", 6) ),
-                   strata = c("cur", 3, 5, 10, 10, 15, 20),
-                   domain = c("full_domain", 
-                              rep(c("district", "full_domain"), each = 3)))
+scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
+                   strata = c("cur", 3, 5, 10, 15),
+                   domain = c("full_domain",
+                              rep(c("district", "full_domain"), each = 2)))
 
-for (irow in 1:7) {
+for (irow in 1:nrow(scen)) {
   scen_name <- paste0("SUR_", scen$survey_type[irow], "_", 
                       scen$domain[irow], "_STR_", scen$strata[irow], "_")
   file_name <- paste0(github_dir, "results/", 
@@ -91,27 +91,29 @@ for (irow in 1:7) {
   
 }
 
+
 ##################################################
 ####   Calculate Expected CV of each species for each survey design
 ##################################################
 expected_sample_cv <- matrix(ncol = ns_all, 
                              nrow = nrow(settings) + 3
                              #add three more row for the current design
-                             )
+)
 
 for (iscen in 1:(nrow(settings) + 3)) {
   
   #Temporary operating model data frame
   temp_frame <- subset(frame_all, select = -X2)
   
-  if( !(iscen %in% (nrow(settings) + (1:3)) )){ #if looping through the 
-                                                #optimized solutions
+  if( !(iscen %in% (nrow(settings) + (1:3))) ){ #if looping through the 
+    #optimized solutions
     
     #Assign to X1 the solution (stratum label)
     temp_frame$X1 <- res_df[, iscen]
     
     #Calculate strata means and variances
     temp_agg_strata <- buildStrataDF(dataset = temp_frame)
+    # temp_agg_strata <- temp_agg_strata[order(as.integer(temp_agg_strata$STRATO)), ]
     temp_agg_strata$DOM1 <- 1
     
     #Clean up order of strata for the district-level solutions
@@ -127,7 +129,7 @@ for (iscen in 1:(nrow(settings) + 3)) {
       temp_agg_strata <- temp_agg_strata[idx, ]
       temp_agg_strata$SOLUZ <- strata_stats_list[[iscen]]$SOLUZ[idx]
     }
-
+    
   }
   
   #Clean up order of strata for the current survey design
@@ -156,13 +158,15 @@ for (iscen in 1:(nrow(settings) + 3)) {
 for (imetric in c("true_cv", "rrmse_cv")) {
   
   png(filename = paste0(output_dir, imetric, ".png"), 
-      width = 190, 
-      height = 200,
+      width = 170, 
+      height = 170,
       units = "mm", 
       res = 500)
   
-  layout(mat = matrix(c(1:ns_all, ns_all+1, ns_all+1), ncol = 4, byrow = TRUE))
-  par(mar = c(0.5, 3, 2.5, 1),
+  layout(mat = matrix(c(1:ns_all, ns_all + 1, ns_all + 1), 
+                      ncol = 4, 
+                      byrow = TRUE))
+  par(mar = c(0.5, 3, 1.5, 1),
       oma = c(0, 2.5, 0, 0))
   
   for (ispp in c(spp_idx_opt, spp_idx_eval)) {
@@ -173,19 +177,18 @@ for (imetric in c("true_cv", "rrmse_cv")) {
                                       1:n_years,
                                       ispp,
                                       paste0("boat_2")])
-    ylim_ <- max(unlist(merged_metric))
+    ylim_ <- max(unlist(merged_metric)) * 1.1
     
     boxplot(merged_metric,
-            ylim = c(0, 1.25 * ylim_),
+            ylim = c(0, max(0.10, ylim_) ),
             las = 1,
             axes = F,
             pch = 16,
-            col  = c("white", "cyan", "cornflowerblue", "blue4",
-                     "darkolivegreen1", "chartreuse1", "darkgreen"),
+            col  = c("white", "cyan", "blue4", "chartreuse1", "darkgreen"),
             cex = 0.5,
-            at = c(1, 3:5, 7:9))
+            at = c(1, 3:4, 6:7))
     
-    abline(v = c(2, 6),
+    abline(v = c(2, 5),
            lty = "dotted", 
            col = "black")
     
@@ -196,12 +199,15 @@ for (imetric in c("true_cv", "rrmse_cv")) {
           col = ifelse(ispp %in% spp_idx_opt, "black", "darkgrey"),
           cex = 0.8)
     
-    points(x = c(1, 3:5, 7:9),
-           y = expected_sample_cv[c(20, which(settings$boat == 2)), ispp],
-           pch = 16,
-           col = "red",
-           cex = 1)
+    if(imetric == "true_cv") {
+      points(x = c(1, 3:4, 6:7),
+             y = expected_sample_cv[c(14, which(settings$boat == 2)), ispp],
+             pch = 16,
+             col = "red",
+             cex = 1)
+    }
 
+    
     
   }
   
@@ -213,20 +219,18 @@ for (imetric in c("true_cv", "rrmse_cv")) {
        axes = F,
        ann = F)
   
-  legend(x = -0.05,
-         y = 1,
+  legend(x = 0,
+         y = 0.9,
          legend = c("Current Survey",
                     "District-Level Optimized Survey, 3 Strata per District",
                     "District-Level Optimized Survey, 5 Strata per District",
-                    "District-Level Optimized Survey, 10 Strata per District",
                     "Gulf-Wide Optimized Survey, 10 Total Strata",
-                    "Gulf-Wide Optimized Survey, 15 Total Strata",
-                    "Gulf-Wide Optimized Survey, 20 Total Strata"),
+                    "Gulf-Wide Optimized Survey, 15 Total Strata"),
          fill = c("white", 
-                  "cyan", "cornflowerblue", "blue4",
-                  "darkolivegreen1", "chartreuse1", "darkgreen"),
+                  "cyan",  "blue4",
+                   "chartreuse1", "darkgreen"),
          xpd = NA,
-         cex = 1.25,
+         cex = 1,
          bty = "n")
   
   mtext(side = 2, 

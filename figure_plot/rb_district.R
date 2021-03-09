@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[1]
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/",
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -31,12 +31,12 @@ source(paste0(github_dir, "modified_functions/plot_percentiles.R"))
 load(paste0(github_dir, '/data/optimization_data.RData'))
 load(paste0(github_dir, '/data/Extrapolation_depths.RData'))
 
-scen <- data.frame(survey_type = c("cur", rep("opt", 6) ),
-                   strata = c("cur", 3, 5, 10, 10, 15, 20),
+scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
+                   strata = c("cur", 3, 5, 10, 15),
                    domain = c("full_domain",
-                              rep(c("district", "full_domain"), each = 3)))
+                              rep(c("district", "full_domain"), each = 2)))
 
-for (irow in 1:7) {
+for (irow in 1:nrow(scen)) {
   scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
                       scen$domain[irow], "_STR_", scen$strata[irow], "_")
   file_name <- paste0(github_dir, "results/",
@@ -85,7 +85,7 @@ for (which_spp in c("eval", "opt1", "opt2")) {
     ## 1) Current
     ## 5) Gulf-wide optiization, 10 strata
     ## 2) District-level optimiztion, 3 strata per district
-    for (irow in c(1, 5, 2) ) {
+    for (irow in c(1, 4, 2) ) {
       ## subset result object based on survey scenario
       scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
                           scen$domain[irow], "_STR_", scen$strata[irow], "_")
@@ -110,7 +110,7 @@ for (which_spp in c("eval", "opt1", "opt2")) {
              ytop = 5, 
              col = ifelse(irow %in% 1, 
                           "white",
-                          ifelse(irow %in% 5, "grey90", 
+                          ifelse(irow %in% 4, "grey90", 
                                  "grey50")))
         
         ## District Labels
@@ -126,15 +126,22 @@ for (which_spp in c("eval", "opt1", "opt2")) {
              tck = -0.05)
         
         if(idistrict %in% c(2, 4) ) {
-          axis(side = 1, at = c(1, 11), labels = c("Yr 1", "Yr 11"),
-               lwd = F, tick = F, line = -1, cex.axis = 0.75)
-          arrows(x0 = 3.5, x1 = 8.5, y0 = -2, xpd = NA, length = 0.02)
+          axis(side = 1, 
+               at = c(1, 11), 
+               labels = c("Yr 1", "Yr 11"),
+               lwd = F, 
+               tick = F, 
+               line = -1, 
+               cex.axis = 0.75)
+          arrows(x0 = 3.5, x1 = 8.5, 
+                 y0 = -2, 
+                 xpd = NA, length = 0.02)
         }
         
         ## Plot time series
         plot_this <- rb_district["obsCV=0",
                                  ,
-                                 c(spp_idx_opt, spp_idx_eval)[ispp],
+                                 ispp,
                                  "boat_2" ,
                                  idistrict,
                                  ]
@@ -176,7 +183,11 @@ for (which_spp in c("eval", "opt1", "opt2")) {
     
     plot(1,type = "n", axes = F, ann = F)  
     plot(1,type = "n", axes = F, ann = F, xlim = c(0, 1), ylim = c(0, 1))
-    text(x = 0.4, y = 0.45, common_names_all[ispp], cex = 1.4, font = 2)
+    text(x = 0.4, 
+         y = 0.35, 
+         labels = common_names_all_labels[ispp], 
+         cex = 1.4, 
+         font = 2)
   }
   
   mtext(side = 2, 
