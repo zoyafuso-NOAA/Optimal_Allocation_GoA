@@ -125,7 +125,7 @@ inpfc_vals_current[Extrapolation_depths$stratum %in%
                         c(50, 150:151, 250:251, 350:351, 450, 550)] <- 5
 
 ## Number of times to simulate survey
-n_iters <- 1000
+n_iters <- 500
 obs_cv <- c(0, 0.25, 0.5, 1) #low to high sampling CVs
 n_obs_cv <- length(obs_cv)
 
