@@ -8,7 +8,9 @@ for abundance estimation."
 
 ## Requirements
 
-A handful of R packages are required. Some conventional ones:
+A handful of R packages are required. R version 4.0.3 (2020-10-10)
+was used for the analysis. Some conventional packages for plotting
+and manipulating spatial data:
 
 ```
 library(sp)
@@ -66,13 +68,16 @@ rockfish and rougheye rockfish, respectively) hereafter.
 ## Input Data -- Spatial Domain
 
 The spatial domain of the survey optimization is the Gulf of Alaska 
-divided into a roughly 5 km resolution grid resulting in n_cells = 22832 total 
-survey cells. The script used to create the survey grid is contained in the [MS_OM_GoA](https://github.com/zoyafuso-NOAA/MS_OM_GoA/blob/master/data/Extrapolation_Grid_Covariates.R)
+divided into a roughly 3.7 km resolution grid resulting in `n_cells` = 22832 total 
+survey cells. The script used to create the survey grid is contained in the 
+[MS_OM_GoA](https://github.com/zoyafuso-NOAA/MS_OM_GoA/blob/master/data/Extrapolation_Grid_Covariates.R)
 repo. That script produces an RData product called 
-Extrapolation_depths.RData that is contained within the [data/](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/tree/master/data) 
+Extrapolation_depths.RData that is contained within the 
+[data/](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/tree/master/data) 
 directory in this repo. Extrapolation_depths.RData contains a variable 
-called `Extrapolation_depths` which is a dataframe of N rows. Useful fields for 
-this analysis are stated in the table below:
+called `Extrapolation_depths` which is a dataframe of `n_cells` rows. 
+Useful fields for this analysis are listed below along with the spatial
+footprint of the survey area:
 
 | Field Name          | Description                                 |
 |---------------------|---------------------------------------------|
@@ -84,7 +89,8 @@ this analysis are stated in the table below:
 | N_km                | num, Northings in kilometers, 5N UTM        |
 | stratum             | int, Stratum ID in current STRS design      |
 
-![](graphics/domain.png)
+![Spatial domain of the Gulf of Alaska Stratified Random Bottom Trawl 
+Survey (black)](graphics/domain.png)
 
 ## Input Data -- Predicted denisity
 Density of each species was predicted across the spatiotemporal domain using a 
@@ -93,10 +99,10 @@ vector autoregressive spatiotemporal model using the VAST package
 catch-per-unit area survey data were used from years 1996, 1999, and the odd
 years from 2003-2019. Code in the repository zoyafuso-NOAA/MS_OM_GoA/ 
 (https://github.com/zoyafuso-NOAA/MS_OM_GoA) was used to run the VAST models 
-and the output was saved in this repo (data/fit_density.RData). This .RData
-file contains a variable called "D_gct" which is a 3-D array of dimension 
-(`n_cells`, `ns_all`, 24). There are 24 total years (1996-2019), but only 
-`n_years` = 11 survey years. 
+and the output was saved in this repo ([data/](https://github.com/zoyafuso-NOAA/MS_OM_GoA/blob/master/data/Extrapolation_Grid_Covariates.R)fit_density.RData). 
+This .RData file contains a variable called "D_gct" which is a 3-D array 
+of dimension (`n_cells`, `ns_all`, 24). There are 24 total years 
+(1996-2019), but only `n_years` = 11 observed survey years. 
 
 ## Script Overview (Optimal_Allocation_GoA/analysis_scripts/)
 
@@ -108,18 +114,15 @@ functions that may ease wider general use.
 optimization_data.R : Synthesizes data inputs and constants common to 
 all subsequent scripts. 
 
-Calculate_Population_Variances.R : Calculates population variances of 
-simple random, optimized single-species stratified random, and current 
-stratified random surveys.
+Survey_Optimization_SS.R : Conducts single-species survey optimization.
 
-Survey_Optimization.R : Conducts the multi- and single-species survey 
-optimization.
-
-knitting_runs.R : knits all the optimization runs into neat result
-outputs.
-
-knitting_runs_SS.R : knits all the single-species optimization runs into
+knitting_runs_SS.R : Knits all the single-species optimization runs into
 neat result outputs.
+
+Survey_Optimization.R : Conducts the multispecies survey optimization.
+
+knitting_runs.R : knits all the multispecies optimization runs into neat 
+result outputs.
 
 Simulate_Surveys.R : Simulates current and optimized stratified random 
 surveys.
@@ -145,20 +148,27 @@ and contains the following variables and constants:
 | `sci_names_eval`      | Scientific names of species excluded in optimization                                                                                | character vector, length `ns_eval`           |
 | `sci_names_all`       | Scientific names of all species considered                                                                                          | character vector, length `ns_all`            |
 | `common_names_opt`    | Common names of species included in optimization                                                                                    | character vector, length `ns_opt`            |
-| `common_names_eval`   | Common names of species excluded in optimization                                                                                    | character vector, length `ns_eval`           |
-| `common_names_all`    | Common names of all species considered                                                                                              | character vector, length `ns_all`            |
+| `common_names_eval`   | Common names of species excluded in optimization (periods removed for path name purposes)                                                          | character vector, length `ns_eval`           |
+| `common_names_eval_labels`   | Common names of species excluded in optimization                                                                                    | character vector, length `ns_eval`           |
+| `common_names_all`    | Common names of all species considered (periods removed for path name purposes)                                                                   | character vector, length `ns_all`            |
+| `common_names_all_labels`    | Common names of all species considered                                                                                       | character vector, length `ns_all`            |
 | `spp_idx_opt`         | indices of the order of species included in optimization                                                                            | numeric vector, length `ns_opt`              |
 | `spp_idx_eval`        | indices of the order of species excluded in optimization                                                                            | numeric vector, length `ns_eval`             |
 | `n_boats`             | Total number of sample sizes of interest, (`n_boats` = 3)                                                                              | numeric vector, length 1                   |
 | `samples`             | Range of sample sizes of interest, corresponding to 1 (n = 280), 2 (n = 550), and 3 (n = 820) boats                                 | numeric vector, length `n_boats`              |
-| `n_strata`            | Total number of strata scenarios, (`n_strata` = 6)                                                                                     | numeric vector, length 1                   |
-| `stratas`             | Range of number of strata, (`stratas <- c(5, 10, 15, 20, 30, 60)`)                                                                     | numeric vector, length `n_strata`             |
+| `n_strata`            | Total number of strata scenarios, (`n_strata` = 2)                                                                                     | numeric vector, length 1                   |
+| `stratas`             | Range of number of strata, (`stratas <- c(10, 15)`)                                                                                    | numeric vector, length `n_strata`             |
 | `n_cells`             | Total number of grid cells in the spatial domain, (`n_cells` = 23339 cells)                                                                 | numeric vector, length 1                   |
 | `n_years`             | Total number of years with data, (`n_years` = 11 years between 1996-2019)                                                               | numeric vector, length 1                   |
 | `year_set`            | Sequence of years over the temporal domain (1996 - 2019)                                                                            | numeric vector, length 24                  |
 | `years_included`      | Indices of years with data                                                                                                          | numeric vector, length `n_years`               |
 | `n_dom`               | Total number of management districts, (`n_dom` = 5)                                                                        | numeric vector, length 1                   |
+| `districts`           | names of managmenet districts with W and E boundaries                                                                                  | dataframe, nrow = `n_dom` |
+| `district_vals`       | district index for each cell in the spatial domain                                                                                     | numeric vector, length `n_cells` |
+| `inpfc_vals_current`   | International North Pacific Fisheries Commission (INPFC) statistical areas index for each cell in the spatial domain                  | numeric vector, length `n_cells` |
 | `n_iters`             | Total number of times a survey is simulated, (`n_iters` = 1000)                                                                        | numeric vector, length 1                   |
+| `obs_cv`             | levels of added lognormal observation error on density when simulating surveys                                                          | numeric vector, length 4                   |
+| `n_obs_cv`             | Total number of observation error scenarios (`n_obs_cv` = 4)                                                                          | numeric vector, length 1                   |
 | `true_mean`           | True mean densities for each species and year. This is the "truth" that is used in the performance metrics when simulating surveys  | numeric matrix, `ns_all` rows, `n_years` columns |
 | `true_index`          | True abundance index for each species and year. This is the "truth" that is used in the performance metrics when simulating surveys | numeric matrix, `ns_all` rows, `n_years` columns |
 | `true_index_district` | True abundance index for each species and year for each management district. This is the "truth" that is used in the performance metrics when simulating surveys | numeric array, dimensions: `ns_all`, `n_years`, `n_dom` |
@@ -169,7 +179,7 @@ gulf-wide and district-level optimizations, respectively. Both dataframes had
 
 | Field Name           | Description                                                                                                                                         |
 |----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| domain               | management district id (1, 2, ..., 5 for frame_district or 1 for frame_all)                                                                                                              |
+| domainvalue          | management district id (1, 2, ..., 5 for frame_district or 1 for frame_all)                                                                                                              |
 | id                   | unique ID for each sampling cell                                                                                                                    |
 | X1                   | strata variable 1: longitude in eastings (km). Because the  optimization does not read in negative values, the values so that the lowest value is 0 |
 | X2                   | strata variable 2: depth of cell (m)                                                                                                                |
