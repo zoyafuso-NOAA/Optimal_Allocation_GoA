@@ -257,7 +257,7 @@ strata in the solution and Y is the run number. Within each run folder contains:
 ## 5. Knit Multispecies Optimization Results [(knitting_runs.R)](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/knitting_runs.R)
 
 The results from each run are synthesized in the knitting_runs_SS.R script. Four
-variables are saved in the [optimization_knitted_results.RData](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/results/full_domain/Single_Species_Optimization/MS_optimization_knitted_results.RData) workspace:
+variables are saved in the [optimization_knitted_results.RData](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/results/MS_optimization_knitted_results.RData) workspace:
 
 ## Survey Simulation and Performance Metrics
 Optimized and current stratified survey designs are simulated on the spatial
@@ -289,8 +289,8 @@ scenario, year, species, and number of boats.
 * `SUR_XXX_YYY_STR_ZZZ_sim_mean`, `SUR_XXX_YYY_STR_ZZZ_sim_cv`,
 `SUR_XXX_YYY_STR_ZZZ_rb_agg`, and `SUR_XXX_YYY_STR_ZZZ_log_rb_agg`,
 are 5-D arrays with dimensions (`n_obs_cv`, `n_years`, `ns_all`, `n_boats`,
-`n_iters). These arrays hold the estimated sample means and cvs, relative bias, and
-log bias ratio for each observation cv scenario, year, species, number of
+`n_iters`). These arrays hold the estimated sample means and cvs, relative bias, 
+andclog bias ratio for each observation cv scenario, year, species, number of
 boats, and survey replicate. Bias estimates are calculated for the 
 abundance indices. 
 
