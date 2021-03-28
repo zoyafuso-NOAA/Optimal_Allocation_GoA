@@ -281,12 +281,12 @@ AAA refers to the result type. AAA = simulation_result has the true cv and
 relative root mean square error of CV associated with the mean density 
 estimates. Within this RData file are the following variables:
 
-*`SUR_XXX_YYY_STR_ZZZ_true_cv` and `SUR_XXX_YYY_STR_ZZZ_rrmse_cv` are 4-D
+* `SUR_XXX_YYY_STR_ZZZ_true_cv` and `SUR_XXX_YYY_STR_ZZZ_rrmse_cv` are 4-D
 arrays with dimensions (`n_obs_cv`, `n_years`, `ns_all`, `n_boats`). 
 These arrays hold the true cv and rrmse of cv for each observation cv 
 scenario, year, species, and number of boats. 
 
-*`SUR_XXX_YYY_STR_ZZZ_sim_mean`, `SUR_XXX_YYY_STR_ZZZ_sim_cv`,
+* `SUR_XXX_YYY_STR_ZZZ_sim_mean`, `SUR_XXX_YYY_STR_ZZZ_sim_cv`,
 `SUR_XXX_YYY_STR_ZZZ_rb_agg`, and `SUR_XXX_YYY_STR_ZZZ_log_rb_agg`,
 are 5-D arrays with dimensions (`n_obs_cv`, `n_years`, `ns_all`, `n_boats`,
 `n_iters). These arrays hold the estimated sample means and cvs, relative bias, and
