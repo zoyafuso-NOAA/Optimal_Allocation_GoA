@@ -259,7 +259,7 @@ strata in the solution and Y is the run number. Within each run folder contains:
 The results from each run are synthesized in the knitting_runs_SS.R script. Four
 variables are saved in the [optimization_knitted_results.RData](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/results/MS_optimization_knitted_results.RData) workspace:
 
-## Survey Simulation and Performance Metrics
+## 6. Survey Simulation and Performance Metrics [(Simulate_Surveys.R)](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/Simulate_Surveys.R)
 Optimized and current stratified survey designs are simulated on the spatial
 domain for each observed year. For a given combination of the optimized 
 survey--number of strata and level of optimization (district or gulf-wide)-- 
