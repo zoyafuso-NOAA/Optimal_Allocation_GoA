@@ -252,8 +252,6 @@ level optimizations. Optimizations were conducted for at boat effort level
 own directory with the code template of StrXRunY where X is the number of 
 strata in the solution and Y is the run number. Within each run folder contains:
 
-![](graphics/workflow3.png)
-
 ## 5. Knit Multispecies Optimization Results [(knitting_runs.R)](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/knitting_runs.R)
 
 The results from each run are synthesized in the knitting_runs_SS.R script. Four
