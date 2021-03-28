@@ -259,17 +259,45 @@ strata in the solution and Y is the run number. Within each run folder contains:
 The results from each run are synthesized in the knitting_runs_SS.R script. Four
 variables are saved in the [optimization_knitted_results.RData](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/results/full_domain/Single_Species_Optimization/MS_optimization_knitted_results.RData) workspace:
 
-## Survey Simulation and Performance Metrics (work in progress)...
+## Survey Simulation and Performance Metrics
+Optimized and current stratified survey designs are simulated on the spatial
+domain for each observed year. For a given combination of the optimized 
+survey--number of strata and level of optimization (district or gulf-wide)-- 
+and the current survey three result objects are saved. The result names are 
+long but the codes are generally:
 
-## Graphic Workflow
+SUR_XXX_YYY_STR_ZZZ_AAA.RData
 
+XXX refers to either the optimized (XXX = opt) or current  (XXX = cur) survey.
 
-## Calculate population variances of different survey types
-After the single-species optimizations are conducted, we calculate the population
-variances under different survey designs under the three boat scenarios: 1) simple 
-random sampling, 2) stratified random sampling using the current strata and effort
-allocations and 3) stratified random sampling using the stratification and effort
-allocation from the optimized single-species survey optimizations from the previous
-section. 
+YYY refers to whether the optimization was conducted on the gulf-wide scale 
+(YYY = full_domain) or separately for each district (YYY = district)
 
-![](graphics/workflow3.png)
+ZZZ refers to how many strata the optimized survey has (10 or 15 total for 
+the gulf-wide optimization or 3 or 5 strata per district for the 
+district-wide optimization).
+
+AAA refers to the result type. AAA = simulation_result has the true cv and
+relative root mean square error of CV associated with the mean density 
+estimates. Within this RData file are the following variables:
+
+*`SUR_XXX_YYY_STR_ZZZ_true_cv` and `SUR_XXX_YYY_STR_ZZZ_rrmse_cv` are 4-D
+arrays with dimensions (`n_obs_cv`, `n_years`, `ns_all`, `n_boats`). 
+These arrays hold the true cv and rrmse of cv for each observation cv 
+scenario, year, species, and number of boats. 
+
+*`SUR_XXX_YYY_STR_ZZZ_sim_mean`, `SUR_XXX_YYY_STR_ZZZ_sim_cv`,
+`SUR_XXX_YYY_STR_ZZZ_rb_agg`, and `SUR_XXX_YYY_STR_ZZZ_log_rb_agg`,
+are 5-D arrays with dimensions (`n_obs_cv`, `n_years`, `ns_all`, `n_boats`,
+`n_iters). These arrays hold the estimated sample means and cvs, relative bias, and
+log bias ratio for each observation cv scenario, year, species, number of
+boats, and survey replicate. Bias estimates are calculated for the 
+abundance indices. 
+
+AAA = rb_district has the relative bias of the abundance index. Within this
+RData file is the variable `SUR_XXX_YYY_STR_ZZZ_rb_district`, a 5-D array
+with dimensions (`n_obs_cv`, `n_years`, `ns_all`, `n_boats`, `n_iters`).
+
+AAA = log_rb_district has the log bias ratio of the abundance index. Within 
+this RData file is the variable `SUR_XXX_YYY_STR_ZZZ_log)rb_district`, a 5-D
+array with dimensions (`n_obs_cv`, `n_years`, `ns_all`, `n_boats`, `n_iters`).
