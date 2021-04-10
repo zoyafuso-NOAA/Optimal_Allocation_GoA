@@ -26,6 +26,7 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
 ##################################################
 load(paste0(github_dir,  "data/fit_density.RData"))
 load(paste0(github_dir,  "data/fit_index.RData"))
+load(paste0(github_dir, "/data/prednll_VAST_models.RData"))
 load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 
 ##################################################
@@ -35,55 +36,29 @@ load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 ## Years to use
 year_set <- 1996:2019
 years_included <- c(1, 4, 8, 10, 12, 14, 16, 18, 20, 22, 24)
-n_years <- length(years_included)
+n_years <- dim(D_gct)[3]
 
 ## Number of sampling grids
 n_cells <- nrow(Extrapolation_depths)
 
 ## Scientific and common names used in optimization
-sci_names_opt <- c("Atheresthes stomias", "Gadus chalcogrammus",
-                   "Gadus macrocephalus", "Glyptocephalus zachirus",
-                   "Hippoglossoides elassodon", "Hippoglossus stenolepis", 
-                   "Lepidopsetta bilineata", "Lepidopsetta polyxystra",
-                   "Microstomus pacificus", "Sebastes alutus", "Sebastes B_R",
-                   "Sebastes brevispinis", "Sebastes polyspinis", 
-                   "Sebastes variabilis", "Sebastolobus alascanus" )
+common_names_all <- prednll$species
+common_names_all[c(3, 24)] <- c("BS and RE rockfishes", "Pacific spiny dogfish")
 
-common_names_opt <- c("arrowtooth flounder", "walleye pollock", "Pacific cod",
-                      "rex sole", "flathead sole", "Pacific halibut", 
-                      "southern rock sole", "northern rock sole", 
-                      "Dover sole", "Pacific ocean perch", 
-                      "BS and RE rockfishes", 
-                      "silvergrey rockfish", "northern rockfish", 
-                      "dusky rockfish", "shortspine thornyhead")
+ns_all <- length(common_names_all)
 
-ns_opt <- length(sci_names_opt)
+spp_idx_opt <- c(25, 14, #cods 
+                 1, 7, 17, 12, 23, 5, 15, #flatfishes
+                 16, 3, 22, 6, 13, 21 #rockfish types
+                 )
+common_names_opt <- common_names_all[spp_idx_opt]
+ns_opt <- length(common_names_opt)
 
 ## Scientific and common names not used in optimization, but evaluated
 ## when simulating surveys
-
-sci_names_eval <- c("Anoplopoma fimbria", "Beringraja spp", "Octopus spp",
-                    "Pleurogrammus monopterygius", "Sebastes borealis",
-                    "Sebastes variegatus", "Squalus suckleyi")
-
-common_names_eval <- c("sablefish", "skates spp", "Octopus spp", 
-                       "Atka mackerel", "shortraker rockfish",
-                       "harlequin rockfish", "Pacific spiny dogfish")
-common_names_eval_labels <- c("sablefish", "skates spp.", "Octopus spp.", 
-                              "Atka mackerel", "shortraker rockfish",
-                              "harlequin rockfish", "Pacific spiny dogfish")
-
-ns_eval <- length(sci_names_eval)
-
-## In case we need it, all species names together
-sci_names_all <- sort(c(sci_names_opt, sci_names_eval))
-common_names_all <- c(common_names_opt, common_names_eval)[order(c(sci_names_opt, sci_names_eval))]
-common_names_all_labels <- c(common_names_opt, common_names_eval_labels)[order(c(sci_names_opt, sci_names_eval))]
-
-ns_all <- ns_opt + ns_eval
-
-spp_idx_opt <- which(sci_names_all %in% sci_names_opt)
-spp_idx_eval <- which(sci_names_all %in% sci_names_eval)
+spp_idx_eval <- (1:ns_all)[-spp_idx_opt]
+common_names_eval <- common_names_all[spp_idx_eval]
+ns_eval <- length(common_names_eval)
 
 ## Sample sizes across 1, 2, and 3 boats
 samples <- c(292, 550, 825)
@@ -125,9 +100,7 @@ inpfc_vals_current[Extrapolation_depths$stratum %in%
                         c(50, 150:151, 250:251, 350:351, 450, 550)] <- 5
 
 ## Number of times to simulate survey
-n_iters <- 500
-obs_cv <- c(0, 0.25, 0.5, 1) #low to high sampling CVs
-n_obs_cv <- length(obs_cv)
+n_iters <- 1000
 
 ##################################################
 ####   Our df will have fields for:
@@ -152,13 +125,13 @@ frame_all <- cbind(
              X2 = Extrapolation_depths$DEPTH_EFH,
              WEIGHT = n_years),
   
-  matrix(data = apply(X = D_gct[, , years_included],
+  matrix(data = apply(X = D_gct,
                       MARGIN = c(1, 2), 
                       FUN = sum),
          ncol = ns_all,
          dimnames = list(NULL, paste0("Y", 1:ns_all))),
   
-  matrix(data = apply(X = D_gct[, , years_included],
+  matrix(data = apply(X = D_gct,
                       MARGIN = c(1, 2), 
                       FUN = function(x) sum(x^2)),
          ncol = ns_all,
@@ -174,13 +147,13 @@ frame_district <- cbind(data.frame(
   X2 = Extrapolation_depths$DEPTH_EFH,
   WEIGHT = n_years),
   
-  matrix(data = apply(X = D_gct[, , years_included],
+  matrix(data = apply(X = D_gct,
                       MARGIN = c(1, 2), 
                       FUN = sum),
          ncol = ns_all,
          dimnames = list(NULL, paste0("Y", 1:ns_all))),
   
-  matrix(data = apply(X = D_gct[, , years_included],
+  matrix(data = apply(X = D_gct,
                       MARGIN = c(1, 2), 
                       FUN = function(x) sum(x^2)),
          ncol = ns_all,
@@ -191,15 +164,15 @@ frame_district <- cbind(data.frame(
 ####   Calculate true mean density and true abundance index along with
 ####   the true abundance index within districts 
 ##################################################
-true_mean <- apply(X = D_gct[, , years_included], 
+true_mean <- apply(X = D_gct, 
                    MARGIN = 2:3,
                    FUN = mean)
 
-true_index <- apply(X = Index[, , years_included], 
+true_index <- apply(X = Index, 
                     MARGIN = 2:3,
                     FUN = sum)
 
-true_index_district <- apply(X = Index[,, years_included], 
+true_index_district <- apply(X = Index, 
                              MARGIN = 2:3,
                              FUN = function(x) tapply(x, 
                                                       INDEX = district_vals, 
@@ -215,11 +188,8 @@ save(list = c("frame_all", "frame_district",
               "true_mean", "true_index", "true_index_district",
               "ns_all", "ns_eval", "ns_opt", 
               "common_names_all", "common_names_eval", "common_names_opt",
-              "common_names_eval_labels", "common_names_all_labels",
-              "sci_names_all", "sci_names_eval", "sci_names_opt",
               "spp_idx_eval", "spp_idx_opt",
               "year_set", "years_included", "n_years", 
               "n_cells", "samples", "n_boats", "n_iters", 
-              "obs_cv", "n_obs_cv",
               "stratas", "n_strata"),
      file = paste0(github_dir, "data/optimization_data.RData"))
