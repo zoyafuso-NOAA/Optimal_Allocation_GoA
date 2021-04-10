@@ -23,7 +23,7 @@ library(raster)
 ####   Set up directories based on whether the optimization is being conducted
 ####        on a multi-species or single-species level
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -42,7 +42,7 @@ load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 ##################################################
 which_domain <- c("full_domain", "district")[1]
 
-for (which_species in 1) {
+for (which_species in spp_idx_opt[1]) {
   
   ##################################################
   ####   Constants to set up based on which_domain and which_species
@@ -63,9 +63,7 @@ for (which_species in 1) {
   result_dir = paste0(github_dir, 
                       "results/", which_domain, 
                       "/Single_Species_Optimization/", 
-                      gsub(x = sci_names_all[which_species], 
-                           pattern = ' ', 
-                           replacement = '_'), '/')
+                      common_names_all[which_species], '/')
   if(!dir.exists(result_dir)) dir.create(path = result_dir, recursive = T)
   
   ##################################################
