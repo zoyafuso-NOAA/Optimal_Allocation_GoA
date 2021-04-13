@@ -27,15 +27,13 @@ library(SamplingStrata)
 ###########################
 load(paste0(github_dir, "/data/optimization_data.RData"))
 
-for(idom in c("full_domain", "district")[2]) {
+for(idom in c("full_domain", "district")[1]) {
   
   n_dom <- ifelse(idom == "full_domain", 1, 5)
   
   frame <- switch( idom,
                    "full_domain" = frame_all,
                    "district" = frame_district)
-  
-  # n_dom <- length(unique(frame$domainvalue))
   
   ###########################
   ## Empty Result objects
@@ -53,9 +51,7 @@ for(idom in c("full_domain", "district")[2]) {
     ## For a given species and boat scenario, collect all runs
     runs = dir(paste0(github_dir, "results/", idom, 
                       "/Single_Species_Optimization/",
-                      gsub(x = sci_names_all[ispp], 
-                           pattern = " ", 
-                           replacement = "_")), 
+                      common_names_all[ispp], "/"), 
                full.names = T)
     
     ## For each run
@@ -74,9 +70,9 @@ for(idom in c("full_domain", "district")[2]) {
           ## by district (aka domain)
           master_settings_district <- rbind(
             master_settings_district,
-            data.frame(domain = 1:n_dom,
-                       id = id,
-                       spp = ispp,
+            data.frame(id = id,
+                       species = common_names_all[ispp],
+                       domain = 1:n_dom,
                        n = tapply(X = result_list$sum_stats$Allocation, 
                                   INDEX = result_list$sum_stats$Domain, 
                                   FUN = sum),
@@ -86,13 +82,10 @@ for(idom in c("full_domain", "district")[2]) {
           ## master_settings: result of optimization (CV, sample size) 
           ## distict-aggregated 
           agg_strata <- result_list$solution$aggr_strata
-          agg_strata$STRATO <- as.integer(agg_strata$STRATO)
-          agg_strata <- agg_strata[order(agg_strata$DOM1, agg_strata$STRATO), ]
-          agg_strata$DOM1 <- 1
           
           master_settings <- rbind(
             master_settings,
-            data.frame(spp = ispp,
+            data.frame(species = common_names_all[ispp],
                        id = id,
                        n = result_list$n,
                        cv = as.numeric(SamplingStrata::expected_CV(
@@ -101,16 +94,8 @@ for(idom in c("full_domain", "district")[2]) {
           
           #master_res_df: solution (which cell belongs to which stratum?)
           ## Solution: which strata is assigned to each extrapolation cell
-          solution <- 
-            switch(idom,
-                   "full_domain" = result_list$solution$indices$X1,
-                   "district" = as.factor(paste(
-                     result_list$solution$framenew$DOMAINVALUE,
-                     result_list$solution$framenew$STRATO))
-                   
-            )
-          
-          solution <- as.integer(solution)
+          solution <-paste0("DOM", result_list$solution$framenew$DOMAINVALUE,
+                            " STR", result_list$solution$framenew$STRATO)
           
           master_res_df <- cbind(master_res_df,
                                  solution)
@@ -120,18 +105,8 @@ for(idom in c("full_domain", "district")[2]) {
                                   list(result_list[[2]]))
           
           #master_strata_stats_list: stratum-level means and variances
-          temp_strata_stats_list <- result_list$solution$aggr_strata
-          temp_strata_stats_list$STRATO <- 
-            as.integer(temp_strata_stats_list$STRATO)
-          temp_strata_stats_list <- 
-            temp_strata_stats_list[order(temp_strata_stats_list$DOM1, 
-                                         temp_strata_stats_list$STRATO), ]
-          
           master_strata_stats_list <- c(master_strata_stats_list, 
-                                        list(temp_strata_stats_list))
-          
-          
-          
+                                        list(result_list$solution$aggr_strata))
         }
       }
     }
@@ -144,9 +119,11 @@ for(idom in c("full_domain", "district")[2]) {
   
   for (ispp in 1:ns_all) {
     for (isample in samples) {
+      temp_idx <- master_settings$species == common_names_all[ispp]
+      
       #Find solution closet to isample, append to sol_idx
       sol_idx <- c(sol_idx, 
-                   with(master_settings[master_settings$spp == ispp, ],
+                   with(master_settings[temp_idx, ],
                         id[which.min(abs(n - isample))])
       )
     }
@@ -154,18 +131,16 @@ for(idom in c("full_domain", "district")[2]) {
   
   settings_agg <- master_settings[sol_idx, -2]
   settings_agg$boat <- rep(1:n_boats, 
-                           times = length(unique(settings_agg$spp)))
+                           times = length(unique(settings_agg$species)))
   res_df <- master_res_df[, 1 + sol_idx]
   strata_list <- master_strata_list[sol_idx]
   strata_stats_list <- master_strata_stats_list[sol_idx]
   
   temp_settings_district <- subset(x = master_settings_district, 
-                                   subset = id %in% sol_idx )
-  temp_settings_district <- 
-    tidyr::spread(data = subset(x = temp_settings_district,
-                                select = -n),
-                  value = cv,
-                  key = domain)
+                                   subset = id %in% sol_idx)
+  temp_settings_district <-tidyr::spread(data = temp_settings_district,
+                                         value = cv,
+                                         key = domain)
   
   settings_district <- data.frame()
   for (idx in sol_idx) {
@@ -173,69 +148,94 @@ for(idom in c("full_domain", "district")[2]) {
                                subset(temp_settings_district, 
                                       subset = id %in% idx))  
   }
-  settings_district$boat = rep(1:n_boats, times = length(unique(settings_district$spp)))
+  settings_district$boat = rep(1:n_boats, 
+                               times = length(unique(settings_district$species)))
   settings_district <- subset(x = settings_district,
                               select = -id)
   
+  old_strata_stats_list <- strata_stats_list
   ####################################
   ## Adjust CVs to match sample sizes
   ####################################
   for (irow in 1:nrow(settings_agg)) {
+    
+    ## Temporary constants
     temp_boat <- settings_agg[irow, "boat"]
     temp_cv <- switch(idom,
                       "full_domain" = settings_agg[irow, "cv"],
                       "district" = as.numeric(settings_district[irow, paste(1:5)]))
-    temp_n <-  settings_agg[irow, "n"]
+    temp_n <- settings_agg[irow, "n"]
     
     temp_strata_stats_list <- subset(x = strata_stats_list[[irow]],
                                      select = -SOLUZ)
     n_dom <- ifelse(idom == "full_domain", 1, 5)
-    temp_n_by_strata <- actual_n_by_strata <- vector(length = nrow(temp_strata_stats_list))
-    names(temp_n_by_strata) <- names(actual_n_by_strata) <- temp_strata_stats_list$DOM1
     
-    while ( !(temp_n >= (samples[temp_boat] - 1) & 
-              temp_n <= (samples[temp_boat] + 1)) ) {
-      over_or_under <- temp_n > samples[temp_boat]
-      
-      temp_cv <- temp_cv * (1 + ifelse(test = over_or_under == T, 
-                                       yes = 0.0001,
-                                       no = -0.0001))
-      temp_n_by_reg <- vector(length = n_dom)
-      
-      for (i in 1:n_dom) {
-        error_df <- data.frame("DOM" = "DOM1",
-                               "CV1" = temp_cv[i],
-                               "domainvalue"  = 1)
-        temp_bethel <- SamplingStrata::bethel(
-          errors = error_df,
-          stratif = subset(x = temp_strata_stats_list, subset = DOM1 == i), 
-          realAllocation = T, 
-          printa = T)
+    ## Temporary variables
+    temp_n_by_strata <- actual_n_by_strata <- 
+      vector(length = nrow(temp_strata_stats_list))
+    names(temp_n_by_strata) <- names(actual_n_by_strata) <- 
+      temp_strata_stats_list$DOM1
+    
+    ## aiming for an optimal sample size within 2 stations of target
+    outside_sample_bounds <- !(temp_n >= (samples[temp_boat] - 1) & 
+                                 temp_n <= (samples[temp_boat] + 1)) 
+    
+    ## if outside that optimal window...
+    if (outside_sample_bounds) {
+      while (outside_sample_bounds) {
         
-        temp_n_by_reg[i] <- sum(as.numeric(ceiling(temp_bethel)))
+        ## Adjust CV slightly depending on current sample size
+        over_or_under <- temp_n > samples[temp_boat]
         
-        temp_n_by_strata[names(temp_n_by_strata) == paste(i)] <- ceiling( temp_bethel)
-        actual_n_by_strata[names(actual_n_by_strata) == paste(i)] <- temp_bethel
+        temp_cv <- temp_cv * (1 + ifelse(test = over_or_under == T, 
+                                         yes = 0.0001,
+                                         no = -0.0001))
+        temp_n_by_reg <- vector(length = n_dom)
+        
+        ## Run bethel algorithm under new temp_cv for each domain
+        for (i in 1:n_dom) {
+          error_df <- data.frame("DOM" = "DOM1",
+                                 "CV1" = temp_cv[i],
+                                 "domainvalue"  = 1)
+          
+          temp_bethel <- SamplingStrata::bethel(
+            errors = error_df,
+            stratif = subset(x = temp_strata_stats_list, subset = DOM1 == i), 
+            realAllocation = T, 
+            printa = T)
+          
+          #Record bethel algorithm run
+          temp_n_by_reg[i] <- sum(as.numeric(ceiling(temp_bethel)))
+          temp_n_by_strata[names(temp_n_by_strata) == paste(i)] <- 
+            ceiling(temp_bethel)
+          actual_n_by_strata[names(actual_n_by_strata) == paste(i)] <- 
+            temp_bethel
+        }
+        
+        ## Update temp_n, repeat process until temp_n is within the optimal
+        ## total sample size window
+        temp_n <- sum(temp_n_by_reg)
+        print(temp_n)
+        
+        outside_sample_bounds <- !(temp_n >= (samples[temp_boat] - 1) & 
+                                     temp_n <= (samples[temp_boat] + 1)) 
       }
       
-      temp_n <- sum(temp_n_by_reg)
-      print(temp_n)
+      ####################################
+      ## Record new results
+      ####################################
+      temp_cv_agg <- SamplingStrata::expected_CV(
+        strata = cbind(subset(temp_strata_stats_list,
+                              select = -DOM1),
+                       DOM1 = 1,
+                       SOLUZ = actual_n_by_strata))
+      
+      settings_agg[irow, "cv"] <- temp_cv_agg
+      settings_agg[irow, "n"] <- temp_n
+      strata_stats_list[[irow]]$SOLUZ <- actual_n_by_strata 
+      strata_list[[irow]]$Allocation <- temp_n_by_strata
+      settings_district[irow, paste(1:n_dom)] <- temp_cv
     }
-    
-    temp_cv_agg <- SamplingStrata::expected_CV(
-      strata = cbind(subset(temp_strata_stats_list,
-                            select = -DOM1),
-                     DOM1 = 1,
-                     SOLUZ = actual_n_by_strata))
-    
-    ####################################
-    ## Record new results
-    ####################################
-    settings_agg[irow, "cv"] <- temp_cv_agg
-    settings_agg[irow, "n"] <- temp_n
-    strata_stats_list[[irow]]$SOLUZ <- actual_n_by_strata 
-    strata_list[[irow]]$Allocation <- temp_n_by_strata
-    settings_district[irow, paste(1:n_dom)] <- temp_cv
   }
   
   ###################################
