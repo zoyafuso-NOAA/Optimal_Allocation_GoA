@@ -46,8 +46,8 @@ scen <- data.frame(nstrata = c(3,5, 10,15),
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-for (irow in 1) {
-  for(isample in 2:n_boats) {
+for (irow in 2) {
+  for(isample in 1:n_boats) {
     
     ##################################################
     ####   Constants to specify before doing optimization
@@ -61,6 +61,7 @@ for (irow in 1) {
                                                       paste0("Y", spp_idx_opt), 
                                                       paste0("Y", spp_idx_opt,
                                                              "_SQ_SUM"))]
+    
     names(frame)[names(frame) %in% paste0("Y", spp_idx_opt)] <- 
       paste0("Y", 1:ns_opt)
     names(frame)[names(frame) %in% paste0("Y", spp_idx_opt, "_SQ_SUM")] <- 
@@ -107,19 +108,27 @@ for (irow in 1) {
     
     ss_strs_pop_cv <- 
       switch(which_domain,
-             "district" = t(subset(x = settings_district_district,
-                                   subset = (boat == isample) & 
-                                     (spp %in% spp_idx_opt),
-                                   select = paste(1:5))),
-             "full_domain" = unlist(subset(x = settings_agg_full_domain,
-                                           subset = boat == isample & 
-                                             spp %in% spp_idx_opt,
-                                           select = cv)))
+             "district" = subset(x = settings,
+                                 subset = boat == isample,
+                                 select = c("species", paste0("cv_domain_", 1:n_dom))),
+             "full_domain" = {
+               
+               temp_cv <- subset(x = settings_agg_full_domain,
+                                 subset = boat == isample & 
+                                   species %in% common_names_all[spp_idx_opt])
+               temp_cv$cv[match(common_names_all[spp_idx_opt], temp_cv$species)]
+               
+             }
+             
+      )
+    ss_strs_pop_cv <- ss_strs_pop_cv[match(common_names_opt, ss_strs_pop_cv$species), ]
+    ss_strs_pop_cv <- t(ss_strs_pop_cv[, -1])
+    colnames(ss_strs_pop_cv) <- common_names_opt
     
     ##################################################
     ####   Run optimization
     ##################################################
-    while (current_n <= c(280, 550, 820)[isample] ) {
+    while (current_n <= samples[isample] ) {
       
       #Set wd for output files, create a directory if it doesn"t exist yet
       temp_dir = paste0(github_dir, "results/", which_domain, 
