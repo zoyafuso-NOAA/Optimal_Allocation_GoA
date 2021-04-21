@@ -78,21 +78,18 @@ for(idom in c("full_domain", "district")) {
           
           #master_res_df: solution (which cell belongs to which stratum?)
           ## Solution: which strata is assigned to each extrapolation cell
-          solution <- as.integer(as.factor(
-            paste0("DOM", result_list$solution$framenew$DOMAINVALUE,
-                   " STR", result_list$solution$framenew$STRATO)))
+          solution <- result_list$sol_by_cell
           
           master_res_df <- cbind(master_res_df,
                                  solution)
           
           #master_strata_list: stratum-level details of solution
           master_strata_list <- c(master_strata_list, 
-                                  list(result_list[[2]]))
+                                  list(result_list$sum_stats))
           
           #master_strata_stats_list: stratum-level means and variances
-          temp <- result_list$solution$aggr_strata
-          temp <- temp[order(as.integer(temp$STRATO)), ]
-          master_strata_stats_list <- c(master_strata_stats_list, list(temp))
+          master_strata_stats_list <- c(master_strata_stats_list, 
+                                        list(result_list$solution$aggr_strata))
         }
       }
     }
