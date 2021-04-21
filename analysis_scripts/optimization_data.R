@@ -43,13 +43,13 @@ n_cells <- nrow(Extrapolation_depths)
 
 ## Scientific and common names used in optimization
 common_names_all <- prednll$species
-common_names_all[c(3, 24)] <- c("BS and RE rockfishes", "Pacific spiny dogfish")
+common_names_all[24] <- "Pacific spiny dogfish"
 
 ns_all <- length(common_names_all)
 
 spp_idx_opt <- c(25, 14, #cods 
                  1, 7, 17, 12, 23, 5, 15, #flatfishes
-                 16, 3, 22, 6, 13, 21 #rockfish types
+                 16, 4, 22, 6, 13, 21 #rockfish types
                  )
 common_names_opt <- common_names_all[spp_idx_opt]
 ns_opt <- length(common_names_opt)
@@ -179,6 +179,10 @@ true_index_district <- apply(X = Index,
                                                       FUN = sum))
 true_index_district <- aperm(a = true_index_district, 
                              perm = c(2,3,1))
+
+dimnames(true_index)[[1]] <- dimnames(true_mean)[[1]] <- 
+  dimnames(true_index_district)[[1]] <- common_names_all
+
 
 ##################################################
 ####   Save Data
