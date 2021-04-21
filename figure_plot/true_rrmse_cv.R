@@ -84,7 +84,7 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
 for (irow in 1:nrow(scen)) {
   scen_name <- paste0("SUR_", scen$survey_type[irow], "_", 
                       scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  file_name <- paste0(github_dir, "results/", 
+  file_name <- paste0(github_dir, "results/sim_dens_surveys/", 
                       scen_name, "simulation_results.RData")
   
   load(file_name)
@@ -96,7 +96,8 @@ for (irow in 1:nrow(scen)) {
 ####   Calculate Expected CV of each species for each survey design
 ##################################################
 expected_sample_cv <- matrix(ncol = ns_all, 
-                             nrow = nrow(settings) + 3
+                             nrow = nrow(settings) + 3,
+                             dimnames = list(NULL, common_names_all),
                              #add three more row for the current design
 )
 
@@ -157,11 +158,11 @@ for (iscen in 1:(nrow(settings) + 3)) {
 
 for (imetric in c("true_cv", "rrmse_cv")) {
   
-  png(filename = paste0(output_dir, imetric, ".png"), 
-      width = 170, 
-      height = 170,
-      units = "mm", 
-      res = 500)
+  # png(filename = paste0(output_dir, imetric, ".png"), 
+  #     width = 170, 
+  #     height = 170,
+  #     units = "mm", 
+  #     res = 500)
   
   layout(mat = matrix(c(1:ns_all, ns_all + 1, ns_all + 1), 
                       ncol = 4, 
@@ -173,9 +174,8 @@ for (imetric in c("true_cv", "rrmse_cv")) {
     merged_metric <- 
       lapply(X = with(scen, paste0("SUR_", survey_type, "_", 
                                    domain, "_STR_", strata, "_", imetric )), 
-             FUN = function(x) get(x)["obsCV=0",
-                                      1:n_years,
-                                      ispp,
+             FUN = function(x) get(x)[1:n_years,
+                                      common_names_all[ispp],
                                       paste0("boat_2")])
     ylim_ <- max(unlist(merged_metric)) * 1.1
     
@@ -199,13 +199,13 @@ for (imetric in c("true_cv", "rrmse_cv")) {
           col = ifelse(ispp %in% spp_idx_opt, "black", "darkgrey"),
           cex = 0.8)
     
-    if(imetric == "true_cv") {
-      points(x = c(1, 3:4, 6:7),
-             y = expected_sample_cv[c(14, which(settings$boat == 2)), ispp],
-             pch = 16,
-             col = "red",
-             cex = 1)
-    }
+    # if(imetric == "true_cv") {
+    #   points(x = c(1, 3:4, 6:7),
+    #          y = expected_sample_cv[c(14, which(settings$boat == 2)), ispp],
+    #          pch = 16,
+    #          col = "red",
+    #          cex = 1)
+    # }
 
     
     
@@ -241,6 +241,6 @@ for (imetric in c("true_cv", "rrmse_cv")) {
                       "rrmse_cv" = "RRMSE of CV",
                       "true_cv" = "True CV") )
   
-  dev.off()
+  # dev.off()
 }
 

@@ -51,12 +51,12 @@ y_range <- diff(range(Extrapolation_depths$N_km))
 ####    Plot
 ##################################################
 {
-  png(filename = paste0(output_dir,
-                        "MS_solutions.png"),
-      width = 170,
-      height = 170,
-      units = "mm",
-      res = 500)
+  # png(filename = paste0(output_dir,
+  #                       "MS_solutions.png"),
+  #     width = 170,
+  #     height = 170,
+  #     units = "mm",
+  #     res = 500)
   
   layout(mat = matrix(data = c(1, 3,
                                2, 4,
@@ -95,7 +95,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
       box()
       
       for (iboat in 1:n_boats) {
-
+        
         sol_idx <- with(settings, 
                         which(domain == idomain & 
                                 strata == istrata & 
@@ -150,6 +150,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
         temp_allocation <- strata_list[[sol_idx]]$Allocation
         
         for (temp_istrata in 1:temp_strata) {
+        # for (temp_istrata in 14) {
           temp_samples = c(temp_samples,
                            sample(x = which(temp_solution == temp_istrata),
                                   size = temp_allocation[temp_istrata]) )
@@ -202,7 +203,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
        font = 2,
        cex = 0.8)
   
-  dev.off()
+  # dev.off()
   
   
 }

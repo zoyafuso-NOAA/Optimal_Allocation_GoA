@@ -35,22 +35,18 @@ load(paste0(github_dir,
 load(paste0(github_dir, "results/full_domain/Single_Species_Optimization/", 
             "optimization_knitted_results.RData"))
 
-settings <- settings_agg_full_domain
-res_df <- res_df_full_domain
-strata_list <- strata_list_full_domain
-
 ##################################################
 ####   Set Constants
 ##################################################
-common_names_opt <- c("arrowtooth\nflounder", "walleye pollock", "Pacific cod", 
-                      "rex sole", "flathead sole", "Pacific halibut", 
-                      "southern\nrock sole", "northern\nrock sole", "Dover sole",
-                      "Pacific ocean\nperch", "blackspotted/\nrougheye\nrockfishes",
-                      "silvergrey\nrockfish", "northern\nrockfish", 
-                      "dusky\nrockfish",  "shortspine\nthornyhead")
-common_names_eval_labels <- c("sablefish", "skates spp.", "Octopus spp.", 
-                              "Atka mackerel", "shortraker\nrockfish", 
-                              "harlequin\nrockfish", "Pacific\nspiny dogfish")
+# common_names_opt <- c("arrowtooth\nflounder", "walleye pollock", "Pacific cod", 
+#                       "rex sole", "flathead sole", "Pacific halibut", 
+#                       "southern\nrock sole", "northern\nrock sole", "Dover sole",
+#                       "Pacific ocean\nperch", "blackspotted/\nrougheye\nrockfishes",
+#                       "silvergrey\nrockfish", "northern\nrockfish", 
+#                       "dusky\nrockfish",  "shortspine\nthornyhead")
+# common_names_eval_labels <- c("sablefish", "skates spp.", "Octopus spp.", 
+#                               "Atka mackerel", "shortraker\nrockfish", 
+#                               "harlequin\nrockfish", "Pacific\nspiny dogfish")
 
 idomain <- "full_domain"
 
@@ -61,25 +57,26 @@ y_range <- diff(range(Extrapolation_depths$N_km))
 ##################################################
 ####   Plot
 ##################################################
-{png(filename = paste0(output_dir, "SS_solutions.png"),
-     height = 170,
-     width = 150,
-     units = "mm",
-     res = 500)
+{
+  # png(filename = paste0(output_dir, "SS_solutions.png"),
+  #    height = 170,
+  #    width = 150,
+  #    units = "mm",
+  #    res = 500)
   
   ## Plot setup
   par(mfrow = c(1, 2),
       mar = c(0, 0, 0, 0))
   
-  for (ispp in 1:ns_all) {
-    if (ispp%%11 == 1) { 
+  for (ispp in 1:ns_opt) {
+    if (ispp %in% c(1, 8)) { 
       
       ## Base Plot
       plot(1, 
            type = "n",
            xlim = range(Extrapolation_depths$E_km),
            ylim = with(Extrapolation_depths, 
-                       c(min(N_km) + 0*y_range, max(N_km) + 5.75*y_range)), 
+                       c(min(N_km) + 0*y_range, max(N_km) + 4*y_range)), 
            axes = F, 
            ann = F,
            asp = 1)
@@ -90,18 +87,20 @@ y_range <- diff(range(Extrapolation_depths$N_km))
     
     ## Which index to plot
     idx = which(settings$boat == isample &
-                  settings$spp == c(spp_idx_opt, spp_idx_eval)[ispp])
+                  settings$species == common_names_opt[ispp])
     
     #Plot Solution
     goa <- SpatialPointsDataFrame(
       coords = Extrapolation_depths[, c("E_km", "N_km")],
-      data = data.frame(Str_no = res_df[, idx]) )
+      data = data.frame("Str_no" = res_df[, idx],
+                        stringsAsFactors = TRUE))
     
     goa_ras <- raster(goa,
                       resolution = 5)
     goa_ras <- rasterize(x = goa,
                          y = goa_ras,
                          field = "Str_no")
+    
     offset_y <- 0.6 * y_range * (offset_val-1)
     goa_ras <- raster::shift(goa_ras, dy = offset_y )
     offset_val <- offset_val + 1
@@ -118,7 +117,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
     
     text(x = min(Extrapolation_depths$E_km) + x_range * 0.72,
          y = min(Extrapolation_depths$N_km) + offset_y + y_range*0.6,
-         labels = c(common_names_opt, common_names_eval_labels)[ispp],
+         labels = common_names_opt[ispp],
          cex = 0.5)
     
     #Simulate a sample solution
@@ -142,5 +141,5 @@ y_range <- diff(range(Extrapolation_depths$N_km))
            cex = 0.25)
     
   }
-  dev.off()
+  # dev.off()
 }
