@@ -64,10 +64,6 @@ ns_eval <- length(common_names_eval)
 samples <- c(292, 550, 825)
 n_boats <- length(samples)
 
-## Number of strata to input into optimization
-stratas <- c(10, 15)
-n_strata <- length(stratas)
-
 ## Specify Management Districts
 districts <- data.frame("reg_area" = c("WRA", "CRA", "CRA", "ERA", "ERA"),
                         "district" = c("West", "Chirikof", "Kodiak", 
@@ -75,8 +71,6 @@ districts <- data.frame("reg_area" = c("WRA", "CRA", "CRA", "ERA", "ERA"),
                         "domainvalue" = 1:5,
                         "W_lon" = c(-170, -159, -154, -147, -140),
                         "E_lon" = c(-159, -154, -147, -140, -132))
-
-n_dom <- nrow(districts)
 
 district_vals <- cut(x = Extrapolation_depths$Lon, 
                      breaks = c(-170, -159, -154, -147, -140, -132), 
@@ -188,12 +182,11 @@ dimnames(true_index)[[1]] <- dimnames(true_mean)[[1]] <-
 ####   Save Data
 ##################################################
 save(list = c("frame_all", "frame_district",
-              "districts", "district_vals", "n_dom", "inpfc_vals_current",
+              "districts", "district_vals", "inpfc_vals_current",
               "true_mean", "true_index", "true_index_district",
               "ns_all", "ns_eval", "ns_opt", 
               "common_names_all", "common_names_eval", "common_names_opt",
               "spp_idx_eval", "spp_idx_opt",
               "year_set", "years_included", "n_years", 
-              "n_cells", "samples", "n_boats", "n_iters", 
-              "stratas", "n_strata"),
+              "n_cells", "samples", "n_boats", "n_iters"),
      file = paste0(github_dir, "data/optimization_data.RData"))
