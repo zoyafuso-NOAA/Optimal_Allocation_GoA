@@ -8,7 +8,7 @@ rm(list = ls())
 ###############################
 ## Set up directories
 ###############################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
                        "C:/Users/Zack Oyafuso/Documents",
@@ -27,7 +27,7 @@ library(SamplingStrata)
 ###########################
 load(paste0(github_dir, "/data/optimization_data.RData"))
 
-for(idom in c("full_domain", "district")[2]) {
+for(idom in c("full_domain", "district")) {
   
   n_dom <- ifelse(idom == "full_domain", 1, 5)
   
@@ -41,7 +41,7 @@ for(idom in c("full_domain", "district")[2]) {
   master_res_df <- data.frame(id = 1:n_cells)
   master_settings <- data.frame()
   master_strata_list <- master_strata_stats_list <- list()
-
+  
   ##########################
   ##########################
   id <- 0
@@ -78,8 +78,9 @@ for(idom in c("full_domain", "district")[2]) {
           
           #master_res_df: solution (which cell belongs to which stratum?)
           ## Solution: which strata is assigned to each extrapolation cell
-          solution <-paste0("DOM", result_list$solution$framenew$DOMAINVALUE,
-                            " STR", result_list$solution$framenew$STRATO)
+          solution <- as.integer(as.factor(
+            paste0("DOM", result_list$solution$framenew$DOMAINVALUE,
+                   " STR", result_list$solution$framenew$STRATO)))
           
           master_res_df <- cbind(master_res_df,
                                  solution)
@@ -89,8 +90,9 @@ for(idom in c("full_domain", "district")[2]) {
                                   list(result_list[[2]]))
           
           #master_strata_stats_list: stratum-level means and variances
-          master_strata_stats_list <- c(master_strata_stats_list, 
-                                        list(result_list$solution$aggr_strata))
+          temp <- result_list$solution$aggr_strata
+          temp <- temp[order(as.integer(temp$STRATO)), ]
+          master_strata_stats_list <- c(master_strata_stats_list, list(temp))
         }
       }
     }
@@ -138,7 +140,9 @@ for(idom in c("full_domain", "district")[2]) {
       }
     }
   } 
-  
+  names(settings) <- c("id", "species", "n", "boat", 
+                       paste0("n_domain_", 1:n_dom),
+                       paste0("cv_domain_", 1:n_dom))
   res_df <- master_res_df[, 1 + sol_idx]
   strata_list <- master_strata_list[sol_idx]
   strata_stats_list <- master_strata_stats_list[sol_idx]
@@ -226,9 +230,10 @@ for(idom in c("full_domain", "district")[2]) {
     strata_list[[irow]]$Allocation <- temp_n_by_strata
   }
   
-  settings <- settings[, c("id", "species", "boat", "n", "cv", 
+  settings <- settings[, c("species", "boat", "n", "cv", 
                            paste0("cv_domain_", 1:n_dom),
                            paste0("n_domain_", 1:n_dom))]
+  rownames(settings) <- NULL
   
   ###################################
   ## Assign result variables with domain name attached at the end
