@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/",
@@ -71,9 +71,9 @@ for(irow in 1:nrow(scen)) {
             solution <- 
                switch(idom,
                       "full_domain" = result_list$solution$indices$X1,
-                      "district" = as.factor(paste(
-                         result_list$solution$framenew$DOMAINVALUE,
-                         result_list$solution$framenew$STRATO))
+                      "district" = as.factor(paste0(
+                         "DOM", result_list$solution$framenew$DOMAINVALUE,
+                         " STR", result_list$solution$framenew$STRATO))
                )
             
             solution <- as.integer(solution)
@@ -87,7 +87,8 @@ for(irow in 1:nrow(scen)) {
             
             ## Strata statistics (mean and variance)
             temp_strata_stats_list <- result_list[[1]]$aggr_strata
-            strata_order <- order(as.integer(temp_strata_stats_list$DOM1))
+            strata_order <- order(as.integer(temp_strata_stats_list$DOM1),
+                                  as.integer(temp_strata_stats_list$STRATO))
             temp_strata_stats_list <- temp_strata_stats_list[strata_order, ]
             master_strata_stats_list <- c(master_strata_stats_list, 
                                           list(temp_strata_stats_list))
