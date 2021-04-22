@@ -241,25 +241,18 @@ optimization.
 
 ## 3. Knit Single-Species Optimization Results [(knitting_runs_SS.R)](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/knitting_runs_SS.R)
 
-The results from each run are synthesized in the knitting_runs_SS.R script. Four
-variables are saved in the [gulf-wide optimization_knitted_results.RData](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/results/full_domain/Single_Species_Optimization/optimization_knitted_results.RData) workspace:
+The results from each run are synthesized in the knitting_runs_SS.R script. 
+Solutions that correspond to the three boat-effort levels were 
+filtered and are knitted together into result objects. Four variables are 
+saved in the [gulf-wide optimization_knitted_results.RData](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/results/full_domain/Single_Species_Optimization/optimization_knitted_results.RData) 
+workspace:
 
-| Variable Name     | Description                                                                 | Class Type and Dimensions                     |
-|-------------------|-----------------------------------------------------------------------------|-----------------------------------------------|
-| `settings_agg_full_domain`      | Optimized population CV for each species and number of boat scenario (sample sizes are approximate to the expected 280, 550, or 820 stations)      | dataframe, `ns_all`*`n_boats` rows, 5 columns      |
-| `res_df_full_domain`            | Solutions for each run                                                      | dataframe, `n_cells` rows, `ns_all`*`n_boats` columns |
-| `strata_list_full_domain`       | Collection of `result_list$solution$aggr_strata` from each run                | list of length   `ns_all`*`n_boats` |
-| `strata_stats_list_full_domain` | Collection of stratum-level means and variances across species for each run | list of length `ns_all`*`n_boats` |
-
-Five variables are saved in the [district-level optimization_knitted_results.RData](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/results/full_domain/Single_Species_Optimization/optimization_knitted_results.RData) workspace:
-
-| Variable Name     | Description                                                                 | Class Type and Dimensions                     |
-|-------------------|-----------------------------------------------------------------------------|-----------------------------------------------|
-| `settings_district`      | Optimized population CV for each species and number of boat scenario calculated by district (sample sizes are approximate to the expected 280, 550, or 820 stations)  | dataframe, `ns_all`*`n_boats` rows, 8 columns      |
-| `settings_agg_district`      | Optimized population CV for each species and number of boat scenario calculated on the full domain (sample sizes are approximate to the expected 280, 550, or 820 stations)  | dataframe, `ns_all`*`n_boats` rows, 5 columns      |
-| `res_df_district`            | Solutions for each run                                                      | dataframe, `n_cells` rows, `ns_all`*`n_boats` columns |
-| `strata_list_district`       | Collection of `result_list$solution$aggr_strata` from each run                | list of length   `ns_all`*`n_boats` |
-| `strata_stats_list_district` | Collection of stratum-level means and variances across species for each run | list of length `ns_all`*`n_boats` |
+| Variable Name       | Description                                                                 | Class Type and Dimensions                                            |
+|---------------------|-----------------------------------------------------------------------------|----------------------------------------------------------------------|
+| `settings`          | cvs and sammple sizes across domains/gulf for each boat effort and species  | dataframe, `ns_all` * `n_boats` rows, 5 columns                      |
+| `res_df`            | stratum id for each cell in the domain                                      | dataframe, `n_cells` rows, `ns_all` * `n_boats` columns              |
+| `strata_list`       | Collection of `result_list$solution$aggr_strata` from each run              | list of length   `ns_all` * `n_boats`                                |
+| `strata_stats_list` | Collection of stratum-level means and variances across species for each run | list of length `ns_all` * `n_boats`                                  |
 
 ![](graphics/workflow2.png)
 
