@@ -130,10 +130,16 @@ for(idom in c("full_domain", "district")) {
         settings <- rbind(
           settings,
           cbind(
-            settings_total_n[best_idx, ],
+            subset(x = settings_total_n, subset = id == best_idx),
             boat = isample,
-            settings_n_by_district[best_idx, paste0("n_domain_", 1:n_dom)],
-            settings_cv_by_district[best_idx, paste0("cv_domain_", 1:n_dom)]))
+            subset(x = settings_n_by_district, subset = id == best_idx, select = -c(species, id)),
+            subset(x = settings_cv_by_district, subset = id == best_idx, select = -c(species, id))#,
+            # settings_n_by_district[best_idx, ],
+            # settings_cv_by_district[best_idx, ]
+            # settings_n_by_district[best_idx, paste0("n_domain_", 1:n_dom)],
+            # settings_cv_by_district[best_idx, paste0("cv_domain_", 1:n_dom)]
+            )
+          )
       }
     }
   } 
