@@ -46,7 +46,7 @@ scen <- data.frame(nstrata = c(3,5, 10,15),
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-for (irow in 2) {
+for (irow in 1) {
   for(isample in 1:n_boats) {
     
     ##################################################
@@ -106,22 +106,13 @@ for (irow in 2) {
                 "/Single_Species_Optimization/",
                 "optimization_knitted_results.RData"))
     
-    ss_strs_pop_cv <- 
-      switch(which_domain,
-             "district" = subset(x = settings,
-                                 subset = boat == isample,
-                                 select = c("species", paste0("cv_domain_", 1:n_dom))),
-             "full_domain" = {
-               
-               temp_cv <- subset(x = settings_agg_full_domain,
-                                 subset = boat == isample & 
-                                   species %in% common_names_all[spp_idx_opt])
-               temp_cv$cv[match(common_names_all[spp_idx_opt], temp_cv$species)]
-               
-             }
-             
-      )
-    ss_strs_pop_cv <- ss_strs_pop_cv[match(common_names_opt, ss_strs_pop_cv$species), ]
+    ss_strs_pop_cv <- subset(x = settings,
+                             subset = boat == isample,
+                             select = c("species", paste0("cv_domain_", 
+                                                          1:n_dom)))
+    
+    ss_strs_pop_cv <- ss_strs_pop_cv[match(common_names_opt, 
+                                           ss_strs_pop_cv$species), ]
     ss_strs_pop_cv <- t(ss_strs_pop_cv[, -1])
     colnames(ss_strs_pop_cv) <- common_names_opt
     
@@ -154,121 +145,133 @@ for (irow in 2) {
                               showPlot = T,
                               writeFiles = T)
       
+      ## Organize result outputs
+      solution$aggr_strata$STRATO <- as.integer(solution$aggr_strata$STRATO)
+      solution$aggr_strata <- 
+        solution$aggr_strata[order(solution$aggr_strata$DOM1,
+                                   solution$aggr_strata$STRATO), ]
+      
       sum_stats <- summaryStrata(solution$framenew,
                                  solution$aggr_strata,
-                                 progress=FALSE) 
+                                 progress=FALSE)
+      sum_stats$stratum_id <- 1:nrow(sum_stats)
+      sum_stats$Population <- sum_stats$Population / n_years
+      sum_stats$wh <- sum_stats$Allocation / sum_stats$Population
+      sum_stats$Wh <- sum_stats$Population / n_cells
+      sum_stats <- cbind(sum_stats,
+                         subset(x = solution$aggr_strata,
+                                select = -c(STRATO, N, COST, CENS, DOM1, X1)))
+      sum_stats <- sum_stats[, c(10, 1:4, 15, 11:12, 6:9)]
       
-      #Plot Solution
-      plot_solution <- as.factor(paste(solution$framenew$DOMAINVALUE,
-                                       solution$framenew$STRATO))
+      plot_solution <- 
+        switch(which_domain,
+               "full_domain" = solution$indices$X1,
+               "district" = as.factor(paste0(
+                 "DOM", solution$framenew$DOMAINVALUE,
+                 " STR", solution$framenew$STRATO))
+        )
+      
       plot_solution <- as.integer(plot_solution)
       
+      ## Save Output
+      CV_constraints <- expected_CV(strata = solution$aggr_strata)
+      current_n <- sum(sum_stats$Allocation)
+      result_list <- list(solution = solution, 
+                          sum_stats = sum_stats, 
+                          CV_constraints = CV_constraints, 
+                          n = current_n,
+                          sol_by_cell = plot_solution)
+      save(list = "result_list", file = "result_list.RData")
+      
+      ##Save a plot of the solution
       goa <- sp::SpatialPointsDataFrame(
-        coords = Extrapolation_depths[,c("Lon", "Lat")],
+        coords = Extrapolation_depths[, c("E_km", "N_km")],
         data = data.frame(Str_no = plot_solution) )
       goa_ras <- raster::raster(x = goa, 
-                                resolution = 0.075)
+                                resolution = 5)
       goa_ras <- raster::rasterize(x = goa, 
                                    y = goa_ras, 
                                    field = "Str_no")
       
-      png(filename = "solution.png", 
-          width = 5, 
-          height = 3, 
-          units = "in", 
+      png(filename = "solution.png",
+          width = 6,
+          height = 3,
+          units = "in",
           res = 500)
       
       par(mfrow = c(1, 1), 
           mar = c(1, 1, 1, 1))
-      plot( goa_ras, 
-            axes = F, 
-            asp = 1,
-            col = colorRampPalette(
-              brewer.pal(n = 11, 
-                         name = "Paired"))(sum(temp_strata))[sample(1:sum(temp_strata))] ) 
+      plot(goa_ras, 
+           axes = F, 
+           asp = 1,
+           col = colorRampPalette(
+             brewer.pal(n = 11, 
+                        name = "Paired"))(length(unique(plot_solution)) ) )
       
-      rect(xleft = districts$W_lon,
-           xright = districts$E_lon,
-           ybottom = tapply(X = Extrapolation_depths$Lat, 
+      rect(xleft = districts$W_UTM,
+           xright = districts$E_UTM,
+           ybottom = tapply(X = Extrapolation_depths$N_km, 
                             INDEX = district_vals,
                             FUN = min), 
-           ytop = tapply(X = Extrapolation_depths$Lat, 
+           ytop = tapply(X = Extrapolation_depths$N_km, 
                          INDEX = district_vals,
                          FUN = max))
       
-      text(x = rowMeans(districts[, c("W_lon", "E_lon")]),
-           y = tapply(X = Extrapolation_depths$Lat, 
+      text(x = rowMeans(districts[, c("W_UTM", "E_UTM")]),
+           y = tapply(X = Extrapolation_depths$N_km, 
                       INDEX = district_vals,
                       FUN = max),
            labels = districts$district,
            pos = 3)
-      
       box()
       dev.off()
       
-      # png(filename = "solution_with_simulated_survey.png", 
-      #     width = 5, 
-      #     height = 3, 
-      #     units = "in", 
-      #     res = 500)
-      # 
-      # par(mfrow = c(1, 1), 
-      #     mar = c(1, 1, 1, 1))
-      # plot( goa_ras, 
-      #       axes = F, 
-      #       asp = 1,
-      #       col = colorRampPalette(
-      #         brewer.pal(n = 11, 
-      #                    name = "Paired"))(sum(temp_strata))[sample(1:sum(temp_strata))] ) 
-      # 
-      # rect(xleft = districts$W_lon,
-      #      xright = districts$E_lon,
-      #      ybottom = tapply(X = Extrapolation_depths$Lat, 
-      #                       INDEX = district_vals,
-      #                       FUN = min), 
-      #      ytop = tapply(X = Extrapolation_depths$Lat, 
-      #                    INDEX = district_vals,
-      #                    FUN = max))
-      # 
-      # text(x = rowMeans(districts[, c("W_lon", "E_lon")]),
-      #      y = tapply(X = Extrapolation_depths$Lat, 
-      #                 INDEX = district_vals,
-      #                 FUN = max),
-      #      labels = districts$district,
-      #      pos = 3)
-      # 
-      # box()
-      # 
-      # #Simulate a sample solution
-      # temp_samples <- c()
-      # temp_strata <- nrow(sum_stats)
-      # temp_solution <- solution$framenew$STRATO
-      # temp_allocation <- sum_stats$Allocation
-      # 
-      # for (temp_istrata in 1:temp_strata) {
-      #   temp_samples = c(temp_samples,
-      #                    sample(x = which(temp_solution == temp_istrata),
-      #                           size = temp_allocation[temp_istrata]) )
-      # }
-      # 
-      # temp_loc <- Extrapolation_depths[temp_samples, c("Lon", "Lat")]
-      # 
-      # points(temp_loc,
-      #        pch = 16,
-      #        cex = 0.25)
-      # 
-      # 
-      # dev.off()
       
-      #Save Output
-      cv_constraints <- expected_CV(strata = solution$aggr_strata)
-      current_n <- sum(sum_stats$Allocation)
+      png(filename = "solution_with_stations.png",
+          width = 6,
+          height = 3,
+          units = "in",
+          res = 500)
       
-      result_list <- list(solution = solution, 
-                          sum_stats = sum_stats, 
-                          cv_constraints = cv_constraints, 
-                          n = current_n)
-      save(list = "result_list", file = "result_list.RData")
+      par(mfrow = c(1, 1), 
+          mar = c(1, 1, 1, 1))
+      plot(goa_ras, 
+           axes = F, 
+           asp = 1,
+           col = colorRampPalette(
+             brewer.pal(n = 11, 
+                        name = "Paired"))(length(unique(plot_solution)) ) )
+      
+      rect(xleft = districts$W_UTM,
+           xright = districts$E_UTM,
+           ybottom = tapply(X = Extrapolation_depths$N_km, 
+                            INDEX = district_vals,
+                            FUN = min), 
+           ytop = tapply(X = Extrapolation_depths$N_km, 
+                         INDEX = district_vals,
+                         FUN = max))
+      
+      text(x = rowMeans(districts[, c("W_UTM", "E_UTM")]),
+           y = tapply(X = Extrapolation_depths$N_km, 
+                      INDEX = district_vals,
+                      FUN = max),
+           labels = districts$district,
+           pos = 3)
+      box()
+      
+      #Take a random sample based on the allocation and stratum
+      sample_vec <- c()
+      for(istrata in 1:nrow(sum_stats)) {
+        sample_vec <- c(sample_vec,
+                        sample(x = which(plot_solution == istrata),
+                               size = sum_stats$Allocation[istrata]) )
+      }
+      
+      points(Extrapolation_depths[sample_vec, c("E_km", "N_km")],
+             pch = 16, cex = 0.5)
+      
+      dev.off()
+      
       
       #Set up next run by changing upper CV constraints
       run <- run + 1
