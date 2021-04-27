@@ -17,22 +17,23 @@ do_STRS <- function(input){
                "Nh" = as.integer(table(input$solution)),
                "nh" = input$allocation)
   
-  #Assume stratum weights include untrawlabe areas
-  survey_detail$Wh <- survey_detail$Nh / n_cells
-  survey_detail$wh <- with(survey_detail, nh/Nh)
-
   #Take strata with 0 effor allocation out
   strata_to_use <- survey_detail$nh > 0
   survey_detail <- survey_detail[strata_to_use, ]
-
+  
+  #Assume stratum weights include untrawlabe areas
+  survey_detail$Wh <- survey_detail$Nh / n_cells
+  survey_detail$wh <- with(survey_detail, nh/Nh)
+  
   #Strata Areas
   strata_areas <- aggregate(cell_areas ~ solution, 
                             FUN = sum,
-                            data = with(input, data.frame(solution, cell_areas)))
+                            data = with(input, data.frame(solution, 
+                                                          cell_areas)))
   strata_areas <- subset(strata_areas, solution %in% survey_detail$Stratum)
   
   #Result objects
-  mean_density <- cv <- rel_bias <- rel_log_bias <- c()
+  mean_density <- cv <- index <- rel_bias <- rel_log_bias <- c()
   index_district <- array(dim = c(n_time, n_dom))
   
   for (iyear in 1:n_time) {
@@ -72,18 +73,23 @@ do_STRS <- function(input){
     #Calculate index of abundance by district
     index_df <- data.frame(Area_km2 = input$cell_areas,
                            stratum = input$solution,
-                           district = input$post_strata)
-    index_district[iyear, ] <- tapply(X = strata_mean[index_df$stratum] *
-                                        index_df$Area_km2,
-                                      INDEX = index_df$district,
-                                      FUN = sum,
-                                      na.rm = TRUE) * 0.001 #Metric tonnes
+                           district = input$post_strata,
+                           mean_dens = strata_mean[paste(input$solution)])
+    
+    index_district[iyear, ] <- 
+      tapply(X = index_df$mean_dens * index_df$Area_km2 * 0.001,
+             INDEX = index_df$district,
+             FUN = sum,
+             na.rm = TRUE)
+    
+    # Calculate total index
+    index[iyear] <- sum(strata_areas * strata_mean) * 0.001
     
   }
   
   #Calculate Relative bias of index over the entire domain and by districts
   rel_bias <-   
-    100 * (rowSums(index_district) - rowSums(input$true_index_district)) /
+    100 * (index - rowSums(input$true_index_district)) /
     rowSums(input$true_index_district)
   rel_log_bias <- 
     log10(rowSums(index_district) / rowSums(input$true_index_district))
@@ -94,6 +100,7 @@ do_STRS <- function(input){
                                      input$true_index_district)
   
   return(list("strs_mean" = STRS_mean,
+              "strs_index" = index,
               "cv" = round(cv, 4),
               "rel_bias" = round(rel_bias, 2),
               "rel_log_bias" = round(rel_log_bias, 3),

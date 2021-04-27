@@ -102,7 +102,7 @@ for (irow in 2:nrow(scen)) {
     ##################################################
     ####   Result Objects
     ##################################################
-    STRS_sim_mean <- STRS_sim_cv <- STRS_rel_bias_est <- STRS_log_bias_est <-
+    STRS_sim_index <- STRS_sim_cv <- STRS_rel_bias_est <- STRS_log_bias_est <-
       array(dim = c(n_years, ns_all, n_boats, n_iters),
             dimnames = list(paste0("year_", 1:n_years),
                             common_names_all,
@@ -190,7 +190,7 @@ for (irow in 2:nrow(scen)) {
           ))
           
           ## Record results
-          STRS_sim_mean[, ispp, iboat, iter] = sim_survey$strs_mean
+          STRS_sim_index[, ispp, iboat, iter] = sim_survey$strs_index
           STRS_sim_cv[, ispp, iboat, iter] = sim_survey$cv
           STRS_rel_bias_est[, ispp, iboat, iter] = sim_survey$rel_bias
           STRS_log_bias_est[, ispp, iboat, iter] = sim_survey$rel_log_bias
@@ -211,8 +211,8 @@ for (irow in 2:nrow(scen)) {
               
               ## Calculate True CV
               STRS_true_cv_array[iyear, ispp, iboat] <- temp_true_cv <- 
-                sd(STRS_sim_mean[iyear, ispp, iboat, ], na.rm = T) / 
-                true_mean[ispp, iyear]
+                sd(STRS_sim_index[iyear, ispp, iboat, ], na.rm = T) / 
+                true_index[ispp, iyear]
               
               temp_sim_cv <- STRS_sim_cv[iyear, ispp, iboat, ]
               
@@ -227,7 +227,7 @@ for (irow in 2:nrow(scen)) {
           ##################################
           ## Save results
           ##################################
-          assign(value = STRS_sim_mean,
+          assign(value = STRS_sim_index,
                  x = paste0(scen_name, "sim_mean"))
           assign(value = STRS_sim_cv,
                  x = paste0(scen_name, "sim_cv"))
@@ -248,7 +248,7 @@ for (irow in 2:nrow(scen)) {
                  x = paste0(scen_name, "rrmse_cv"))
           
           save(list = paste0(scen_name, 
-                             c("sim_mean", "sim_cv", "rb_agg", "log_rb_agg", 
+                             c("sim_index", "sim_cv", "rb_agg", "log_rb_agg", 
                                "true_cv", "rrmse_cv",
                                "rb_district", "log_rb_district") ),
                file = paste0(github_dir,  idata, "_surveys/", scen_name, 
