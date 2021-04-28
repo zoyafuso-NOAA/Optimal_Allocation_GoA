@@ -39,7 +39,7 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
 for (irow in 1:nrow(scen)) {
   scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
                       scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  file_name <- paste0(github_dir, "results/",
+  file_name <- paste0(github_dir, "results/pred_dens_surveys/",
                       scen_name, "simulation_results.RData")
   
   load(file_name)
@@ -51,24 +51,24 @@ for (irow in 1:nrow(scen)) {
 gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
 
 {
-  png(filename = paste0(output_dir, "RB_full_domain.png"),
-      width = 190,
-      height = 220,
-      units = "mm",
-      res = 500)
+  # png(filename = paste0(output_dir, "RB_full_domain.png"),
+  #     width = 190,
+  #     height = 220,
+  #     units = "mm",
+  #     res = 500)
   
   par(mar = c(.25, 0, .25, 0), oma = c(1,5,0,0))
   plot_layout <- rbind(
     cbind(gen_layout + 5 * 0, gen_layout + 5 * 1, 
           gen_layout + 5 * 2, gen_layout + 5 * 3, gen_layout + 5 * 4),
     cbind(gen_layout + 5 * 5, gen_layout + 5 * 6, 
-          gen_layout + 5 * 7, gen_layout + 5 * 8, gen_layout + 5 * 9),
-    cbind(gen_layout + 5 * 10, gen_layout + 5 * 11, 
-          gen_layout + 5 * 12, gen_layout + 5 * 13, gen_layout + 5 * 14),
-    cbind(gen_layout + 5 * 15, gen_layout + 5 * 16, 
-          gen_layout + 5 * 17, gen_layout + 5 * 18, gen_layout + 5 * 19),
-    cbind(gen_layout + 5 * 20, gen_layout + 5 * 21, 
-          gen_layout + 5 * 22, gen_layout + 5 * 23, gen_layout + 5 * 24)
+          gen_layout + 5 * 7, gen_layout + 5 * 8, gen_layout + 5 * 9)#,
+    # cbind(gen_layout + 5 * 10, gen_layout + 5 * 11, 
+    #       gen_layout + 5 * 12, gen_layout + 5 * 13, gen_layout + 5 * 14),
+    # cbind(gen_layout + 5 * 15, gen_layout + 5 * 16, 
+    #       gen_layout + 5 * 17, gen_layout + 5 * 18, gen_layout + 5 * 19),
+    # cbind(gen_layout + 5 * 20, gen_layout + 5 * 21, 
+    #       gen_layout + 5 * 22, gen_layout + 5 * 23, gen_layout + 5 * 24)
   )
   layout(mat =  plot_layout, 
          widths = c(1,0.4, 1,0.4, 1,0.4, 1,0.4, 1,0.1),
@@ -90,8 +90,7 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
                                      scen$domain[irow], 
                                      "_STR_", 
                                      scen$strata[irow], 
-                                     "_rb_agg"))["obsCV=0",
-                                                 ,
+                                     "_rb_agg"))[,
                                                  c(spp_idx_opt, spp_idx_eval)[ispp],
                                                  "boat_2" ,
                                                  ] ),
@@ -107,7 +106,6 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
       scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
                           scen$domain[irow], "_STR_", scen$strata[irow], "_")
       rb_agg <- get(paste0(scen_name, "rb_agg"))[
-        "obsCV=0",
         ,
         c(spp_idx_opt, spp_idx_eval)[ispp],
         "boat_2" , ]
@@ -164,7 +162,7 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
     plot(1,type = "n", axes = F, ann = F, xlim = c(0, 1), ylim = c(0, 1))
     text(x = 0.5,
          y = 0.3, 
-         labels = c(common_names_opt, common_names_eval_labels)[ispp], 
+         labels = c(common_names_opt, common_names_eval)[ispp], 
          col = ifelse(ispp <= ns_opt, "black", "grey"),
          cex = 1, 
          font = 2, 
@@ -177,5 +175,5 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
         line = 3, 
         font = 2)
   
-  dev.off()
+  # dev.off()
 }

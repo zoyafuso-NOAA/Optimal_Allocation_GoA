@@ -84,7 +84,7 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
 for (irow in 1:nrow(scen)) {
   scen_name <- paste0("SUR_", scen$survey_type[irow], "_", 
                       scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  file_name <- paste0(github_dir, "results/sim_dens_surveys/", 
+  file_name <- paste0(github_dir, "results/pred_dens_surveys/", 
                       scen_name, "simulation_results.RData")
   
   load(file_name)

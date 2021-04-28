@@ -1,0 +1,2 @@
+SUR_opt_full_domain_STR_15_
+Finished: Iteration 1000, yelloweye rockfish, opt scenario, 15 strata
