@@ -22,7 +22,7 @@ do_STRS <- function(input){
   survey_detail <- survey_detail[strata_to_use, ]
   
   #Assume stratum weights include untrawlabe areas
-  survey_detail$Wh <- survey_detail$Nh / n_cells
+  survey_detail$Wh <- survey_detail$Nh / sum(survey_detail$Nh)
   survey_detail$wh <- with(survey_detail, nh/Nh)
   
   #Strata Areas
@@ -66,9 +66,11 @@ do_STRS <- function(input){
                          INDEX = sampled_strata,
                          FUN = var)
     STRS_var <- sum(strata_var * with(survey_detail, Wh^2 * (1 - wh) / nh) )
+    # STRS_var <- sum(strata_var * with(survey_detail, Nh^2 * (1 - wh) / nh) )
     
     #Save mean and cv of estimates across species
-    cv[iyear] <- sqrt(STRS_var) / STRS_mean 
+    cv[iyear] <- sqrt(STRS_var) / STRS_mean
+    # cv[iyear] <- sqrt(STRS_var) / sum(survey_detail$Nh * strata_mean)
     
     #Calculate index of abundance by district
     index_df <- data.frame(Area_km2 = input$cell_areas,
@@ -88,8 +90,7 @@ do_STRS <- function(input){
   }
   
   #Calculate Relative bias of index over the entire domain and by districts
-  rel_bias <-   
-    100 * (index - rowSums(input$true_index_district)) /
+  rel_bias <- 100 * (index - rowSums(input$true_index_district)) /
     rowSums(input$true_index_district)
   rel_log_bias <- 
     log10(rowSums(index_district) / rowSums(input$true_index_district))

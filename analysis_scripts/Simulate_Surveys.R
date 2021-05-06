@@ -46,7 +46,7 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
                    domain = c("full_domain", 
                               rep(c("district", "full_domain"), each = 2)))
 
-foreach(irow = nrow(scen):1 ) %dopar% {
+foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
   
   ##################################################
   ####   Import Libraries
@@ -57,13 +57,13 @@ foreach(irow = nrow(scen):1 ) %dopar% {
   ##################################################
   ####   Predicted densities
   ##################################################
-  load(paste0(dirname(github_dir), "/data/fit_density.RData"))
+  load(paste0(dirname(github_dir), "/data/VAST_fit_D_gct.RData"))
   dimnames(D_gct)[[2]][24] <- "Pacific spiny dogfish"
   
   ##################################
   ## Import Strata Allocations and spatial grid and predicted density
   ##################################
-  load(paste0(dirname(github_dir), '/data/optimization_data.RData'), verbose = T)
+  load(paste0(dirname(github_dir), '/data/optimization_data.RData'))
   load(paste0(dirname(github_dir), '/data/Extrapolation_depths.RData'))
   load(paste0(github_dir, "MS_optimization_knitted_results.RData"))
   
@@ -115,7 +115,8 @@ foreach(irow = nrow(scen):1 ) %dopar% {
   ##################################################
   source( paste0(dirname(github_dir), "/modified_functions/sim_fns.R") )
   
-  for(idata in c("pred_dens_surveys", "sim_dens_surveys")[]) {
+  for(idata in c("pred_dens_surveys", 
+                 "sim_dens_surveys")) { ## loop over data OM type -- start
     isurvey <- scen$survey_type[irow]
     
     scen_name <- paste0("SUR_", isurvey, "_", scen$domain[irow], "_STR_", 
@@ -149,22 +150,20 @@ foreach(irow = nrow(scen):1 ) %dopar% {
     ##################################################
     ####   Simulate Survey
     ##################################################
-    for (ispp in common_names_all) {
-      
+    for (ispp in common_names_all) { ## loop over species--start
       # ## Load species specific simulated data
       if(idata ==  "sim_dens_surveys")
         load(paste0(VAST_sim_data_dir, ispp, "/simulated_data.RData"))
       
-      
-      for (iter in 1:n_iters) {
+      for (iter in 1:n_iters) { ## loop over survey replicates--start
         set.seed(n_iters + iter)
-        for (iboat in 1:n_boats) {
+        for (iboat in 1:n_boats) { ## loop over boat-effort--start
           
           ## Subset the iter-th simulated dataset and turn into densities
           sim_survey <- do_STRS(input = list(
             "density" = switch(idata,
                                "sim_dens_surveys" = 
-                                 sweep(x = sim_data[, , 1],
+                                 sweep(x = sim_data[, , iter],
                                        MARGIN = 1,
                                        STATS = Extrapolation_depths$Area_km2,
                                        FUN = "/"),
@@ -197,16 +196,7 @@ foreach(irow = nrow(scen):1 ) %dopar% {
             
             "true_density" = true_mean[ispp, ],
             
-            # "true_index_district" = true_index_district[ispp, , ],
-            "true_index_district" = switch(
-              idata,
-              "sim_dens_surveys" = 
-                t(apply(sim_data[, , 1], 
-                        MARGIN = 2,
-                        FUN = function(x) 0.001 * tapply(X = x, 
-                                                         INDEX = district_vals,
-                                                         FUN = sum))),
-              "pred_dens_surveys" = true_index_district[ispp, , ]),
+            "true_index_district" = true_index_district[ispp, , ] ,
             "post_strata" = district_vals
             
           ))
@@ -220,22 +210,23 @@ foreach(irow = nrow(scen):1 ) %dopar% {
             sim_survey$bias_index_district
           STRS_log_bias_index_district[, ispp, iboat, , iter]  <-
             sim_survey$log_bias_index_district
-        }
+          
+        }  ## loop over boat-effort--end
         
-        
-        if(iter%%50 == 0) {
+        if(iter%%100 == 0) { ## update results--start
+          
+          print(paste0("Finished: Iteration ", iter))
+          
           ##################################
-          ## Calculate Performance Metric
+          ## Calculate Performance Metrics
           ##################################
-          for (iboat in 1:n_boats) {
-            for(iyear in 1:n_years) {
+          for (iboat in 1:n_boats) { ## subloop over boat-effort--start
+            for(iyear in 1:n_years) { ## subloop over years--start
               
               ## Calculate True CV
               STRS_true_cv_array[iyear, ispp, iboat] <- temp_true_cv <-
-                sd(STRS_sim_index[iyear, ispp, iboat, ], na.rm = T) /
-                switch(idata,
-                       "pred_dens_surveys" = true_index[ispp, iyear],
-                       "sim_dens_surveys" = 0.001 * sum(sim_data[, iyear, 1]) )
+                sd(STRS_sim_index[iyear, ispp, iboat, ], na.rm = T) / 
+                (true_index[ispp, iyear])
               
               
               temp_sim_cv <- STRS_sim_cv[iyear, ispp, iboat, ]
@@ -245,6 +236,7 @@ foreach(irow = nrow(scen):1 ) %dopar% {
                 sqrt(mean((temp_sim_cv - temp_true_cv)^2, na.rm = T)) /
                 mean(temp_sim_cv, na.rm = T)
               
+
               #Update progress to file
               update_file  <- file(paste0(github_dir, idata, "/",
                                           scen_name, "progress.txt"))
@@ -255,8 +247,8 @@ foreach(irow = nrow(scen):1 ) %dopar% {
                                   scen$strata[irow], " strata")), update_file)
               close(update_file)
               
-            }
-          }
+            } ## subloop over years--end
+          } ## subloop over boat-effort--end
           
           
           ##################################
@@ -266,31 +258,29 @@ foreach(irow = nrow(scen):1 ) %dopar% {
                  x = paste0(scen_name, "sim_index"))
           assign(value = STRS_sim_cv,
                  x = paste0(scen_name, "sim_cv"))
-          
+
           assign(value = STRS_rel_bias_est,
                  x = paste0(scen_name, "rb_agg"))
-          
+
           assign(value = STRS_rel_bias_index_district,
                  x = paste0(scen_name, "rb_district"))
           assign(value = STRS_log_bias_index_district,
                  x = paste0(scen_name, "log_rb_district"))
-          
+
           assign(value = STRS_true_cv_array,
                  x = paste0(scen_name, "true_cv"))
           assign(value = STRS_rrmse_cv_array,
                  x = paste0(scen_name, "rrmse_cv"))
-          
+
           save(list = paste0(scen_name,
                              c("sim_index", "sim_cv", "rb_agg",
                                "true_cv", "rrmse_cv",
                                "rb_district", "log_rb_district") ),
                file = paste0(github_dir,  idata, "/", scen_name,
                              "simulation_results.RData"))
-        }
-      }
-      
-      
-    }
-    
-  }
-}
+        } ## update results--emd
+        
+      } ## loop over survey replicates--end
+    } ## loop over species--end
+  } ## loop over data OM type -- end
+} ## loop over scenario type -- end
