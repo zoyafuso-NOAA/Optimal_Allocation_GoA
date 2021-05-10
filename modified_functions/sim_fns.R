@@ -79,13 +79,13 @@ do_STRS <- function(input){
                            mean_dens = strata_mean[paste(input$solution)])
     
     index_district[iyear, ] <- 
-      tapply(X = index_df$mean_dens * index_df$Area_km2 * 0.001,
+      tapply(X = index_df$mean_dens * index_df$Area_km2,
              INDEX = index_df$district,
              FUN = sum,
              na.rm = TRUE)
     
     # Calculate total index
-    index[iyear] <- sum(strata_areas * strata_mean) * 0.001
+    index[iyear] <- sum(strata_areas * strata_mean) 
     
   }
   
