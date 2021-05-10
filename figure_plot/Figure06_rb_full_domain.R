@@ -71,13 +71,6 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
              "1" = cbind(gen_layout + 5 * 12, gen_layout + 5 * 13, 
                          gen_layout + 5 * 14, gen_layout + 5 * 15),
              "2" = NULL)
-      
-      # cbind(gen_layout + 5 * 10, gen_layout + 5 * 11, 
-      #       gen_layout + 5 * 12, gen_layout + 5 * 13, gen_layout + 5 * 14),
-      # cbind(gen_layout + 5 * 15, gen_layout + 5 * 16, 
-      #       gen_layout + 5 * 17, gen_layout + 5 * 18, gen_layout + 5 * 19),
-      # cbind(gen_layout + 5 * 20, gen_layout + 5 * 21, 
-      #       gen_layout + 5 * 22, gen_layout + 5 * 23, gen_layout + 5 * 24)
     )
     layout(mat =  plot_layout, 
            widths = c(1,0.4, 1,0.4, 1,0.4, 1,0.1),
