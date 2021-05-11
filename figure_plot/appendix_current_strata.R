@@ -7,14 +7,14 @@ rm(list = ls())
 ##################################################
 ####  Set up directories  
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[1]
+which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
 
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
                      "GitHub/Optimal_Allocation_GoA/")
 output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/",
                        "C:/Users/Zack Oyafuso/Google Drive/")[which_machine],
-                     "MS_Optimizations/TechMemo/figures/")
+                     "MS_Optimizations/TechMemo/appendix/")
 
 ##################################################
 ####  Libraries
@@ -31,7 +31,7 @@ library(RColorBrewer)
 ####  Extrapolation_depths.RData: goa_grid that corresponds to the solutions
 ####  optimization_data.RData: constants 
 ##################################################
-AK_land <- rgdal::readOGR(paste0(github_dir, 
+AK_land <- rgdal::readOGR(paste0(github_dir,
                                  "data/shapefiles/AKland.shp"))
 AK_land <- sp::spTransform(x = AK_land,
                            CRSobj = "+proj=utm +units=km +zone=5")
@@ -51,7 +51,7 @@ n_depth_zones <- 4
 ##################################################
 ####  Which optimal solution to plot?
 ##################################################
-sol_idx <- with(settings, which(boat == 1 & strata == 5 & domain == "district"))
+sol_idx <- with(settings, which(boat == 2 & strata == 3 & domain == "district"))
 
 ##################################################
 ####  Current GoA Strata names
@@ -78,7 +78,8 @@ strata_groupings <- list(
                                   "Shelikof Edge" = 121,
                                   "Chirikof Outer Shelf" = 122),
        "Depth Zone 201-300 m" = c("Lower Chirikof Gully" = 220,
-                                  "Chirikof Slope" = 221),
+                                  "Chirikof Slope" = 221,
+                                  "Upper Shelikof Gully" = 232),
        "Depth Zone 301-1000 m" = c("Chirikof Slope" = 320,
                                    "Chirikof Slope" = 420,
                                    "Chirikof Slope" = 520)),
@@ -95,8 +96,7 @@ strata_groupings <- list(
                                   "Kenai Flats" = 133,
                                   "Kodiak Outer Shelf" = 134),
        "Depth Zone 201-300 m" = c("Kenai Gullies" = 230,
-                                  "Kodiak Slope" = 231,
-                                  "Upper Shelikof Gully" = 232),
+                                  "Kodiak Slope" = 231),
        "Depth Zone 301-1000 m" = c("Kodiak Slope" = 330,
                                    "Kodiak Slope" = 430,
                                    "Kodiak Slope" = 530)),
@@ -131,10 +131,10 @@ strata_groupings <- list(
 plot_settings <- data.frame(district = districts$district,
                             x_max_offset = c(0, 3.55, 3.6, 0, 3.5),
                             x_offset = c(0, 400, 500, 0, 700),
-                            y_min_offset = c(3, 0, 0.3, 5.5, 0.1),
-                            y_offset = c(290, 0, 0, 250, 0),
+                            y_min_offset = c(3.5, 0.15, 0.3, 5.5, 0.2),
+                            y_offset = c(325, 0, 0, 250, 0),
                             x_legend = c(0, -0.1, 0, 0.15, 0.1),
-                            y_legend = c(0.975, 1.1, 1.5, 1.75, 1.3),
+                            y_legend = c(1.05, 1.25, 1.5, 1.75, 1.35),
                             legend_cex = c(0.44, 0.5, 0.5, 0.45, 0.44),
                             y_inter = c(0.9, 1, 1, 1, 1))
 
@@ -142,9 +142,13 @@ plot_settings <- data.frame(district = districts$district,
 ####  Appendix Figure Label
 ##################################################
 figure_label <- 
- paste0("Appendix Figure D-1. -- Stratum boundaries of the current stratified",
-        " random design (open polygons)\n", "                               ",
-        "superimposed on the optimized stratum boundaries (filled polygons).")
+ paste0("Appendix Figure C-1. -- Stratum boundaries of the current stratified",
+        " random design (open polygons)\n", 
+        "                                         ",
+        "superimposed on the optimized strata boundaries ",
+        "(District-level optimization,\n",
+        "                                         ",
+        "three strata per district, filled polygons).")
 
 ##################################################
 ####  Plot
@@ -152,8 +156,8 @@ figure_label <-
 {
  
  ## Set up plot
- pdf("/Users/zackoyafuso/Desktop/test.pdf", 
-     width = 6, height = 6, fonts = "serif")
+ pdf(paste0(output_dir, "Appendix C.pdf"), 
+     width = 6, height = 6.5, fonts = "serif")
  
  ## Set up plot layout
  par(mar = c(0, 0, 0, 0), 
@@ -296,12 +300,16 @@ figure_label <-
       font = 2)
  
  ## Plot figure capture
- text(x = goa_ras@extent[1] + 900,
-      y = goa_ras@extent[3] + 1100,
+ text(x = goa_ras@extent[1] - 950,
+      y = goa_ras@extent[3] + 950,
       labels = figure_label,
       xpd = NA, 
+      pos = 4, offset = 0,
       cex = 0.7)
    box(which = "figure")
  
  dev.off()
+ 
+ 
+ shell.exec(paste0(output_dir, "Appendix C.pdf"))
 }
