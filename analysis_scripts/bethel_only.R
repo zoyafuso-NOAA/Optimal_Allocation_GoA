@@ -20,6 +20,8 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
                        "C:/Users/Zack Oyafuso/")[which_machine], 
                      "Google Drive/MS_Optimizations/TechMemo/figures/")
 
+VAST_sim_data_dir <- "C:/Users/Zack Oyafuso/Desktop/VAST_Runs/Simulate_Data/"
+
 ##################################################
 ####  Install a forked version of the SamplingStrata Package from 
 ####  zoyafuso-NOAA's Github page
@@ -44,7 +46,7 @@ load(paste0(github_dir,
 load(paste0(github_dir,
             "results/MS_optimization_knitted_results.RData"))
 source( paste0(github_dir, "/modified_functions/sim_fns.R") )
-load(paste0(github_dir, '/data/fit_density.RData'))
+# load(paste0(github_dir, '/data/fit_density.RData'))
 
 
 ##################################################
@@ -165,48 +167,45 @@ for (ithreshold in 1:length(threshold)) {
 ####   
 ##################################################
 
-temp_res <- array(dim = c(length(threshold) + 1, n_years, ns_all, n_iters) )
+temp_res <- array(dim = c(length(threshold) + 1, n_years, ns_all, n_iters),
+                  dimnames = list(NULL, NULL, common_names_all, NULL))
 
-for (isurvey in 1:(length(threshold)+1) ) {
-  for (isim in 1:n_iters) {
-    
-    set.seed(isim + 23423)
-    sim_survey <- 
-      do_STRS( 
-        input = list(
-          "density" = D_gct[, , years_included],
-          
-          "cell_areas" = Extrapolation_depths$Area_km2,
-          
-          "obs_CV" = 0,
-          
-          "solution" = res_df[, sol_idx],
-          
-          "allocation" =  tradeoff_sample_allocations[, isurvey],
-          
-          "true_density" = true_mean,
-          
-          "true_index_district" = true_index_district,
-          
-          "post_strata" = district_vals
-        )
-      )
-    temp_res[isurvey, , , isim] <- sim_survey$mean_denisty
-    
-    if (isim%%50 == 0) print(isim)
+for (ispp in common_names_all) {
+  load(paste0(VAST_sim_data_dir, ispp, "/simulated_data.RData"))
+  
+  for (isurvey in 1:(length(threshold)+1) ) {
+    for (isim in 1:n_iters) {
+      
+      set.seed(isim + 23423)
+      sim_survey <- do_STRS(input = list(
+        "density" = sweep(x = sim_data[, , isim],
+                          MARGIN = 1,
+                          STATS = Extrapolation_depths$Area_km2,
+                          FUN = "/"),
+        "cell_areas" = Extrapolation_depths$Area_km2,
+        "solution" = res_df[, sol_idx],
+        "allocation" = tradeoff_sample_allocations[, isurvey],
+        "true_density" = true_mean[ispp, ],
+        "true_index_district" = true_index_district[ispp, , ] ,
+        "post_strata" = district_vals))
+      temp_res[isurvey, , ispp, isim] <- sim_survey$strs_index
+      
+      if (isim%%50 == 0) print(isim)
+    }
   }
+  
 }
 
 par(mfrow = c(5, 3), mar = c(3,3,1,1))
-for (ispp in 1:15) {
-  plot_this <- t(sweep(x = apply(X = temp_res[, , spp_idx_opt[ispp], ],
+for (ispp in common_names_opt) {
+  plot_this <- t(sweep(x = apply(X = temp_res[, , ispp, ],
                                  MARGIN = 1:2,
                                  FUN = sd),
                        MARGIN = 2,
-                       STATS = true_mean[spp_idx_opt[ispp], ],
+                       STATS = true_index[ispp, ],
                        FUN = '/'))
   boxplot(plot_this,
-          main = common_names_opt[ispp],
+          main = ispp,
           ylim = c(0, max(plot_this)),
           las = 1)
 }
@@ -217,18 +216,18 @@ for (ispp in 1:15) {
 ##################################################
 
 {
-  png(filename = paste0(output_dir, "bethel_only_comparisons.png"),
+  png(filename = paste0(output_dir, "Figure10_bethel_only_comparisons.png"),
       width = 170,
       height = 190,
       units = "mm",
       res = 500)
   
   ## Plot layout
-  layout(mat = matrix(data = 1:8, ncol = 2, byrow = T))
+  layout(mat = matrix(data = 1:6, ncol = 2, byrow = T))
   par(mar = c(3, 0, 0, 1), 
       oma = c(2, 7.5, 1, 0))
   
-  for (i in 1:4) {
+  for (i in 1:3) {
     
     ## Base plot
     plot(1,
