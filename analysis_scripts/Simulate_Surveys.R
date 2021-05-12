@@ -163,7 +163,7 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
           sim_survey <- do_STRS(input = list(
             "density" = switch(idata,
                                "sim_dens_surveys" = 
-                                 sweep(x = sim_data[, , iter],
+                                 sweep(x = sim_data[, , iter] / 0.001,
                                        MARGIN = 1,
                                        STATS = Extrapolation_depths$Area_km2,
                                        FUN = "/"),
@@ -196,7 +196,7 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
             
             "true_density" = true_mean[ispp, ],
             
-            "true_index_district" = true_index_district[ispp, , ] ,
+            "true_index_district" = true_index_district[ispp, , ],
             "post_strata" = district_vals
             
           ))
