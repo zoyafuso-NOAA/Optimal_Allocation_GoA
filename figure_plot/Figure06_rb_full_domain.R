@@ -39,7 +39,7 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
 for (irow in 1:nrow(scen)) {
   scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
                       scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  file_name <- paste0(github_dir, "results/pred_dens_surveys/",
+  file_name <- paste0(github_dir, "results/sim_dens_surveys/",
                       scen_name, "simulation_results.RData")
   
   load(file_name)
@@ -52,7 +52,7 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
 
 {
   for (spp_group in 1:2) {
-    png(filename = paste0(output_dir, "Figure6", LETTERS[spp_group], 
+    png(filename = paste0(output_dir, "Figure6", LETTERS[spp_group],
                           "_RB_full_domain.png"),
         width = 190,
         height = c(190, 150)[spp_group],
@@ -81,7 +81,7 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
       ## Loop over three survey scenarios
       ## 1) Current
       ## 5) Gulf-wide optiization, 10 strata
-      ## 2) District-level optimiztion, 3 strata per district
+      ## 2) District-level optimiztion, 3 strata per district 
       
       y_max <- max(abs(unlist(
         lapply(X = lapply(X = c(1, 5, 2),
@@ -93,13 +93,10 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
                                        "_STR_", 
                                        scen$strata[irow], 
                                        "_rb_agg"))[,
-                                                   c(spp_idx_opt, spp_idx_eval)[ispp],
+                                                   ispp,
                                                    "boat_2" ,
                                                    ] ),
-               FUN = function(x) apply(x, MARGIN = 1, 
-                                       FUN = quantile, 
-                                       probs = c(0.05, 0.975),
-                                       na.rm = T))))) 
+               FUN = function(x) plot_percentiles(values = x, plot = F) )))) 
       
       y_max <- max(y_max, 25)
       
@@ -109,7 +106,7 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
                             scen$domain[irow], "_STR_", scen$strata[irow], "_")
         rb_agg <- get(paste0(scen_name, "rb_agg"))[
           ,
-          c(spp_idx_opt, spp_idx_eval)[ispp],
+          ispp,
           "boat_2" , ]
         
         ## Base plot
@@ -157,6 +154,7 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
              at = pretty(x = c(-y_max, y_max), n = 3) )
         
         abline(h = 0, lwd = 0.5, lty = "dotted")
+        box()
         
       }
       
