@@ -1,2 +1,2 @@
 SUR_opt_district_STR_5_
-Finished: Iteration 1000, yelloweye rockfish, opt scenario, 5 strata
+Finished: Iteration 300, arrowtooth flounder, opt scenario, 5 strata
