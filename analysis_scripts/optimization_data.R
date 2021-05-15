@@ -24,8 +24,8 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
 ##################################################
 ####   Load the true density, true index, and spatial domain dataset
 ##################################################
-load(paste0(github_dir,  "data/fit_density.RData"))
-load(paste0(github_dir,  "data/fit_index.RData"))
+load(paste0(github_dir,  "data/VAST_fit_D_gct.RData"))
+load(paste0(github_dir,  "data/VAST_fit_I_gct.RData"))
 load(paste0(github_dir, "/data/prednll_VAST_models.RData"))
 load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
 
@@ -92,6 +92,10 @@ inpfc_vals_current[Extrapolation_depths$stratum %in%
                         c(40:41, 140:143, 240:241, 340:341, 440, 540)] <- 4
 inpfc_vals_current[Extrapolation_depths$stratum %in% 
                         c(50, 150:151, 250:251, 350:351, 450, 550)] <- 5
+
+## ranges of the spatial domain for plotting
+x_range <- diff(range(Extrapolation_depths$E_km))
+y_range <- diff(range(Extrapolation_depths$N_km))
 
 ## Number of times to simulate survey
 n_iters <- 1000
@@ -162,11 +166,11 @@ true_mean <- apply(X = D_gct,
                    MARGIN = 2:3,
                    FUN = mean)
 
-true_index <- apply(X = Index, 
+true_index <- apply(X = I_gct, 
                     MARGIN = 2:3,
                     FUN = sum)
 
-true_index_district <- apply(X = Index, 
+true_index_district <- apply(X = I_gct, 
                              MARGIN = 2:3,
                              FUN = function(x) tapply(x, 
                                                       INDEX = district_vals, 
@@ -185,6 +189,7 @@ save(list = c("frame_all", "frame_district",
               "districts", "district_vals", "inpfc_vals_current",
               "true_mean", "true_index", "true_index_district",
               "ns_all", "ns_eval", "ns_opt", 
+              "x_range", "y_range",
               "common_names_all", "common_names_eval", "common_names_opt",
               "spp_idx_eval", "spp_idx_opt",
               "year_set", "years_included", "n_years", 
