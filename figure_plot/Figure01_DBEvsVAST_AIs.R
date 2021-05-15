@@ -25,72 +25,85 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
 ##################################################
 ####  Load Data
 ##################################################
-load(paste0(github_dir, 
-            "data/optimization_data.RData"))
+load(file = paste0(github_dir, "data/optimization_data.RData"))
 
 ##################################################
-####  Import Observed DBEs, calculate ranges of sample CVs
+####  Import Observed vast estimates, add "Pacific" to spiny dogfish
 ##################################################
-load(paste0(github_dir, 
-            "data/VAST_fit_I_ct.RData"))
+load(file = paste0(github_dir, "data/VAST_fit_I_ct.RData"))
 vast_index$species[vast_index$species == "spiny dogfish"] <-
   "Pacific spiny dogfish"
 
-DBE <- readRDS(paste0(github_dir2, 
-                      "GOA_biomass_indices_wnames.rds"))
+##################################################
+####  Import Observed DBEs
+####  Subset for the years and species included and calculate SD of biomass
+##################################################
+DBE <- readRDS(file = paste0(github_dir2, "GOA_biomass_indices_wnames.rds"))
 DBE$COMMON_NAME[DBE$COMMON_NAME == "rougheye and blackspotted rockfish"] <-
   "BS and RE rockfishes"
 DBE$COMMON_NAME[DBE$COMMON_NAME == "spiny dogfish"] <- "Pacific spiny dogfish"
 
-DBE <- subset(DBE, 
-              COMMON_NAME %in% common_names_all &
+DBE <- subset(x = DBE, 
+              subset = COMMON_NAME %in% common_names_all &
                 YEAR %in% (1996:2019)[years_included])
 DBE <- DBE[order(DBE$YEAR),]
+
+DBE$BIOMASS_SD <- sqrt(DBE$BIOMASS_VAR)
 
 ##################################################
 ####  Plot
 ##################################################
 
 {
+  ## Open device
   png(filename = paste0(output_dir, "Figure_01_DBEvsVAST_AIs.png"),
-      width = 190,
-      height = 210,
-      units = "mm",
+      width = 190, height = 220, units = "mm",
       res = 500)
   
+  ## Plot layout
   par(mfrow = c(7, 4),
       mar = c(0, 2.5, 1, 1),
       oma = c(3, 2.5, 0.5, 0))
   
-  for (ispp in c(common_names_opt, common_names_eval) ) {
+  for (ispp in c(common_names_opt, common_names_eval)) {
     
     #Knit the VAST and DBE output into one list
     temp_list <- list(
-      DBE = subset(DBE, COMMON_NAME == ispp, 
-                   select = c(YEAR, TOTAL_BIOMASS, BIOMASS_VAR)),
-      VAST = subset(vast_index, 
+      DBE = subset(x = DBE, 
+                   subset = COMMON_NAME == ispp, 
+                   select = c(YEAR, TOTAL_BIOMASS, BIOMASS_SD)),
+      VAST = subset(x = vast_index, 
                     subset = species == ispp,
                     select = c(Year, Estimate_metric_tons, SD_mt))
     )
     
-    temp_list$DBE$BIOMASS_SD <- sqrt(temp_list$DBE$BIOMASS_VAR)
-    
     #Base plot
-    plot(1,
-         type = "n",
-         las = 1,
-         ann = F,
-         ylim = c(0, 1.5 * 0.001 * max(cbind(temp_list$DBE$TOTAL_BIOMASS,
-                                             temp_list$VAST$Estimate_metric_tons))),
-         xlim = c(1995, 2020),
-         axes = F)
+    ymax_ <- max(c(with(temp_list$DBE, 
+                        TOTAL_BIOMASS + BIOMASS_SD),
+                   with(temp_list$VAST, 
+                        Estimate_metric_tons + SD_mt))) * 0.001 * 1.25
     
-    # Year label for the last row of plots
-    if(ispp %in% common_names_eval[8:11]) 
-      axis(side = 1, at = seq(1995, 2020, by = 5))
-    axis(side = 2, las = 1)
+    plot(x = 1, y = 1,
+         type = "n",
+         ann = F, axes = F,
+         xlim = c(1995, 2020), ylim = c(0, ymax_))
+    axis(side = 2, 
+         las = 1)
     box()
     
+    ## Species label
+    mtext(side = 3, 
+          text = ispp, 
+          line = -1.5,
+          col = ifelse(ispp %in% common_names_eval, "darkgrey", "black"),
+          cex = 0.75)
+    
+    ## Year label for the last row of plots
+    if(ispp %in% common_names_eval[8:11]) 
+      axis(side = 1, 
+           at = seq(from = 1995, to = 2020, by = 5))
+    
+    ## Plot point estimates
     matpoints(x = temp_list$DBE$YEAR,
               y = 0.001 * cbind(temp_list$DBE$TOTAL_BIOMASS,
                                 temp_list$VAST$Estimate_metric_tons) ,
@@ -103,6 +116,7 @@ DBE <- DBE[order(DBE$YEAR),]
              lty = 1,
              col = c("red", "black"))
     
+    ## Add SD bars
     segments(x0 = temp_list$DBE$YEAR,
              x1= temp_list$DBE$YEAR,
              y0 = 0.001 * with(temp_list$DBE, TOTAL_BIOMASS - BIOMASS_SD),
@@ -114,17 +128,9 @@ DBE <- DBE[order(DBE$YEAR),]
              y0 = 0.001 * with(temp_list$VAST, Estimate_metric_tons - SD_mt),
              y1 = 0.001 * with(temp_list$VAST, Estimate_metric_tons + SD_mt),
              col = "black")
-    
-    
-    
-    mtext(side = 3, 
-          text = ispp, 
-          line = -1.5,
-          col = ifelse(ispp %in% common_names_eval, "darkgrey", "black"),
-          cex = 0.75)
-    
   }
   
+  ## Figure labels
   mtext(side = 1, 
         outer = T, 
         text = "Year", 
@@ -136,12 +142,10 @@ DBE <- DBE[order(DBE$YEAR),]
         line = 1,
         font = 2)
   
-  #Plot Legend
-  par(mar = c(0,2,3,2))
-  plot(1, 
-       type = "n", 
-       axes = F, 
-       ann = F)
+  ## Plot Legend
+  par(mar = c(0, 2, 3, 2))
+  plot(x = 1, y = 1, 
+       type = "n", axes = F, ann = F)
   legend("bottom", 
          legend = c("DBE", "VAST"), 
          col = c("red", "black"), 
@@ -149,5 +153,6 @@ DBE <- DBE[order(DBE$YEAR),]
          lty = 1, 
          cex = 1.5)
   
+  ## Close Device
   dev.off()
 }

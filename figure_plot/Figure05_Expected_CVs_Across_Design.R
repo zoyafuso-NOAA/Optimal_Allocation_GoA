@@ -26,6 +26,7 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
 library(devtools)
 devtools::install_github(repo = "zoyafuso-NOAA/SamplingStrata")
 library(SamplingStrata)
+library(readxl)
 
 ##################################################
 ####  Load Data
@@ -122,7 +123,7 @@ current_strs_cv <- as.numeric(temp_cv)
 ####  Calculate expected CV for all species for the 
 ####  gulf-wide (full_domain) 15 strata solution (isol == 8)
 ##################################################
-isol <- 2
+isol <- 8
 frame$X1 <- res_df_MS[, isol]
 strata_stats <- SamplingStrata::buildStrataDF(dataset = frame)
 strata_stats <- strata_stats[order(as.numeric(strata_stats$STRATO)), ]

@@ -145,7 +145,7 @@ for (which_spp in paste(1:4)) {
       res = 500)
   
   ## Set up plot layout
-  par(mar = c(0.25, 0, 0.25, 0), oma = c(1, 5, 0, 0))
+  par(mar = c(0.25, 0, 0.25, 0), oma = c(1.25, 5, 0, 0))
   plot_layout <- rbind( cbind(gen_layout + 17*0, gen_layout + 17*1),
                         cbind(gen_layout + 17*2, gen_layout + 17*3),
                         switch(paste0(which_spp %in% paste0(1:3)),
@@ -158,7 +158,12 @@ for (which_spp in paste(1:4)) {
                         
   )
   
-  layout(mat =  plot_layout, widths = c(rep(1, 11), 0.1))
+  layout(mat =  plot_layout, 
+         widths = c(rep(1, 11), 0.1),
+         heights = c(0.75, 1, 1, 1,
+                     0.75, 1, 1, 1,
+                     0.75, 1, 1, 1,
+                     0.75, 1, 1, 1))
   
   ## Loop over species
   for (ispp in get(paste0("spp_idx_", which_spp)) ) {

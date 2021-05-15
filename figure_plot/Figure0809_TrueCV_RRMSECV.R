@@ -25,6 +25,7 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
 ##################################
 source(paste0(github_dir, "modified_functions/plot_percentiles.R"))
 library(SamplingStrata)
+library(readxl)
 
 ##################################
 ## Import Strata Allocations and spatial grid and predicted density
@@ -39,7 +40,6 @@ GOA_allocations <- readxl::read_xlsx(
 GOA_allocations3 <- readxl::read_xlsx(
   path = paste0(github_dir, '/data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')
 ) 
-
 
 ##################################
 ## Specify Management Districts
@@ -84,7 +84,7 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
 for (irow in 1:nrow(scen)) {
   scen_name <- paste0("SUR_", scen$survey_type[irow], "_", 
                       scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  file_name <- paste0(github_dir, "results/pred_dens_surveys/", 
+  file_name <- paste0(github_dir, "results/sim_dens_surveys/", 
                       scen_name, "simulation_results.RData")
   
   load(file_name)
@@ -156,68 +156,63 @@ for (iscen in 1:(nrow(settings) + 3)) {
 ####   Plot True CV and RRMSE
 ##################################################
 
-for (imetric in c("true_cv", "rrmse_cv")) {
+for (imetric in c("true_cv", "rrmse_cv")) { ## loop over metric -- start
   
-  # png(filename = paste0(output_dir, imetric, ".png"), 
-  #     width = 170, 
-  #     height = 170,
-  #     units = "mm", 
-  #     res = 500)
+  ## Open Device
+  png(filename = paste0(output_dir,
+                        ifelse(imetric == "true_cv",
+                               "Figure08_TrueCV.png",
+                               "Figure09_RRMSECV.png") ),
+      width = 170, height = 200, units = "mm",
+      res = 500)
   
+  ## Plot layout
   layout(mat = matrix(c(1:ns_all, ns_all + 1, ns_all + 1), 
                       ncol = 4, 
                       byrow = TRUE))
   par(mar = c(0.5, 3, 1.5, 1),
       oma = c(0, 2.5, 0, 0))
   
-  for (ispp in c(spp_idx_opt, spp_idx_eval)) {
+  for (ispp in c(spp_idx_opt, spp_idx_eval)) { ## Loop over species -- start
+    
+    ## Calculate max y for plotting
     merged_metric <- 
       lapply(X = with(scen, paste0("SUR_", survey_type, "_", 
                                    domain, "_STR_", strata, "_", imetric )), 
              FUN = function(x) get(x)[1:n_years,
                                       common_names_all[ispp],
                                       paste0("boat_2")])
-    ylim_ <- max(unlist(merged_metric)) * 1.1
+    ymax_ <- max(unlist(merged_metric)) * 1.1
     
+    ## Plot metric
     boxplot(merged_metric,
-            ylim = c(0, max(0.10, ylim_) ),
+            ylim = c(0, max(0.10, ymax_) ),
             las = 1,
             axes = F,
             pch = 16,
             col  = c("white", "cyan", "blue4", "chartreuse1", "darkgreen"),
             cex = 0.5,
             at = c(1, 3:4, 6:7))
+    box()
+    axis(side = 2, las = 1)
     
+    ## Separate scenarios
     abline(v = c(2, 5),
            lty = "dotted", 
            col = "black")
     
-    box()
-    axis(side = 2, 
-         las = 1)
+    ## Species label
     mtext(side = 3, text = common_names_all[ispp], 
           col = ifelse(ispp %in% spp_idx_opt, "black", "darkgrey"),
           cex = 0.8)
     
-    # if(imetric == "true_cv") {
-    #   points(x = c(1, 3:4, 6:7),
-    #          y = expected_sample_cv[c(14, which(settings$boat == 2)), ispp],
-    #          pch = 16,
-    #          col = "red",
-    #          cex = 1)
-    # }
-    
-    
-    
-  }
+  } ## Loop over species -- start
   
-  par(mar = c(0,0,0,0))
-  plot(1,
-       xlim = c(0,1),
-       ylim = c(0,1),
-       type = "n",
-       axes = F,
-       ann = F)
+  ## Plot legend
+  par(mar = c(0, 0, 0, 0))
+  plot(x = 1, y = 1,
+       xlim = c(0,1), ylim = c(0,1),
+       type = "n", axes = F, ann = F)
   
   legend(x = 0,
          y = 0.9,
@@ -233,6 +228,7 @@ for (imetric in c("true_cv", "rrmse_cv")) {
          cex = 1,
          bty = "n")
   
+  ## y-axis label
   mtext(side = 2, 
         outer = T, 
         line = 0.5,
@@ -241,5 +237,6 @@ for (imetric in c("true_cv", "rrmse_cv")) {
                       "rrmse_cv" = "RRMSE of CV",
                       "true_cv" = "True CV") )
   
-  # dev.off()
-}
+  ## Close Device
+  dev.off()
+} ## loop over  metric -- end

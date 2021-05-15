@@ -51,15 +51,16 @@ for (irow in 1:nrow(scen)) {
 gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
 
 {
-  for (spp_group in 1:2) {
+  for (spp_group in 1:2) { ## loop over species groupings (opt or eval) -- start
+    
+    ## Open Device
     png(filename = paste0(output_dir, "Figure6", LETTERS[spp_group],
                           "_RB_full_domain.png"),
-        width = 190,
-        height = c(190, 150)[spp_group],
-        units = "mm",
+        width = 190, height = c(220, 170)[spp_group], units = "mm",
         res = 500)
     
-    par(mar = c(.25, 0, .25, 0), oma = c(1,5,0,0))
+    ## Plot Layout
+    par(mar = c(.5, 0, 0.25, 0), oma = c(1,5,0,0))
     plot_layout <- rbind(
       cbind(gen_layout + 5 * 0, gen_layout + 5 * 1, 
             gen_layout + 5 * 2, gen_layout + 5 * 3),
@@ -74,7 +75,7 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
     )
     layout(mat =  plot_layout, 
            widths = c(1,0.4, 1,0.4, 1,0.4, 1,0.1),
-           heights = c(0.75,1,1,1))
+           heights = c(0.5, 1, 1, 1))
     
     ## Loop over species
     for (ispp in list(spp_idx_opt, spp_idx_eval)[[spp_group]] ) {
@@ -82,7 +83,9 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
       ## 1) Current
       ## 5) Gulf-wide optiization, 10 strata
       ## 2) District-level optimiztion, 3 strata per district 
+      ## start
       
+      ## Calculate y-max for the plot
       y_max <- max(abs(unlist(
         lapply(X = lapply(X = c(1, 5, 2),
                           FUN = function(x) 
@@ -104,21 +107,14 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
         ## subset result object based on survey scenario
         scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
                             scen$domain[irow], "_STR_", scen$strata[irow], "_")
-        rb_agg <- get(paste0(scen_name, "rb_agg"))[
-          ,
-          ispp,
-          "boat_2" , ]
+        rb_agg <- get(paste0(scen_name, "rb_agg"))[ , ispp, "boat_2" , ]
         
         ## Base plot
-        plot(1,
-             type = "n",
-             xlim = c(0, 12),
-             ylim = c(-y_max, y_max),
-             axes = F,
-             ann = F)
-        box()
+        plot(x = 1, y = 1,
+             type = "n", axes = F, ann = F,
+             xlim = c(0, 12), ylim = c(-y_max, y_max))
         
-        ## Color of the background determines the survey type
+        ## Color of the background corresponds to the  the survey type
         rect(xleft = -5, 
              xright = 15, 
              ybottom = -500, 
@@ -127,6 +123,12 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
                           "white",
                           ifelse(irow %in% 5, "grey90", 
                                  "grey50")))
+        axis(side = 2,
+             las = 1,
+             cex.axis = 0.75,
+             at = pretty(x = c(-y_max, y_max), n = 3) )
+        box()
+        
         ## Time axis
         axis(side = 1,
              at = 1:11,
@@ -139,23 +141,16 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
                labels = c("Yr 1", "Yr 11"),
                lwd = F, 
                tick = F, 
-               line = -1., 
-               cex.axis = 0.75)
+               line = -0.5, 
+               cex.axis = 1)
         }
         
+        ## Plot bias distributions
         plot_percentiles(values = rb_agg,
                          xs = 1:11, 
                          pt.cex = 0.5,
                          pt.colors = "black")
-        
-        axis(side = 2,
-             las = 1,
-             cex.axis = 0.75,
-             at = pretty(x = c(-y_max, y_max), n = 3) )
-        
         abline(h = 0, lwd = 0.5, lty = "dotted")
-        box()
-        
       }
       
       plot(1,type = "n", axes = F, ann = F)  
@@ -166,10 +161,15 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
            cex = 1.25, 
            font = 2, 
            xpd = NA)
-    }
+    } ## Loop over three survey scenarios -- end
     
-    plot(1,type = "n", axes = F, ann = F, xlim = c(0, 1), ylim = c(0, 1))
-    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = "white")
+    ## Plot Legend
+    plot(x = 1, y = 1,
+         type = "n", axes = F, ann = F, 
+         xlim = c(0, 1), ylim = c(0, 1))
+    rect(xleft = par("usr")[1], xright = par("usr")[3], 
+         ybottom = par("usr")[2], ytop = par("usr")[4],
+         col = "white")
     text(x = 0.5,
          y = 0.5, 
          labels = "Current STRS Design", 
@@ -177,8 +177,12 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
          font = 2, 
          xpd = NA)
     
-    plot(1,type = "n", axes = F, ann = F, xlim = c(0, 1), ylim = c(0, 1))
-    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = "grey90")
+    plot(x = 1, y = 1,
+         type = "n", axes = F, ann = F, 
+         xlim = c(0, 1), ylim = c(0, 1))
+    rect(xleft = par("usr")[1], xright = par("usr")[3], 
+         ybottom = par("usr")[2], ytop = par("usr")[4],
+         col = "white")
     text(x = 0.5,
          y = 0.5, 
          labels = "Gulf-Wide\n(10 Strata)\nOptimized STRS Design",
@@ -186,8 +190,12 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
          font = 2, 
          xpd = NA)
     
-    plot(1,type = "n", axes = F, ann = F, xlim = c(0, 1), ylim = c(0, 1))
-    rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = "grey50")
+    plot(x = 1, y = 1,
+         type = "n", axes = F, ann = F, 
+         xlim = c(0, 1), ylim = c(0, 1))
+    rect(xleft = par("usr")[1], xright = par("usr")[3], 
+         ybottom = par("usr")[2], ytop = par("usr")[4],
+         col = "white")
     text(x = 0.5,
          y = 0.5, 
          labels = "District-Level\n(3 Strata per District)\nOptimized STRS Design", 
@@ -201,6 +209,7 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
           line = 3, 
           font = 2)
     
+    ## Close Device
     dev.off()
-  }
+  } ## loop over species groupings (opt or eval) -- end
 }

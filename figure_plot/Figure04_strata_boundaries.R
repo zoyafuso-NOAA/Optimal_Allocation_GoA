@@ -47,19 +47,14 @@ t_col <- function(color, percent = 50, name = NULL) {
 ##################################################
 ####  Load Data
 ##################################################
-load(paste0(github_dir, 
-            "data/optimization_data.RData"))
-load(paste0(github_dir, 
-            "data/Extrapolation_depths.RData"))
-load(paste0(github_dir,
-            "results/MS_optimization_knitted_results.RData"))
+load(paste0(github_dir, "data/optimization_data.RData"))
+load(paste0(github_dir, "data/Extrapolation_depths.RData"))
+load(paste0(github_dir, "results/MS_optimization_knitted_results.RData"))
 
 ##################################################
-####  Constants
+####  Random seed for consistent colors
 ##################################################
 seed <- 234233
-x_range <- diff(range(Extrapolation_depths$E_km))
-y_range <- diff(range(Extrapolation_depths$N_km))
 
 ##################################################
 ## Rescale UTM eastings back to UTM 5N
@@ -139,15 +134,6 @@ plot_strata_boundary <- function(
     )
   }
   
-  ## Draw stratua boundaries
-  # rect(xleft = strata$Lower_X1,
-  #      xright = strata$Upper_X1,
-  #      ybottom = ecdf_depth(strata$Lower_X2),
-  #      ytop = ecdf_depth(strata$Upper_X2),
-  #      lwd = 1,
-  #      border = strata_cols)
-  #      border = 'black')
-  
   ## Add labels for stratum labels
   text(x = tapply(extrapolation_grid$Lon, 
                   res_df[, idx],
@@ -165,14 +151,14 @@ plot_strata_boundary <- function(
 ## Plot
 ##################################################
 {
+  
+  ## Open device
   png(filename = paste0(output_dir, "Figure04_strata_boundaries.png"),
-      height = 190,
-      width = 170,
-      units = "mm",
+      height = 190, width = 170, units = "mm",
       res = 500)
   
   ## Plot layout
-  layout(mat = matrix(data = c(1,2,5,6,3,4,7,8), ncol = 2),
+  layout(mat = matrix(data = c(1, 2, 5, 6, 3, 4, 7, 8), ncol = 2),
          heights = c(1, 0.75))
   par(oma = c(2.5, 1, 0, 0))
   
@@ -180,7 +166,7 @@ plot_strata_boundary <- function(
   ## (10 and 15 strata total) solutions. idx refers to the index of the solution
   ## in the settings dataframe
   
-  for (idx in c(2, 5, 8, 11)) {
+  for (idx in c(2, 5, 8, 11)) { ## Loop over scenarios -- start
     
     ## Plot solution map
     par(mar = c(0.5, 3, 0, 0))
@@ -202,18 +188,16 @@ plot_strata_boundary <- function(
     set.seed(seed)
     strata_cols <- sample(strata_cols, replace = F)
     
-    plot(1, 
+    plot(x = 1, y = 1, 
          type = "n", axes = F, ann = F, asp = 1,
          xlim = goa_ras@extent[1:2],
-         ylim = goa_ras@extent[3:4] + c(0, 0.7 * diff(goa_ras@extent[3:4])))
+         ylim = goa_ras@extent[3:4] + c(0, 0.7 * y_range ))
     
     ## Plot image
-    raster::image(goa_ras,
+    raster::image(x = goa_ras, add = TRUE,
+                  axes = F, ann = F,
                   asp = 1,
-                  col = strata_cols,
-                  axes = F,
-                  ann = F,
-                  add = TRUE)
+                  col = strata_cols)
     
     
     ## District labels
@@ -225,26 +209,26 @@ plot_strata_boundary <- function(
              xpd = NA,
              lwd = 2)
     
-    #Simulate a sample solution
+    ## Simulate a sample solution
     temp_samples <- c()
     temp_strata <- nrow(strata_list[[idx]])
     temp_solution <- res_df[, idx]
     temp_allocation <- strata_list[[idx]]$Allocation
     
     for (temp_istrata in 1:temp_strata) {
-      # for (temp_istrata in 14) {
       temp_samples = c(temp_samples,
                        sample(x = which(temp_solution == temp_istrata),
                               size = temp_allocation[temp_istrata]) )
     }
     
+    ## Plot stations
     temp_loc <- Extrapolation_depths[temp_samples, c("E_km", "N_km")]
     temp_loc$N_km <- temp_loc$N_km
-    
-    points(temp_loc,
+    points(x = temp_loc,
            pch = 16,
            cex = 0.3)
     
+    ## District labels
     text(x = rowMeans(cbind(districts$W_UTM, districts$E_UTM)),
          y = tapply(X = Extrapolation_depths$N_km,
                     INDEX = district_vals,
@@ -253,8 +237,9 @@ plot_strata_boundary <- function(
          labels = districts$district,
          pos = 3)
     
+    ## Plot solution
     raster::image(raster::shift(x = goa_ras,
-                                dy = 0.65 * y_range ),
+                                dy = 0.65 * y_range),
                   asp = 1,
                   col = strata_cols,
                   axes = F,
@@ -271,6 +256,7 @@ plot_strata_boundary <- function(
          labels = 1:nrow(strata_list[[idx]]),
          font = 2,
          cex = 0.5)
+    
     ## Solution label
     text(x = min(Extrapolation_depths$E_km) + x_range*0.15,
          y = min(Extrapolation_depths$N_km) + y_range*1.5,
@@ -288,18 +274,17 @@ plot_strata_boundary <- function(
     
     ## Solution boundary map
     par(mar = c(2, 4.24, 0, 1))
-    plot_strata_boundary( strata = strata_list[[idx]],
-                          sol = res_df[, idx],
-                          extrapolation_grid = Extrapolation_depths,
-                          y_axis_pos = ifelse(idx %in% c(2, 5), 2, 2))
+    plot_strata_boundary(strata = strata_list[[idx]],
+                         sol = res_df[, idx],
+                         extrapolation_grid = Extrapolation_depths,
+                         y_axis_pos = 2)
     axis(side = 1)
-    
-    
-  }
+  }  ## Loop over scenarios -- end
   
   ## Outer axes labels
   mtext(side = 1, text = "Longitude", outer = T, line = 1.25, font = 2)
   mtext(side = 2, text = "Bottom Depth (m)", outer = T, line = -0.25, font = 2)
   
+  ## Close device
   dev.off()
 }

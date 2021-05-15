@@ -6,10 +6,7 @@
 rm(list = ls())
 
 ##################################################
-####  Install a forked version of the SamplingStrata Package from 
-####  zoyafuso-NOAA's Github page
-####
-####  Import other required packages
+####  Import required packages
 ##################################################
 library(sp)
 library(RColorBrewer)
@@ -51,37 +48,33 @@ y_range <- diff(range(Extrapolation_depths$N_km))
 ####    Plot
 ##################################################
 {
-  png(filename = paste0(output_dir,
-                        "Figure03_MS_solutions.png"),
-      width = 170,
-      height = 170,
-      units = "mm",
+  
+  ## Open device
+  png(filename = paste0(output_dir, "Figure03_MS_solutions.png"),
+      width = 170, height = 170, units = "mm",
       res = 500)
   
   layout(mat = matrix(data = c(1, 2,
                                3, 4,
                                5, 5), ncol = 2, byrow = T),
-         heights = c(1,1,0.4))
-  
+         heights = c(1, 1, 0.4))
   par(mar = c(0, 0, 0, 0))
   
   for (idomain in c("district", "full_domain")) {
+    
     istrata <- list("district" = c(3, 5),
                     "full_domain" = c(10, 15))[[idomain]][1]
     
     for(istrata in list("district" = c(3, 5),
                         "full_domain" = c(10, 15))[[idomain]]) {
-      #Base Plot layer
-      plot(1, 
-           type = "n",
+      ## Base Plot layer
+      plot(x = 1, y = 1, asp = 1,
+           type = "n", axes = F, ann = F,
            xlim = range(Extrapolation_depths$E_km),
            ylim = with(Extrapolation_depths, 
                        c(min(N_km), 
-                         max(N_km) + 2.1 * y_range)), 
-           axes = F,
-           ann = F,
-           asp = 1)
-      
+                         max(N_km) + 2.1 * y_range)))
+      box()
       
       #Strata label
       mtext(side = 3,
@@ -94,15 +87,15 @@ y_range <- diff(range(Extrapolation_depths$N_km))
                          c("full_domain" = "Strata", 
                            "district" = "Strata Per District")[idomain] ))
       
-      box()
-      
       for (iboat in 1:n_boats) {
         
+        ## Find index that corresponds to the solution scenario
         sol_idx <- with(settings, 
                         which(domain == idomain & 
                                 strata == istrata & 
                                 boat == iboat))
         
+        ## Set up spatial object to plot solution
         goa <- sp::SpatialPointsDataFrame(
           coords = Extrapolation_depths[, c("E_km", "N_km")],
           data = data.frame(Str_no = res_df[, sol_idx]) )
@@ -112,29 +105,30 @@ y_range <- diff(range(Extrapolation_depths$N_km))
                                      y = goa_ras, 
                                      field = "Str_no")
         offset_y <- 0.9 * y_range * (iboat - 1)
-        goa_ras <- raster::shift(goa_ras, dy = offset_y )
+        goa_ras <- raster::shift(x = goa_ras, dy = offset_y )
         
+        ## Set strata colors
         n_strata <- nrow(strata_list[[sol_idx]])
-        
         strata_cols <- colorRampPalette(
           c(brewer.pal(n = 11, name = "Paired"),
             brewer.pal(n = 11, name = "Spectral")))(n_strata)
         
         set.seed(seed)
-        strata_cols <- sample(x = strata_cols, 
-                              replace = F)
+        strata_cols <- sample(x = strata_cols, replace = F)
         
-        image(goa_ras,
+        ## Plot solution
+        image(x = goa_ras,
               add = TRUE,
               col = strata_cols)
         
-        #Sample Size label
-        text(x = min(Extrapolation_depths$E_km) + x_range*0.15,
-             y = min(Extrapolation_depths$N_km) + offset_y + y_range*0.55,
+        ## Sample Size label
+        text(x = min(Extrapolation_depths$E_km) + x_range * 0.15,
+             y = min(Extrapolation_depths$N_km) + offset_y + y_range * 0.55,
              label = paste("n =", samples[iboat]),
              cex = 1.5,
              font = 2)
         
+        ## District boxes
         rect(xleft = districts$W_UTM,
              xright = districts$E_UTM,
              ybottom = tapply(X = Extrapolation_depths$N_km,
@@ -145,23 +139,22 @@ y_range <- diff(range(Extrapolation_depths$N_km))
                            FUN = max) + offset_y)
         
         
-        #Simulate a sample solution
+        ## Simulate a sample solution
         temp_samples <- c()
         temp_strata <- nrow(strata_list[[sol_idx]])
         temp_solution <- res_df[, sol_idx]
         temp_allocation <- strata_list[[sol_idx]]$Allocation
         
         for (temp_istrata in 1:temp_strata) {
-          # for (temp_istrata in 14) {
           temp_samples = c(temp_samples,
                            sample(x = which(temp_solution == temp_istrata),
                                   size = temp_allocation[temp_istrata]) )
         }
         
+        ## Plot stations
         temp_loc <- Extrapolation_depths[temp_samples, c("E_km", "N_km")]
         temp_loc$N_km <- temp_loc$N_km + offset_y
-        
-        points(temp_loc,
+        points(x = temp_loc,
                pch = 16,
                cex = 0.3)
         
@@ -180,7 +173,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
                                field = "Str_no")
   
   par(mar = c(0,0,0.5,0))
-  image(goa_ras,
+  image(x = goa_ras,
         col = "lightgrey",
         asp = 1,
         axes = F,
