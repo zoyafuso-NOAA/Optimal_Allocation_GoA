@@ -1,2 +1,2 @@
 SUR_opt_district_STR_5_
-Finished: Iteration 300, northern rockfish, opt scenario, 5 strata
+Finished: Iteration 100, arrowtooth flounder, opt scenario, 5 strata

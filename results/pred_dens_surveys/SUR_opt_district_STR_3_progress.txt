@@ -1,2 +1,2 @@
 SUR_opt_district_STR_3_
-Finished: Iteration 400, Pacific cod, opt scenario, 3 strata
+Finished: Iteration 1000, yelloweye rockfish, opt scenario, 3 strata

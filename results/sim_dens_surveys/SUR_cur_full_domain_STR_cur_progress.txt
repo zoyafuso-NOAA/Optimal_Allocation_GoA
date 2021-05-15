@@ -1,2 +1,2 @@
 SUR_cur_full_domain_STR_cur_
-Finished: Iteration 200, arrowtooth flounder, cur scenario, cur strata
+Finished: Iteration 1000, yelloweye rockfish, cur scenario, cur strata
