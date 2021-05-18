@@ -1,24 +1,42 @@
-# get_next_station_1
-# Survey design 1: Pick stations based on proximity, depth, west-to-east --------
-# After completing each survey station, three decision rules:
-# 1) which station is closest and unsampled?
-# 2) which station is the furthest west unsampled station? (i.e., don't skip over sites going west to east)
-# 3) is one of the above 2 deeper than the other? If so, pick the deepest station (to prioritize deeper, longer trawls first per Ned & Wayne)
+###############################################################################
+## Function:      Calculate next station to go to  based on proximity, depth, 
+##                and west-to-east direction
+## Author:        Megsie Siple (margaret.siple@noaa.gov)
+##                modified by Zack Oyafuso (zack.oyafuso@noaa.gov)
+## Description:   Three decision rules to choose the next station
+##                  1) which station is closest and unsampled?
+##                  2) which station is the furthest west unsampled station? 
+##                     (i.e., don't skip over sites going west to east)
+##                  3) is one of the above 2 deeper than the other? If so, pick 
+##                     the deepest station (to prioritize deeper, longer trawls
+##                     first per Ned & Wayne)
+##
+## Arguments:
+##                 stationId: current stationId to find the next station for
+##                 already_sampled: character vector of previously sampled 
+##                                  stations
+##                 distances: numeric vector of distances from stationId to 
+##                            the other stations
+##                 survey_locations: depths and locations of all stations
+###############################################################################
 
-
-get_next_station_1 <- function(stationId = boat_plan[i - 1],
-                               already_sampled = boat_plan[1:i],
-                               distances = distance_matrix_km[paste(boat_plan[i - 1]), ],
-                               survey_locations = surv_pts_boat){
+get_next_station_1 <- function(
+  stationId = boat_plan[i - 1],
+  already_sampled = boat_plan[1:i],
+  distances = distance_matrix_km[paste(boat_plan[i - 1]), ],
+  survey_locations = surv_pts_boat)
+{
   
+  ## Isolate depths and longitudes of stations
   depths <- subset(survey_locations, select = c(Id, DEPTH_EFH))
-  longs <- subset(survey_locations, select = c(Id, Lon))
-  
   names(depths) <- c("Id","depth")
+  longs <- subset(survey_locations, select = c(Id, Lon))
   names(longs) <- c("Id", "lon")
   
+  ## Select closest stationId to stationId that has not already been sampled
   closest <- names(which.min(distances[!names(distances) %in% already_sampled]))
   
+  ## Calculate the most western unsampled station 
   furthest_w_unsampled <- longs %>%
     filter(Id != stationId) %>%
     filter(!Id %in% already_sampled) %>%
@@ -26,6 +44,7 @@ get_next_station_1 <- function(stationId = boat_plan[i - 1],
     dplyr::select(Id) %>%
     as.character()
   
+  ## Ideally, furthest_w_unsampled should be the closest but if not ...
   if(closest == furthest_w_unsampled){
     selection = closest} else{
       depth1 <- depths %>% 
@@ -42,5 +61,6 @@ get_next_station_1 <- function(stationId = boat_plan[i - 1],
   ## Calculate distance between the next station the previous station
   distance_travelled <- distances[selection]
   
-  return(list(selection = selection, distance = distance_travelled))
+  return(list(selection = selection, 
+              distance = distance_travelled))
 }
