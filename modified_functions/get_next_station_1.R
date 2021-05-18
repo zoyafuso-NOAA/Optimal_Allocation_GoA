@@ -44,7 +44,8 @@ get_next_station_1 <- function(
     dplyr::select(Id) %>%
     as.character()
   
-  ## Ideally, furthest_w_unsampled should be the closest but if not ...
+  ## Ideally, furthest_w_unsampled should be the closest but if not,
+  ## choose the deeper station
   if(closest == furthest_w_unsampled){
     selection = closest} else{
       depth1 <- depths %>% 
@@ -58,7 +59,8 @@ get_next_station_1 <- function(
       selection <- c(closest, furthest_w_unsampled)[ind]
     }
   
-  ## Calculate distance between the next station the previous station
+  ## Calculate the distance travelled between the current stationId and the 
+  ## selected next stationId
   distance_travelled <- distances[selection]
   
   return(list(selection = selection, 
