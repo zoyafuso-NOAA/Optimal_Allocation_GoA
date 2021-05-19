@@ -136,9 +136,12 @@ sims_list <- foreach (sim = 1:1000,
       sample_size = c(n1, n2, n3)[b]
       
       ## Initialize the station order (boat_plan) with the most western station
-      boat_plan <- boat_distance <- rep(x = NA, times = sample_size)
+      boat_plan <- boat_distance <- closest_dist <- second_closest_dist <- 
+        rep(x = NA, times = sample_size)
       boat_plan[1] <- western_end$Id
       boat_distance[1] <- 0
+      closest_dist[1] <- sort(distance_matrix_km[paste(western_end$Id), ])[2]
+      second_closest_dist[1] <- sort(distance_matrix_km[paste(western_end$Id), ])[3]
       
       # Loop through stations, assigning a "next station" for each one
       for (i in 2:length(boat_plan)) { ## loop over stations -- start
@@ -150,12 +153,16 @@ sims_list <- foreach (sim = 1:1000,
         
         boat_plan[i] <- calc_next_station$selection
         boat_distance[i] <- calc_next_station$distance
+        closest_dist[i] <- calc_next_station$closest_dist
+        second_closest_dist[i] <- calc_next_station$second_closest_dist
       } ## loop over stations -- end
       
       df_list[[b]] <- data.frame(boadno = b,
                                  Id = boat_plan,
                                  nwd_order = 1:sample_size,
                                  distance = boat_distance,
+                                 closest_dist,
+                                 second_closest_dist,
                                  whichsim = sim)
     }
     
@@ -167,7 +174,7 @@ sims_list <- foreach (sim = 1:1000,
 ##################################################
 ####   Stop core cluster
 ##################################################
-stopCluster(cl)
+parallel::stopCluster(cl)
 
 ##################################################
 ####   Summarize simulation results
@@ -184,5 +191,5 @@ cum_dists_sum <- round(apply(X = cum_dists,
 ##################################################
 ####   Save Results
 ##################################################
-save(list = c("cum_dists", "cum_dists_sum"),
+save(list = c("cum_dists", "cum_dists_sum", "sims_list"),
      file = paste0(github_dir, "/results/survey_distances.RData"))

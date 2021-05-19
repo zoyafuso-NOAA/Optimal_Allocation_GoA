@@ -19,6 +19,11 @@
 ##                            the other stations
 ##                 survey_locations: depths and locations of all stations
 ###############################################################################
+# i = 2
+# stationId = boat_plan[i - 1]
+# already_sampled = boat_plan[1:i]
+# distances = distance_matrix_km[paste(boat_plan[i - 1]), ]
+# survey_locations = surv_pts_boat
 
 get_next_station_1 <- function(
   stationId = boat_plan[i - 1],
@@ -63,6 +68,8 @@ get_next_station_1 <- function(
   ## selected next stationId
   distance_travelled <- distances[selection]
   
-  return(list(selection = selection, 
-              distance = distance_travelled))
+  return(list(selection = selection,
+              distance = distance_travelled,
+              closest_dist = sort(distances)[2],
+              second_closest_dist = sort(distances)[3]))
 }
