@@ -6,13 +6,14 @@ and Stan Kotwicki temporarily entitled "The expected performance and
 feasibility of a Gulf of Alaska groundfish bottom trawl survey optimized 
 for abundance estimation." 
 
-## Requirements
+## Package Requirements
 
 A handful of R packages are required. R version 4.0.3 (2020-10-10)
 was used for the analysis. Some conventional packages for plotting
-and manipulating spatial data:
+and manipulating data:
 
 ```
+library(tidyverse)
 library(sp)
 library(raster)
 library(RColorBrewer)
@@ -27,6 +28,13 @@ best to use a forked version of the package that I modified:
 library(devtools)
 devtools::install_github(repo = "zoyafuso-NOAA/SamplingStrata")
 library(SamplingStrata)
+```
+
+Lastly, the TSP package was imported to calculate the shortest path
+that visits each station.
+
+```
+library(TSP)
 ```
 
 ## Species Included
@@ -133,10 +141,23 @@ Knits all the single-species optimization runs into neat result outputs.
 Conducts the multispecies survey optimization.
 
 [knitting_runs.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/knitting_runs.R): 
-knits all the multispecies optimization runs into neat result outputs.
+Knits all the multispecies optimization runs into neat result outputs.
 
 [Simulate_Surveys.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/Simulate_Surveys.R):
 Simulates current and optimized stratified random surveys.
+
+[survey_distance_travelled/haul_data.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/survey_distance_travelled/haul_data.R): 
+Synthesizes haul-level historical data
+
+[survey_distance_travelled/historical_surveys.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/survey_distance_travelled/historical_surveys.R): 
+Calculates actual distance travelled and the approximate shortest 
+total distance using the TSP package for the historically observed
+stations for each survey year. The nearest and second closest stations 
+are also calculated.
+
+[survey_distance_travelled/survey_feasibility.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/survey_distance_travelled/survey_feasibility.R): 
+Simulates station locations under the current and optimized STRS designs
+and calculates the approximate shortest total distance using the TSP package.
 
 ## 1. Input Data and constants [(optimization_data.R)](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/optimization_data.R)
 
@@ -158,29 +179,30 @@ and contains the following variables and constants:
 | `common_names_opt`    | Common names of species included in optimization                                                                                    | character vector, length `ns_opt`            |
 | `common_names_eval`   | Common names of species excluded in optimization (periods removed for path name purposes)                                                          | character vector, length `ns_eval`           |
 | `common_names_all`    | Common names of all species considered                                                                                              | character vector, length `ns_all`            |
-| `spp_idx_opt`         | indices of the order of species included in optimization                                                                            | numeric vector, length `ns_opt`              |
-| `spp_idx_eval`        | indices of the order of species excluded in optimization                                                                            | numeric vector, length `ns_eval`             |
+| `spp_idx_opt`         | indices of the order of species included in optimization according to the order of the species names in common_names_all            | numeric vector, length `ns_opt`              |
+| `spp_idx_eval`        | indices of the order of species excluded in optimization according to the order of the species names in common_names_all            | numeric vector, length `ns_eval`             |
 | `n_boats`             | Total number of sample sizes of interest, (`n_boats` = 3)                                                                              | numeric vector, length 1                   |
-| `samples`             | Range of sample sizes of interest, corresponding to 1 (n = 280), 2 (n = 550), and 3 (n = 820) boats                                 | numeric vector, length `n_boats`              |
+| `samples`             | Range of sample sizes of interest, corresponding to 1 (n = 292), 2 (n = 550), and 3 (n = 825) boats                                 | numeric vector, length `n_boats`              |
 | `n_cells`             | Total number of grid cells in the spatial domain, (`n_cells` = 23339 cells)                                                                 | numeric vector, length 1                   |
 | `n_years`             | Total number of years with data, (`n_years` = 11 years between 1996-2019)                                                               | numeric vector, length 1                   |
 | `year_set`            | Sequence of years over the temporal domain (1996 - 2019)                                                                            | numeric vector, length 24                  |
 | `years_included`      | Indices of years with data                                                                                                          | numeric vector, length `n_years`               |
-| `districts`           | names of the five (5) Gulf of Alaska FMP management districts with W and E boundaries                                                                  | dataframe, nrow = 5 |
+| `n_districts`      | Total number of Gulf of Alaska FMP management districts (5)                                                                               | numeric vector, length 1                   |
+| `districts`           | names of the five (5) Gulf of Alaska FMP management districts with W and E boundaries                                                                  | dataframe, nrow = `n_districts` |
 | `district_vals`       | district index for each cell in the spatial domain                                                                                     | numeric vector, length `n_cells` |
 | `inpfc_vals_current`   | International North Pacific Fisheries Commission (INPFC) statistical areas index for each cell in the spatial domain                  | numeric vector, length `n_cells` |
 | `n_iters`             | Total number of times a survey is simulated, (`n_iters` = 1000)                                                                        | numeric vector, length 1                   |
 | `true_mean`           | True mean densities for each species and year. This is the "truth" that is used in the performance metrics when simulating surveys  | numeric matrix, `ns_all` rows, `n_years` columns |
 | `true_index`          | True abundance index for each species and year. This is the "truth" that is used in the performance metrics when simulating surveys | numeric matrix, `ns_all` rows, `n_years` columns |
-| `true_index_district` | True abundance index for each species and year for each management district. This is the "truth" that is used in the performance metrics when simulating surveys | numeric array, dimensions: `ns_all`, `n_years`, 5 |
+| `true_index_district` | True abundance index for each species and year for each management district. This is the "truth" that is used in the performance metrics when simulating surveys | numeric array, dimensions: `ns_all`, `n_years`, `n_districts` |
 
-`frame_all` and `frame_district` are the main data input used in the 
-gulf-wide and district-level optimizations, respectively. Both dataframes had
-`n_cells` rows with useful fields:
+`frame_all` and `frame_district` is the main data input used in the gulf-wide
+and district-level optimizations, respectively. Both dataframes had`n_cells`
+rows with useful fields:
 
 | Field Name           | Description                                                                                                                                         |
 |----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| domainvalue          | management district id (1, 2, ..., 5 for frame_district or 1 for frame_all)                                                                         |
+| domainvalue          | management district id (1, 2, ..., `n_districts` for frame_district or 1 for frame_all)                                                             |
 | id                   | unique ID for each sampling cell                                                                                                                    |
 | X1                   | strata variable 1: longitude in eastings (km). Because the optimization does not read in negative values, the values are scaled so that the lowest value is 0 |
 | X2                   | strata variable 2: depth of cell (m)                                                                                                                |
