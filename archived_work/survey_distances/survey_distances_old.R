@@ -31,14 +31,127 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
 ##################################################
 ####   Load constants, spatial domain grid, and optimization solutions
 ##################################################
-nboats <- 2  ## Only considering two-boat solutions
+
 load(file = paste0(github_dir, "data/Extrapolation_depths.RData"))
+load(file = paste0(github_dir, "data/processed_haul_data.RData"))
 load(file = paste0(github_dir, "results/MS_optimization_knitted_results.RData"))
+
+years_vec <- c(1996, 1999, 2003, 2005, 2007, 
+               2009, 2011, 2013, 2015, 2017, 2019)
 
 ##################################################
 ####   Source functions to calculate nearest station
 ##################################################
 source(file = paste0(github_dir, "modified_functions/get_next_station_1.R"))
+
+##################################################
+####   Calculate cumulative distance of current stations with ordering of 
+####   stations based on the station choice algorithm
+##################################################
+df_list <- NULL
+
+for (iyear in years_vec[1]) { ## Loop over years -- start
+  
+  ## Subset for a give year iyear
+  locs <- haul %>%
+    filter(YEAR == iyear) %>%
+    distinct(STATIONID, lat, lon, BOTTOM_DEPTH, END_LATITUDE, END_LONGITUDE, 
+             HAUL, DATE, HAULJOIN, VESSEL) %>%
+    arrange(DATE, HAULJOIN) %>%
+    rowid_to_column("order")
+  
+  ## How many boats were used in the survey
+  nboats <- length(unique(locs$VESSEL))
+  
+  ## Depth quantiles used to allocate number of stations across boats
+  depth_quants <- quantile(x = locs$BOTTOM_DEPTH)
+  locs$whichboat <- dplyr::case_when(
+    ## If two boats, split stations by the median
+    nboats == 2 ~ as.integer(cut(x = locs$BOTTOM_DEPTH, 
+                                 breaks = depth_quants[paste0(c(0, 50, 100), "%")], 
+                                 labels = c(1, 2), 
+                                 include.lowest =  T)),
+    
+    ## If three boats, split boats by the 25th and 75th perceniles
+    ## Note: boat two will have more stations allocated
+    nboats == 3 ~ as.integer(cut(x = locs$BOTTOM_DEPTH, 
+                                 breaks = depth_quants[paste0(c(0, 25, 75, 100), "%")], 
+                                 labels = c(1, 2, 3), 
+                                 include.lowest =  T)))
+  
+  for(b in 1:nboats){ ## Loop across boats -- start
+    ## Subset stations for boat b
+    surv_pts_boat <- locs %>% 
+      dplyr::filter(whichboat == b)
+    
+    surv_pts_boat$DEPTH_EFH <- surv_pts_boat$BOTTOM_DEPTH
+    surv_pts_boat$Lon <- surv_pts_boat$lon
+    surv_pts_boat$Id <- 1:nrow(surv_pts_boat)
+    
+    ## Subset most western station for boat b
+    western_end <- surv_pts_boat %>%
+      dplyr::arrange(lon) %>%
+      dplyr::slice(1)
+    
+    ## Subset total sample size for boat b
+    sample_size <- nrow(surv_pts_boat)
+    
+    
+    ##
+    locs_sf <- sf::st_as_sf(x = surv_pts_boat,
+                            coords = c("lon", "lat"),
+                            crs = 4326, agr = "constant")
+    
+    distance_matrix_km <- matrix(as.numeric(sf::st_distance(locs_sf) / 1000),
+                                 nrow = nrow(locs_sf),
+                                 dimnames = list(locs_sf$Id, locs_sf$Id))
+    
+    ## Initialize the station order (boat_plan) with the most western station
+    boat_plan <- boat_distance <- closest_dist <- second_closest_dist <- 
+      rep(x = NA, times = sample_size)
+    boat_plan[1] <- western_end$Id
+    boat_distance[1] <- 0
+    west_id <- western_end$Id
+    closest_dist[1] <- sort(distance_matrix_km[west_id, ])[2]
+    second_closest_dist[1] <- sort(distance_matrix_km[west_id, ])[3]
+    
+    
+    # Loop through stations, assigning a "next station" for each one
+    for (i in 2:sample_size) { ## loop over stations -- start
+      calc_next_station <- get_next_station_1(
+        stationId = boat_plan[i - 1],
+        already_sampled = boat_plan[1:(i-1)],
+        distances = distance_matrix_km[boat_plan[i - 1], ],
+        survey_locations = surv_pts_boat
+      )
+      
+      boat_plan[i] <- calc_next_station$selection
+      boat_distance[i] <- calc_next_station$distance
+      closest_dist[i] <- calc_next_station$closest_dist
+      second_closest_dist[i] <- calc_next_station$second_closest_dist
+    } ## loop over stations -- end
+    
+    df_list <- rbind(df_list,
+                     data.frame(year = iyear,
+                                boatno = b,
+                                lat = surv_pts_boat$lat[as.integer(boat_plan)],
+                                lon = surv_pts_boat$lon[as.integer(boat_plan)],
+                                Id = boat_plan,
+                                nwd_order = 1:sample_size,
+                                distance = boat_distance,
+                                closest_dist,
+                                second_closest_dist))
+      
+  }  ## Loop across boats -- end
+  
+  print(paste("Done with", iyear))
+}  ## Loop over years -- end
+
+dplyr::spread(data = aggregate(distance ~ boadno + year,
+                               data = df_list,
+                               FUN = function(x) round(sum(x))),
+              value = distance,
+              key = boadno)
 
 ##################################################
 ####  Pick solution and get survey information 
@@ -61,6 +174,7 @@ solution <- res_df[, idx] # Optimized solution
 ####   Result object
 ##################################################
 sims_list <- list()
+nboats <- 2  ## Only considering two-boat solutions
 
 ##################################################
 ####   Simulation
@@ -140,8 +254,9 @@ sims_list <- foreach (sim = 1:1000,
         rep(x = NA, times = sample_size)
       boat_plan[1] <- western_end$Id
       boat_distance[1] <- 0
-      closest_dist[1] <- sort(distance_matrix_km[paste(western_end$Id), ])[2]
-      second_closest_dist[1] <- sort(distance_matrix_km[paste(western_end$Id), ])[3]
+      west_id <- paste(western_end$Id)
+      closest_dist[1] <- sort(distance_matrix_km[west_id, ])[2]
+      second_closest_dist[1] <- sort(distance_matrix_km[west_id, ])[3]
       
       # Loop through stations, assigning a "next station" for each one
       for (i in 2:length(boat_plan)) { ## loop over stations -- start

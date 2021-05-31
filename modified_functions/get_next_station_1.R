@@ -39,9 +39,9 @@ get_next_station_1 <- function(
   names(longs) <- c("Id", "lon")
   
   ## Select closest stationId to stationId that has not already been sampled
-  closest <- names(which.min(distances[!names(distances) %in% already_sampled]))
+  closest <- names(which.min(distances[!(names(distances) %in% already_sampled)]))
   
-  ## Calculate the most western unsampled station 
+  ## Calculate the most western unsampled station
   furthest_w_unsampled <- longs %>%
     filter(Id != stationId) %>%
     filter(!Id %in% already_sampled) %>%
@@ -53,18 +53,18 @@ get_next_station_1 <- function(
   ## choose the deeper station
   if(closest == furthest_w_unsampled){
     selection = closest} else{
-      depth1 <- depths %>% 
-        filter(Id == closest) %>% 
+      depth1 <- depths %>%
+        filter(Id == closest) %>%
         dplyr::select(depth)
-      depth2 <- depths %>% 
-        filter(Id == furthest_w_unsampled) %>% 
+      depth2 <- depths %>%
+        filter(Id == furthest_w_unsampled) %>%
         dplyr::select(depth)
       
       ind <- which.max(c(depth1, depth2))
       selection <- c(closest, furthest_w_unsampled)[ind]
     }
   
-  ## Calculate the distance travelled between the current stationId and the 
+  ## Calculate the distance travelled between the current stationId and the
   ## selected next stationId
   distance_travelled <- distances[selection]
   
