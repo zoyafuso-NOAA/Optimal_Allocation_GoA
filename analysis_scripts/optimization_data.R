@@ -80,6 +80,8 @@ districts[, c("W_UTM", "E_UTM")] <-
                        INDEX = district_vals, 
                        FUN = range) )
 
+n_districts <- nrow(districts)
+
 ## International North Pacific Fisheries Commission statistical areas
 inpfc_vals_current <- district_vals
 inpfc_vals_current[Extrapolation_depths$stratum %in% 
@@ -186,7 +188,7 @@ dimnames(true_index)[[1]] <- dimnames(true_mean)[[1]] <-
 ####   Save Data
 ##################################################
 save(list = c("frame_all", "frame_district",
-              "districts", "district_vals", "inpfc_vals_current",
+              "districts", "district_vals", "n_districts", "inpfc_vals_current",
               "true_mean", "true_index", "true_index_district",
               "ns_all", "ns_eval", "ns_opt", 
               "x_range", "y_range",

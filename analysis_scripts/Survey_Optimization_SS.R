@@ -55,11 +55,21 @@ for (which_species in spp_idx_opt[1]) {
                                                     paste0("Y", which_species,
                                                            "_SQ_SUM"))]
   names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
-  n_dom <- length(unique(frame$domainvalue))
+  
+  ## Domain is the term used in the SamplingStrata package, is used to 
+  ## distinguish whether the optimization is done gulf-wide (n_dom == 1) or 
+  ## at each of the five management districts (n_dom == n_districts)
+  n_dom <- ifelse(test = which_domain == "full_domain", 
+                  yes = 1, 
+                  no = n_districts)
+  
+  ## For the gulf-wide optimization, use 10 strata
+  ## For the district-level optimization, use 5 strata per district
   no_strata <- switch(which_domain,
                       "full_domain" = 10,
                       "district" = rep(5, n_dom))
   
+  ## Set the result directory to which optimization outputs will save 
   result_dir = paste0(github_dir, 
                       "results/", which_domain, 
                       "/Single_Species_Optimization/", 
@@ -74,16 +84,22 @@ for (which_species in spp_idx_opt[1]) {
   run <- 1
   current_n <- 0
   
-  ## Initiate CVs to be those calculated under SRS
+  ## Initiate CVs to be those calculated under simple random sampling (SRS)
+  ## If doing a gulf-wide optimization, start at 280 samples (1-boat solution)
+  ## If doing a district-level optimization, dole out the 280 samples across
+  ##     districts proportional to area
   srs_stats <- SamplingStrata::buildStrataDF( 
     dataset = cbind( subset(frame, select = -c(X1, X2)),
                      X1 = 1))
   
   srs_n <- as.numeric(280 * table(frame$domainvalue) / n_cells)
   
+  ## SRS statistics
   srs_var <- srs_stats$S1^2 * (1 - srs_n / n_cells) / srs_n
   srs_cv <- sqrt(srs_var) / srs_stats$M1
   
+  ## cv is a data input to the SamplingStrata package, assign the initial 
+  ## cv constraints 
   cv <- list()
   cv[["CV1"]] <- srs_cv
   cv[["DOM"]] <- 1:n_dom
@@ -92,14 +108,14 @@ for (which_species in spp_idx_opt[1]) {
   
   while (current_n <= 820 ) {
     
-    #Set wd for output files, create a directory if it doesn"t exist yet
+    ## Set wd for output files, create a directory if it doesn"t exist yet
     temp_dir = paste0(result_dir, "Run", run)
     if(!dir.exists(temp_dir)) dir.create(temp_dir, recursive = T)
     
     setwd(temp_dir)
     
-    #Run optimization
-    par(mfrow = c(6,6), mar = c(2,2,0,0))
+    #Run optimization, set up a plot layout to show optimization updates
+    par(mfrow = c(6, 6), mar = c(2, 2, 0, 0))
     
     solution <- optimStrata(method = "continuous",
                             errors = cv, 
@@ -150,7 +166,7 @@ for (which_species in spp_idx_opt[1]) {
                         sol_by_cell = plot_solution)
     save(list = "result_list", file = "result_list.RData")
     
-    ##Save a plot of the solution
+    ## Save a plot of the solution
     goa <- sp::SpatialPointsDataFrame(
       coords = Extrapolation_depths[, c("E_km", "N_km")],
       data = data.frame(Str_no = plot_solution) )
@@ -193,7 +209,7 @@ for (which_species in spp_idx_opt[1]) {
     box()
     dev.off()
     
-    
+    ## Save a plot of the solution with one simulation of station locations
     png(filename = "solution_with_stations.png",
         width = 6,
         height = 3,
@@ -226,7 +242,7 @@ for (which_species in spp_idx_opt[1]) {
          pos = 3)
     box()
     
-    #Take a random sample based on the allocation and stratum
+    ## Take a random sample based on the allocation and stratum
     sample_vec <- c()
     for(istrata in 1:nrow(sum_stats)) {
       sample_vec <- c(sample_vec,
@@ -240,14 +256,15 @@ for (which_species in spp_idx_opt[1]) {
     dev.off()
     
     ## Set up next run by changing slightly reducing the CV constraints
-    ## CVs are reduced proportionally, based on the effort level
+    ## CVs are reduced proportionally at a rate that reduces as total current 
+    ## sample size increases
     run <- run + 1
     effort_level <- as.integer(cut(x = current_n, 
                                    breaks = c(0, 200, samples, 1000), 
                                    labels = 1:5))
     CV_constraints <- CV_constraints * c(0.80, 0.90, 0.95, 0.975)[effort_level]
     
-    #Create CV dataframe in the format of SamplingStrata
+    ## Create CV dataframe in the format of SamplingStrata
     cv <- list()
     cv[["CV1"]] <- as.numeric(CV_constraints)
     cv[["DOM"]] <- 1:n_dom
