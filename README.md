@@ -161,6 +161,8 @@ and calculates the approximate shortest total distance using the TSP package.
 
 ## 1. Input Data and constants [(optimization_data.R)](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/optimization_data.R)
 
+https://user-images.githubusercontent.com/60302777/120702226-afcca780-c468-11eb-9ae3-9de8bd1cecd6.mp4
+
 Data for the optimization were synthesized in the optimization_data.R script. 
 It's purpose is to take the VAST model density predictions and create an input 
 dataset in the form that is used in the SamplingStrata package. The depth and 
