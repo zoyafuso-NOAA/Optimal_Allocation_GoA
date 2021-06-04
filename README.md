@@ -212,9 +212,9 @@ rows with useful fields:
 | Y1, Y2, ...          | density for a given cell summed across observed years for  each species                                                                             |
 | Y1_SQ_SUM, Y2_SQ_SUM | density-squared for a given cell, summed across observed  years for each species  |
 
-![](graphics/workflow1.png)
-
 ## 2. Survey Optimization--Single Species Optimizations [(Survey_Optimization_SS.R)](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/Survey_Optimization_SS.R)
+
+https://user-images.githubusercontent.com/60302777/120753219-b33f4d80-c4bf-11eb-88e1-f2a52f5faab0.mp4
 
 Gulf-wide and district-level single-species optimizations are first conducted.
 Ten strata are used for the gulf-wide optimization and five strata per distict 
