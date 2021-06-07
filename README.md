@@ -1,6 +1,6 @@
 # Multispecies Stratified Survey Optimization for Gulf of Alaska Groundfishes
  
-This repository is provides the code used for an In Prep NOAA Technical 
+This repository provides the code used for an In Prep NOAA Technical 
 Memorandum manuscript by Zack Oyafuso, Lewis Barnett, Margaret Siple,
 and Stan Kotwicki temporarily entitled "The expected performance and 
 feasibility of a Gulf of Alaska groundfish bottom trawl survey optimized 
@@ -277,8 +277,6 @@ workspace:
 | `res_df`            | stratum id for each cell in the domain                                      | dataframe, `n_cells` rows, `ns_all` * `n_boats` columns              |
 | `strata_list`       | Collection of `result_list$solution$aggr_strata` from each run              | list of length   `ns_all` * `n_boats`                                |
 | `strata_stats_list` | Collection of stratum-level means and variances across species for each run | list of length `ns_all` * `n_boats`                                  |
-
-![](graphics/workflow2.png)
 
 ## 4. Survey Optimization--Multi-Species Optimizations [(Survey_Optimization.R)](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/Survey_Optimization.R)
 Multispecies optimizations are conducted with 10, 15, and 20 strata for the 
