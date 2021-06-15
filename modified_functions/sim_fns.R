@@ -17,31 +17,31 @@ do_STRS <- function(input){
                "Nh" = as.integer(table(input$solution)),
                "nh" = input$allocation)
   
-  #Take strata with 0 effor allocation out
+  # Remove strata with zero stations
   strata_to_use <- survey_detail$nh > 0
   survey_detail <- survey_detail[strata_to_use, ]
   
-  #Assume stratum weights include untrawlabe areas
+  # Assume stratum weights include untrawlabe areas
   survey_detail$Wh <- survey_detail$Nh / sum(survey_detail$Nh)
   survey_detail$wh <- with(survey_detail, nh/Nh)
   
-  #Strata Areas
+  # Calculate stratum area
   strata_areas <- aggregate(cell_areas ~ solution, 
                             FUN = sum,
                             data = with(input, data.frame(solution, 
                                                           cell_areas)))
   strata_areas <- subset(strata_areas, solution %in% survey_detail$Stratum)
   
-  #Result objects
+  # Create result objects
   mean_density <- cv <- index <- rel_bias <- rel_log_bias <- c()
   index_district <- array(dim = c(n_time, n_dom))
   
-  for (iyear in 1:n_time) {
+  for (iyear in 1:n_time) { ## Loop through years -- start
     
-    #Subset density df by year
+    # Subset density df by year
     sub_df <- input$density[, iyear]
     
-    #Take a random sample based on the allocation and stratum
+    # Take a random sample based on the allocation and stratum
     sample_vec <- c()
     for(istrata in 1:nrow(survey_detail)) {
       sample_vec <- c(sample_vec,
@@ -52,27 +52,25 @@ do_STRS <- function(input){
     sampled_strata <- rep(x = survey_detail$Stratum, 
                           times = survey_detail$nh)
     
-    #subset sub_df by which cells were chosen
+    # Subset sub_df by which cells were chosen
     sample_df <- as.vector(sub_df[sample_vec])
     
-    #Calculate STRS mean density
+    # Calculate STRS mean density
     strata_mean <- tapply(X = sample_df, 
                           INDEX = sampled_strata,
                           FUN = mean)
     STRS_mean <- sum(strata_mean * survey_detail$Wh)
     
-    #Calculate STRS variance of mean density
+    # Calculate STRS variance of mean density
     strata_var <- tapply(X = sample_df, 
                          INDEX = sampled_strata,
                          FUN = var)
     STRS_var <- sum(strata_var * with(survey_detail, Wh^2 * (1 - wh) / nh) )
-    # STRS_var <- sum(strata_var * with(survey_detail, Nh^2 * (1 - wh) / nh) )
     
-    #Save mean and cv of estimates across species
+    # Save mean and cv of estimates across species
     cv[iyear] <- sqrt(STRS_var) / STRS_mean
-    # cv[iyear] <- sqrt(STRS_var) / sum(survey_detail$Nh * strata_mean)
     
-    #Calculate index of abundance by district
+    # Calculate index of abundance by district
     index_df <- data.frame(Area_km2 = input$cell_areas,
                            stratum = input$solution,
                            district = input$post_strata,
@@ -87,9 +85,9 @@ do_STRS <- function(input){
     # Calculate total index
     index[iyear] <- sum(strata_areas * strata_mean) * 0.001
     
-  }
+  } ## Loop through years -- end
   
-  #Calculate Relative bias of index over the entire domain and by districts
+  # Calculate Relative bias of index over the entire domain and by districts
   rel_bias <- 100 * (index - rowSums(input$true_index_district)) /
     rowSums(input$true_index_district)
   rel_log_bias <- 
