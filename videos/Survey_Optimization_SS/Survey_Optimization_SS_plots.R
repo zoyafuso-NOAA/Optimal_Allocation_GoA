@@ -19,27 +19,6 @@ github_dir <- "C:/Users/Zack Oyafuso/Documents/GitHub/Optimal_Allocation_GoA/res
 output_dir <- "C:/Users/Zack Oyafuso/Documents/GitHub/Optimal_Allocation_GoA/videos/Survey_Optimization_SS/"
 
 ##################################################
-####   Create output directories
-##################################################
-# if (!dir.exists(paste0(output_dir, "solution_panel/"))) {
-#   dir.create(paste0(output_dir, "solution_panel/"))
-# }
-
-
-##################################################
-####   Load Data
-##################################################
-# load(paste0(github_dir, "data/optimization_data.RData"))
-# load(paste0(github_dir, "results/full_domain/Single_Species_Optimization/",
-#             "optimization_knitted_results.RData"))
-# load(paste0(github_dir, "data/Extrapolation_depths.RData"))
-
-##################################################
-####   Subset results to only a handful of species
-##################################################
-spp <- "Pacific cod"
-
-##################################################
 ####   Base Plots
 ##################################################
 base_plot <- function(abline_h = NULL, abline_col = NULL,
@@ -63,24 +42,41 @@ for (irun in 1:n_runs) {
   
 }
 
+png(filename = paste0(output_dir, "plot0.png"), 
+    width = 5.5, height = 5.5, units = "in", res = 500)
 base_plot()
+dev.off()
 
+png(filename = paste0(output_dir, "plot1.png"), 
+    width = 5.5, height = 5.5, units = "in", res = 500)
 base_plot()
 points(result_pts[1, ], pch = 16)
+dev.off()
 
+png(filename = paste0(output_dir, "plot2.png"), 
+    width = 5.5, height = 5.5, units = "in", res = 500)
 base_plot()
 points(result_pts[1, ], pch = 16, col = 'grey')
 abline(v = result_pts[2, 1], lty = "dotted", col = "grey")
+dev.off()
 
+png(filename = paste0(output_dir, "plot3.png"), 
+    width = 5.5, height = 5.5, units = "in", res = 500)
 base_plot()
 points(result_pts[1, ], pch = 16, col = 'grey')
 abline(v = result_pts[2, 1], lty = "dotted", col = "grey")
 points(result_pts[2, ], pch = 16)
+dev.off()
 
+png(filename = paste0(output_dir, "plot4.png"), 
+    width = 5.5, height = 5.5, units = "in", res = 500)
 base_plot()
 points(result_pts, pch = 16)
 lines(result_pts, pch = 16)
+dev.off()
 
+png(filename = paste0(output_dir, "plot5.png"), 
+    width = 5.5, height = 5.5, units = "in", res = 500)
 base_plot()
 points(result_pts, pch = 16)
 lines(result_pts, pch = 16)
@@ -94,4 +90,4 @@ segments(x0 = result_pts[sol_idx, 1],
          y0 = -100,
          y1 = result_pts[sol_idx, 2],
          lty = "dotted", col = "grey")
-
+dev.off()
