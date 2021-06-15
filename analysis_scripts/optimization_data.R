@@ -12,22 +12,12 @@
 rm(list = ls())
 
 ##################################################
-####    Set up directories here first 
-##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents",
-                       "C:/Users/Zack Oyafuso/Documents",
-                       "C:/Users/zack.oyafuso/Work")[which_machine],
-                     "/GitHub/Optimal_Allocation_GoA/")
-
-##################################################
 ####   Load the true density, true index, and spatial domain dataset
 ##################################################
-load(paste0(github_dir,  "data/VAST_fit_D_gct.RData"))
-load(paste0(github_dir,  "data/VAST_fit_I_gct.RData"))
-load(paste0(github_dir, "/data/prednll_VAST_models.RData"))
-load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
+load("data/processed/VAST_fit_D_gct.RData")
+load( "data/processed/VAST_fit_I_gct.RData")
+load("data/processed/prednll_VAST_models.RData")
+load("data/processed/grid_goa.RData")
 
 ##################################################
 ####   Constants used throughout all scripts
@@ -39,7 +29,7 @@ years_included <- c(1, 4, 8, 10, 12, 14, 16, 18, 20, 22, 24)
 n_years <- dim(D_gct)[3]
 
 ## Number of sampling grids
-n_cells <- nrow(Extrapolation_depths)
+n_cells <- nrow(grid_goa)
 
 ## Scientific and common names used in optimization
 common_names_all <- prednll$species
@@ -72,11 +62,11 @@ districts <- data.frame("reg_area" = c("WRA", "CRA", "CRA", "ERA", "ERA"),
                         "W_lon" = c(-170, -159, -154, -147, -140),
                         "E_lon" = c(-159, -154, -147, -140, -132))
 
-district_vals <- cut(x = Extrapolation_depths$Lon, 
+district_vals <- cut(x = grid_goa$Lon, 
                      breaks = c(-170, -159, -154, -147, -140, -132), 
                      labels = 1:5)
 districts[, c("W_UTM", "E_UTM")] <- 
-  do.call(rbind,tapply(X = Extrapolation_depths$E_km, 
+  do.call(rbind,tapply(X = grid_goa$E_km, 
                        INDEX = district_vals, 
                        FUN = range) )
 
@@ -84,20 +74,20 @@ n_districts <- nrow(districts)
 
 ## International North Pacific Fisheries Commission statistical areas
 inpfc_vals_current <- district_vals
-inpfc_vals_current[Extrapolation_depths$stratum %in% 
+inpfc_vals_current[grid_goa$stratum %in% 
                         c(10:13, 110:112, 210, 310, 410, 510)] <- 1
-inpfc_vals_current[Extrapolation_depths$stratum %in% 
+inpfc_vals_current[grid_goa$stratum %in% 
                         c(20:22, 120:122, 220:221, 320, 420, 520)] <- 2
-inpfc_vals_current[Extrapolation_depths$stratum %in% 
+inpfc_vals_current[grid_goa$stratum %in% 
                         c(30:33, 35, 130:134, 230:232, 330, 430, 530)] <- 3
-inpfc_vals_current[Extrapolation_depths$stratum %in% 
+inpfc_vals_current[grid_goa$stratum %in% 
                         c(40:41, 140:143, 240:241, 340:341, 440, 540)] <- 4
-inpfc_vals_current[Extrapolation_depths$stratum %in% 
+inpfc_vals_current[grid_goa$stratum %in% 
                         c(50, 150:151, 250:251, 350:351, 450, 550)] <- 5
 
 ## ranges of the spatial domain for plotting
-x_range <- diff(range(Extrapolation_depths$E_km))
-y_range <- diff(range(Extrapolation_depths$N_km))
+x_range <- diff(range(grid_goa$E_km))
+y_range <- diff(range(grid_goa$N_km))
 
 ## Number of times to simulate survey
 n_iters <- 1000
@@ -121,8 +111,8 @@ n_iters <- 1000
 frame_all <- cbind(
   data.frame(domainvalue = 1,
              id = 1:n_cells,
-             X1 = with(Extrapolation_depths, E_km - min(E_km)),
-             X2 = Extrapolation_depths$DEPTH_EFH,
+             X1 = with(grid_goa, E_km - min(E_km)),
+             X2 = grid_goa$DEPTH_EFH,
              WEIGHT = n_years),
   
   matrix(data = apply(X = D_gct,
