@@ -8,15 +8,24 @@ for abundance estimation."
 
 ## Package Requirements
 
-A handful of R packages are required. R version 4.0.3 (2020-10-10)
-was used for the analysis. Some conventional packages for plotting
-and manipulating data:
+A handful of R packages are required. R version 4.0.2 was used for the 
+analysis. Some conventional packages for plotting and manipulating data:
+
+VAST version 3.6.1,
+and FishStatsUtils version 2.8.0 (2020-09-22). 
 
 ```
 library(tidyverse)
 library(sp)
 library(raster)
 library(RColorBrewer)
+```
+
+The creation of the operating models was done using the [VAST R package](https://github.com/James-Thorson-NOAA/VAST)
+version 3.6.1 and FishStatsUtils version 2.8.0.
+
+```
+library(VAST)
 ```
 
 The bulk of the optimization is done within the SamplingStrata R Package 
@@ -81,45 +90,6 @@ surveys:
 | *Albatrossia Pectoralis*            | giant grenadier                       |
 | *Enteroctopus dofleini*             | giant octopus                         |
 | *Squalus suckleyi*                  | Pacific spiny dogfish                 |
-
-## Input Data -- Spatial Domain
-
-The spatial domain of the survey optimization is the Gulf of Alaska 
-divided into a 2 nautical mile (~3.7 km) resolution grid resulting in 
-`n_cells` = 22832 total survey cells. The script used to create the 
-survey grid is contained in the [MS_OM_GoA](https://github.com/zoyafuso-NOAA/MS_OM_GoA/blob/master/data/Extrapolation_Grid_Covariates.R)
-repo. That script produces an .RData file called 
-Extrapolation_depths.RData that is contained within the 
-[data/](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/tree/master/data) 
-directory in this repo. Extrapolation_depths.RData contains a variable 
-called `Extrapolation_depths` which is a dataframe of `n_cells` rows. 
-Useful fields in `Extrapolation_depths` for this analysis are listed 
-below along with the spatial footprint of the survey area:
-
-| Field Name          | Description                                 |
-|---------------------|---------------------------------------------|
-| Area_km2            | num, Area of grid cell in square kilometers |
-| Lon                 | num, Longitude                              |
-| Lat                 | num, Latitude                               |
-| Depth_EFH           | num, Depth in meters                        |
-| E_km                | num, Eastings in kilometers, 5N UTM         |
-| N_km                | num, Northings in kilometers, 5N UTM        |
-| stratum             | int, Stratum ID in current STRS design      |
-
-![Spatial domain of the Gulf of Alaska Stratified Random Bottom Trawl 
-Survey (black)](graphics/domain.png)
-
-## Input Data -- Predicted denisity
-Density of each species was predicted across the spatiotemporal domain using a 
-vector autoregressive spatiotemporal model using the [VAST package](https://github.com/James-Thorson-NOAA/VAST).
-Gulf of Alaska bottom-trawl catch-per-unit area survey data from years
-1996, 1999, and the odd years from 2003-2019 (`n_years` = 11 total 
-observed survey years) were used in the model fitting. Code in the 
-Z. Oyafuso's [zoyafuso-NOAA/MS_OM_GoA/](https://github.com/zoyafuso-NOAA/MS_OM_GoA) 
-repo was used to run the VAST models and the output was saved in this
-repo ([data/](https://github.com/zoyafuso-NOAA/MS_OM_GoA/blob/master/data/Extrapolation_Grid_Covariates.R)fit_density.RData). 
-This .RData file contains a variable called "D_gct" which is a 3-D array 
-of dimension (`n_cells`, `ns_all`, `n_years`) of predicted densities. 
 
 ## Script Overview (Optimal_Allocation_GoA/analysis_scripts/)
 
