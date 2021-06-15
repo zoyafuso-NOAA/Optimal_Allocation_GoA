@@ -46,12 +46,12 @@ scen <- data.frame(nstrata = c(3,5, 10,15),
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-for (irow in 2) {
-  for(isample in 2:3) {
+for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
+  for(isample in 1:n_boats) {
     
-    ##################################################
-    ####   Constants to specify before doing optimization
-    ##################################################
+    ##  Constants to specify before doing optimization
+    ##  The optimization at the full_domain (gulf-wide) uses a different
+    ##      data input than the optimization at the district-level
     which_domain <- scen$which_domain[irow]
     
     frame <- switch( which_domain,
@@ -61,21 +61,31 @@ for (irow in 2) {
                                                       paste0("Y", spp_idx_opt), 
                                                       paste0("Y", spp_idx_opt,
                                                              "_SQ_SUM"))]
-    
+
+    ## Only subset the species included in the optimization, indexed by 
+    ## spp_idx_opt, then reorganize field names
     names(frame)[names(frame) %in% paste0("Y", spp_idx_opt)] <- 
       paste0("Y", 1:ns_opt)
     names(frame)[names(frame) %in% paste0("Y", spp_idx_opt, "_SQ_SUM")] <- 
       paste0("Y", 1:ns_opt, "_SQ_SUM")
     
+    ## n_dom: domain is the term used in the optimization
+    ##        1 domain if conducting a gulf-wide optimization
+    ##        5 domains if conduct a district-level optimization (i.e., 
+    ##                 five managment districts)
+    ##
+    ## Assign the number of strata in each domain
     n_dom <- length(unique(frame$domainvalue))
-    
     temp_strata <- rep(x = scen$nstrata[irow], times = n_dom)
     
-    ##Initial Condition
-    run <- 1
+    ## Initial Condition
+    run <- 1 
     current_n <- 0
     
-    ## Initiate CVs to be those calculated under SRS
+    ## Initiate CVs to be those calculated under SRS, assign to a variable 
+    ## named cv_constraints
+    ## buildStrataDF calculates the stratum means and variances, X1 = 1 
+    ##     means to calculate those statics on the whole domain
     srs_stats <- SamplingStrata::buildStrataDF( 
       dataset = cbind( subset(frame, select = -c(X1, X2)),
                        X1 = 1))
@@ -92,6 +102,7 @@ for (irow in 2) {
     
     cv_constraints <- srs_cv
     
+    ## Create CV constraint df
     cv <- list()
     for (spp in 1:ns_opt) 
       cv[[paste0("CV", spp)]] <- 
@@ -102,6 +113,7 @@ for (irow in 2) {
     cv[["domainvalue"]] <- 1:n_dom
     cv <- as.data.frame(cv)
     
+    ## Load the single species optimized CVs
     load(paste0(github_dir, "results/", which_domain, 
                 "/Single_Species_Optimization/",
                 "optimization_knitted_results.RData"))
@@ -116,10 +128,8 @@ for (irow in 2) {
     ss_strs_pop_cv <- t(ss_strs_pop_cv[, -1])
     colnames(ss_strs_pop_cv) <- common_names_opt
     
-    ##################################################
-    ####   Run optimization
-    ##################################################
-    while (current_n <= samples[isample] ) {
+    ## Run optimization
+    while (current_n <= samples[isample] ) { 
       
       #Set wd for output files, create a directory if it doesn"t exist yet
       temp_dir = paste0(github_dir, "results/", which_domain, 
@@ -287,4 +297,4 @@ for (irow in 2) {
       cv <- as.data.frame(cv)
     }
   }
-}
+}  ## Loop through scen dataframe -- start
