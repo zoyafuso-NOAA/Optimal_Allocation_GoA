@@ -108,10 +108,8 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
   
   allocations$Stratum <- 1:nrow(allocations)
   
-  n_dom = 5
-  
   ##################################################
-  ####   Load simulation functions
+  ####   Load simulate survey function
   ##################################################
   source( paste0(dirname(github_dir), "/modified_functions/sim_fns.R") )
   
@@ -134,11 +132,11 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
     
     STRS_rel_bias_index_district <- STRS_log_bias_index_district <-
       STRS_index_district <-
-      array(dim = c(n_years, ns_all, n_boats, n_dom, n_iters),
+      array(dim = c(n_years, ns_all, n_boats, n_districts, n_iters),
             dimnames = list(paste0("year_", 1:n_years),
                             common_names_all,
                             paste0("boat_", 1:n_boats),
-                            paste0("district_", 1:n_dom),
+                            paste0("district_", 1:n_districts),
                             NULL ))
     
     STRS_true_cv_array <- STRS_rrmse_cv_array <-
@@ -193,8 +191,6 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
                 
                 strata_list[[idx]]$Allocation
               }),
-            
-            "true_density" = true_mean[ispp, ],
             
             "true_index_district" = true_index_district[ispp, , ],
             "post_strata" = district_vals
@@ -278,7 +274,7 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
                                "rb_district", "log_rb_district") ),
                file = paste0(github_dir,  idata, "/", scen_name,
                              "simulation_results.RData"))
-        } ## update results--emd
+        } ## update results--end
         
       } ## loop over survey replicates--end
     } ## loop over species--end
