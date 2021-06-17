@@ -65,8 +65,8 @@ master_data <- read.csv(file = "data/processed/goa_vast_data_input.csv" )
 #################################################
 spp_names <- sort(unique(master_data$COMMON_NAME))
 
-for (ispp in spp_names[1]) {
-  for (depth_in_model in c(F, T)[1]) {
+for (ispp in spp_names[23]) {
+  for (depth_in_model in c(F, T)) {
     
     ##################################################
     ## Create directory to store model results
@@ -192,7 +192,7 @@ for (ispp in spp_names[1]) {
                     "a_i" = data_geostat[, "AreaSwept_km2"],
                     "getJointPrecision" = TRUE,
                     "newtonsteps" = 1,
-                    "test_fit" = T,
+                    "test_fit" = F,
                     "input_grid" = grid_goa),
                   
                   "TRUE" = FishStatsUtils::fit_model( 
@@ -206,7 +206,7 @@ for (ispp in spp_names[1]) {
                     "a_i" = data_geostat[, "AreaSwept_km2"],
                     "getJointPrecision" = TRUE,
                     "newtonsteps" = 1,
-                    "test_fit" = T,
+                    "test_fit" = F,
                     "input_grid" = grid_goa[, c("Area_km2", "Lon", "Lat")],
                     
                     ##Additional arguments for covariates
@@ -254,7 +254,7 @@ for (ispp in spp_names[1]) {
     } 
     
     # Loop through partitions, refitting each time with a different PredTF_i
-    for (fI in 1:n_fold ) {
+    for (fI in 1:n_fold) {
       PredTF_i <- ifelse( test = data_geostat$fold == fI, 
                           yes = TRUE, 
                           no = FALSE )
@@ -271,7 +271,7 @@ for (ispp in spp_names[1]) {
                          "a_i" = data_geostat[, "AreaSwept_km2"],
                          "getJointPrecision" = TRUE,
                          "newtonsteps" = 1,
-                         "test_fit" = T,
+                         "test_fit" = F,
                          "input_grid" = grid_goa,
                          "PredTF_i" = PredTF_i,
                          "Parameters" = fit$ParHat),
@@ -287,7 +287,7 @@ for (ispp in spp_names[1]) {
                          "a_i" = data_geostat[, "AreaSwept_km2"],
                          "getJointPrecision" = TRUE,
                          "newtonsteps" = 1,
-                         "test_fit" = T,
+                         "test_fit" = F,
                          "input_grid" = grid_goa[, c("Area_km2", "Lon", "Lat")],
                          "PredTF_i" = PredTF_i,
                          

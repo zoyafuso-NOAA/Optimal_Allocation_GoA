@@ -132,3 +132,5 @@ grid_goa$stratum[is.na(grid_goa$stratum)] <- 0
 ##################################################
 if(!dir.exists("data/processed/")) dir.create("data/processed/")
 save(list = "grid_goa", file = paste0("data/processed/grid_goa.RData"))
+write.csv(grid_goa, row.names = F, file = "data/processed/grid_goa.csv")
+
