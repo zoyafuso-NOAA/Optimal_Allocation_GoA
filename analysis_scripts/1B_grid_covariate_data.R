@@ -53,7 +53,7 @@ goa_grid <- goa_grid[, c("Id", "Shape_Area", "Longitude", "Latitude")]
 goa_grid$Shape_Area <- goa_grid$Shape_Area / 1000 / 1000 #Convert to km2 
 names(goa_grid) <- c( "Id", "Area_km2", "Lon", "Lat")
 
-data = read.csv("data/GOA_multspp.csv")
+data = read.csv("data/processed/goa_vast_data_input.csv")
 
 goa_grid_nountrawl <- read.csv("data/extrapolation_grid/GOA_ALL_nountrawl.csv")
 
@@ -87,14 +87,11 @@ grid_shape_aea <- subset(grid_shape_aea,
 ##################################################
 ####   Plot depth covariate of the extrapolation grid
 ##################################################
-spplot(grid_shape_aea[, "DEPTH_EFH"], 
-       col.regions = rev(terrain.colors(1000)),
-       pch = 16, cex = 0.1,
-       cuts = 100, colorkey = T)
+# spplot(grid_shape_aea[, "DEPTH_EFH"], 
+#        col.regions = rev(terrain.colors(1000)),
+#        pch = 16, cex = 0.1,
+#        cuts = 100, colorkey = T)
 
-##################################################
-####   Remove cells with depths outside the observed range to the range
-##################################################
 grid_goa <- grid_shape_aea@data
 grid_goa[, c("E_km", "N_km")] <- 
   project(xy = coordinates(grid_goa[, c("Lon", "Lat")]), 
