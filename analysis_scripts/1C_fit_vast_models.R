@@ -65,7 +65,7 @@ master_data <- read.csv(file = "data/processed/goa_vast_data_input.csv" )
 #################################################
 spp_names <- sort(unique(master_data$COMMON_NAME))
 
-for (ispp in spp_names[23]) {
+for (ispp in spp_names[1:6]) {
   for (depth_in_model in c(F, T)) {
     
     ##################################################
@@ -310,6 +310,15 @@ for (ispp in spp_names[23]) {
       ## Save predicted and observed CPUEs
       obs_cpue <- with(data_geostat[PredTF_i, ], Catch_KG / AreaSwept_km2)
       pred_cpue <- fit_CV$Report$D_i[PredTF_i]
+      
+      cv_performance <- list(cpues = data.frame(cv_fold = fI, 
+                                                obs_cpue, 
+                                                pred_cpue),
+                             prednll = fit_CV$Report$pred_jnll)
+      
+      save(cv_performance,
+           file = paste0(result_dir, "CV_", fI, 
+                         "/crossval_fit_performance.RData"))
       
       write.csv(x = data.frame(cv_fold = fI, obs_cpue, pred_cpue),
                 file = paste0(result_dir, "CV_", fI, "/pred_obs_cpue.csv"),
