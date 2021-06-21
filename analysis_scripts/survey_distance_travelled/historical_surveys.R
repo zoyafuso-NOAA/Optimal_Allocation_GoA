@@ -12,6 +12,7 @@ rm(list = ls())
 ####   Import Libraries
 ##################################################
 library(TSP)
+library(tidyverse)
 
 ##################################################
 ####   Set up directories
@@ -26,21 +27,21 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents",
 ##################################################
 ####   Load constants, spatial domain grid, and optimization solutions
 ##################################################
-load(file = paste0(github_dir, "data/Extrapolation_depths.RData"))
-load(file = paste0(github_dir, "data/processed_haul_data.RData"))
-load(file = paste0(github_dir, "results/MS_optimization_knitted_results.RData"))
+load(file = "data/processed/grid_goa.RData")
+load(file = "data/processed/processed_haul_data.RData")
+load(file = "results/MS_optimization_knitted_results.RData")
 
 years_vec <- c(1996, 1999, 2003, 2005, 2007, 
                2009, 2011, 2013, 2015, 2017, 2019)
-GOA_allocations <- readxl::read_xlsx(
-  path = paste0(github_dir, '/data/GOA 2019 stations by stratum.xlsx'))
-GOA_allocations3 <- readxl::read_xlsx(
-  path = paste0(github_dir, '/data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')) 
+GOA_allocations <- 
+  readxl::read_xlsx(path = 'data/GOA 2019 stations by stratum.xlsx')
+GOA_allocations3 <- 
+  readxl::read_xlsx(path = 'data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')
 
 ##################################
 ## Specify Management Districts
 ##################################
-new_strata_labels = 1:length(unique(Extrapolation_depths$stratum))
+new_strata_labels <- 1:length(unique(Extrapolation_depths$stratum))
 names(new_strata_labels) <- sort(unique(Extrapolation_depths$stratum))
 
 ##################################
@@ -63,10 +64,6 @@ allocations <- rbind(data.frame(Stratum = 0, boat3 = 0, boat2 = 0),
                      allocations)
 
 allocations$Stratum <- 1:nrow(allocations)
-##################################################
-####   Source functions to calculate nearest station
-##################################################
-# source(file = paste0(github_dir, "modified_functions/get_next_station_1.R"))
 
 ##################################################
 ####   Calculate cumulative distance of current stations with ordering of 
@@ -80,9 +77,9 @@ tour_dists <- array(dim = c(length(years_vec), 2, 3),
 
 {
   pdf(paste0("C:/Users/Zack Oyafuso/Google Drive/MS_Optimizations/",
-             "Update Documents/Updates 25 May 2021/path_trajectories.pdf"),
+             "TechMemo/appendix/Appendix D.pdf"),
       width = 7, height = 8, onefile = T  )
-for (iyear in years_vec[]) { ## Loop over years -- start
+for (iyear in years_vec[1]) { ## Loop over years -- start
   
   year_lab <- paste0("year_", iyear)
   ## Subset haul data for a given iyear and order based on the actual station
