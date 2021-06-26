@@ -320,10 +320,6 @@ for (ispp in spp_names[1:6]) {
            file = paste0(result_dir, "CV_", fI, 
                          "/crossval_fit_performance.RData"))
       
-      write.csv(x = data.frame(cv_fold = fI, obs_cpue, pred_cpue),
-                file = paste0(result_dir, "CV_", fI, "/pred_obs_cpue.csv"),
-                row.names = FALSE)
-      
       ## Copy other outputs to the CV-fold directory
       file.copy(from = dir(temp_res, full.names = T), 
                 to = paste0(result_dir, "CV_", fI, "/"))

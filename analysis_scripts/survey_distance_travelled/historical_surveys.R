@@ -17,12 +17,9 @@ library(tidyverse)
 ##################################################
 ####   Set up directories
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
+result_dir <- "C:/Users/Zack Oyafuso/Google Drive/MS_Optimizations/TechMemo/appendix/Appendix D plots/"
 
-github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
-                       "C:/Users/Zack Oyafuso/Documents",
-                       "C:/Users/zack.oyafuso/Work")[which_machine],
-                     "/GitHub/Optimal_Allocation_GoA/")
+if(!dir.exists(result_dir)) dir.create(result_dir)
 
 ##################################################
 ####   Load constants, spatial domain grid, and optimization solutions
@@ -75,11 +72,10 @@ tour_dists <- array(dim = c(length(years_vec), 2, 3),
                                     c("actual", "tsp"),
                                     paste0("boat_", 1:3)) )
 
-{
-  pdf(paste0("C:/Users/Zack Oyafuso/Google Drive/MS_Optimizations/",
-             "TechMemo/appendix/Appendix D.pdf"),
-      width = 7, height = 8, onefile = T  )
-for (iyear in years_vec[1]) { ## Loop over years -- start
+for (iyear in years_vec[]) { ## Loop over years -- start
+  
+  png(paste0(result_dir, "Appendix D", which(iyear == years_vec), ".png"),
+      width = 7, height = 8, units = "in", res = 500  )
   
   year_lab <- paste0("year_", iyear)
   ## Subset haul data for a given iyear and order based on the actual station
@@ -100,7 +96,7 @@ for (iyear in years_vec[1]) { ## Loop over years -- start
   depth_quants <- quantile(x = locs$BOTTOM_DEPTH)
   locs$whichboat <- sample(x = 1:nboats, size = nrow(locs), replace = TRUE)
   
-  par(mfrow = c(3, 2), mar = c(3, 3, 1, 1), oma = c(1, 1, 3.5, 0))
+  par(mfrow = c(3, 2), mar = c(3, 3, 1, 1), oma = c(1, 1, 6, 0))
   for(b in 1:nboats){ ## Loop across boats -- start
     
     boat_lab <- paste0("boat_", b)
@@ -156,7 +152,7 @@ for (iyear in years_vec[1]) { ## Loop over years -- start
                        paste(nrow(locs_y_b), "Stations")),
            bty = "n")
     
-    if(b == 1) mtext(side = 3, text = "Actual Survey Path")
+    if(b == 1) mtext(side = 3, line = 0.5, text = "Actual Survey Path")
     
     tour_dists[paste0("year_", iyear), 1, b] <- tour_length
     
@@ -236,7 +232,7 @@ for (iyear in years_vec[1]) { ## Loop over years -- start
     ####   (i.e., a path which visits each node in the graph exactly once)
     ####   Solve the TSP and remove the "dummy" location from the tour
     ##################################################
-  
+    
     tsp_data <- TSP::TSP(x = dist_km_y_b)
     tsp_data <- TSP::insert_dummy(tsp_data, label = "cut")
     solution <- TSP::solve_TSP(tsp_data, method = "nearest_insertion")
@@ -274,20 +270,33 @@ for (iyear in years_vec[1]) { ## Loop over years -- start
            legend = c(paste("Total Length:", tour_length, "km"),
                       paste(nrow(surv_pts_y_b), "Stations")),
            bty = "n")
-    if(b == 1) mtext(side = 3, 
-                     text = "TSP path\nstations allocated by depth")
-  }
-  
-  mtext(side = 3, 
-        line = 2,
-        font = 2,
-        text = iyear, 
-        outer = TRUE)
-  
+    if(b == 1) {
+      
+      mtext(side = 3, line = 0.5,
+            text = "TSP path\nstations allocated by depth")
+      
+      space_indent <- ifelse(which(iyear == years_vec) %in% 10:11,
+                             "\n                                         ",
+                             "\n                                       ") 
+      
+      text(x = -225, y = 63.5, xpd = NA, adj = 0,
+           labels = paste0("Appendix Figure D-", which(iyear == years_vec), 
+                           ". -- Survey paths observed by the survey (left) ",
+                           "for each boat (rows) along with the optimal ", 
+                           "shortest path from",
+                           space_indent,
+                           "solving the Travelling Salesperson Problem (right)",
+                           " using the same stations allocated to each ",
+                           "boat in ", iyear, ".", 
+                           space_indent,
+                           "Surveys start at the most western station and ",
+                           "traverse eastward." ))
+    }
+    
+    
+  } ## Loop over boats -- end
+  dev.off()
 }  ## Loop over years -- end
-
-dev.off()
-}
 
 ##################################################
 ####   Save

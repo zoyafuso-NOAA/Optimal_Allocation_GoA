@@ -19,23 +19,14 @@ library(sp)
 library(RColorBrewer)
 library(raster)
 
-##################################################
-####   Set up directories based on whether the optimization is being conducted
-####        on a multi-species or single-species level
-##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
-                       "C:/Users/Zack Oyafuso/Documents",
-                       "C:/Users/zack.oyafuso/Work")[which_machine],
-                     "/GitHub/Optimal_Allocation_GoA/")
+github_dir <- getwd()
 
 ##################################################
 ####   Load Data
 ####   Load Population CVs for use in the thresholds
 ##################################################
-load(paste0(github_dir, "/data/optimization_data.RData"))
-load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
+load("data/processed/optimization_data.RData")
+load("data/processed/grid_goa.RData")
 
 ##################################################
 ####   Create optimization scenarios
@@ -46,6 +37,8 @@ scen <- data.frame(nstrata = c(3,5, 10,15),
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
+irow = 3; isample = 3
+
 for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
   for(isample in 1:n_boats) {
     
@@ -57,7 +50,9 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
     frame <- switch( which_domain,
                      "full_domain" = frame_all,
                      "district" = frame_district)[, c("domainvalue", "id", 
-                                                      "X1", "X2", "WEIGHT",
+                                                      "X1", 
+                                                      # "X2", 
+                                                      "WEIGHT",
                                                       paste0("Y", spp_idx_opt), 
                                                       paste0("Y", spp_idx_opt,
                                                              "_SQ_SUM"))]
@@ -87,7 +82,9 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
     ## buildStrataDF calculates the stratum means and variances, X1 = 1 
     ##     means to calculate those statics on the whole domain
     srs_stats <- SamplingStrata::buildStrataDF( 
-      dataset = cbind( subset(frame, select = -c(X1, X2)),
+      dataset = cbind( subset(frame, select = -c(X1#, 
+                                                 # X2
+                                                 )),
                        X1 = 1))
     
     srs_n <- as.numeric(samples[isample] * table(frame$domainvalue) / n_cells)
@@ -132,7 +129,7 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
     while (current_n <= samples[isample] ) { 
       
       #Set wd for output files, create a directory if it doesn"t exist yet
-      temp_dir = paste0(github_dir, "results/", which_domain, 
+      temp_dir = paste0(github_dir, "/results/", which_domain, 
                         "/Multi_Species_Optimization/boat", isample,
                         "/Str", temp_strata[1], "/Run", run)
       
@@ -147,8 +144,10 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
       solution <- optimStrata(method = "continuous",
                               errors = cv, 
                               framesamp = frame,
-                              iter = 300,
-                              pops = 50,
+                              # iter = 300,
+                              # pops = 50,
+                              iter = 50,
+                              pops = 30,
                               elitism_rate = 0.1,
                               mut_chance = 1 / (temp_strata[1] + 1),
                               nStrata = temp_strata,
@@ -195,7 +194,7 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
       
       ##Save a plot of the solution
       goa <- sp::SpatialPointsDataFrame(
-        coords = Extrapolation_depths[, c("E_km", "N_km")],
+        coords = grid_goa[, c("E_km", "N_km")],
         data = data.frame(Str_no = plot_solution) )
       goa_ras <- raster::raster(x = goa, 
                                 resolution = 5)
@@ -220,15 +219,15 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
       
       rect(xleft = districts$W_UTM,
            xright = districts$E_UTM,
-           ybottom = tapply(X = Extrapolation_depths$N_km, 
+           ybottom = tapply(X = grid_goa$N_km, 
                             INDEX = district_vals,
                             FUN = min), 
-           ytop = tapply(X = Extrapolation_depths$N_km, 
+           ytop = tapply(X = grid_goa$N_km, 
                          INDEX = district_vals,
                          FUN = max))
       
       text(x = rowMeans(districts[, c("W_UTM", "E_UTM")]),
-           y = tapply(X = Extrapolation_depths$N_km, 
+           y = tapply(X = grid_goa$N_km, 
                       INDEX = district_vals,
                       FUN = max),
            labels = districts$district,
@@ -277,7 +276,7 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
                                size = sum_stats$Allocation[istrata]) )
       }
       
-      points(Extrapolation_depths[sample_vec, c("E_km", "N_km")],
+      points(grid_goa[sample_vec, c("E_km", "N_km")],
              pch = 16, cex = 0.5)
       
       dev.off()
