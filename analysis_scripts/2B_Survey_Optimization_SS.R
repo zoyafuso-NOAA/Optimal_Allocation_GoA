@@ -40,7 +40,7 @@ load("data/processed/grid_goa.RData")
 ##################################################
 which_domain <- c("full_domain", "district")[1]
 
-for (which_species in c(spp_idx_opt, spp_idx_opt)) {
+for (which_species in c(spp_idx_opt, spp_idx_opt)[1:8]) {
   
   ##################################################
   ####   Constants to set up based on which_domain and which_species
@@ -135,10 +135,10 @@ for (which_species in c(spp_idx_opt, spp_idx_opt)) {
     solution <- optimStrata(method = "continuous",
                             errors = cv, 
                             framesamp = frame,
-                            # iter = 300,
-                            # pops = 50,
-                            iter = 50,
-                            pops = 30,
+                            iter = 300,
+                            pops = 50,
+                            # iter = 50,
+                            # pops = 30,
                             elitism_rate = 0.1,
                             mut_chance = 1 / (no_strata[1] + 1),
                             nStrata = no_strata,
