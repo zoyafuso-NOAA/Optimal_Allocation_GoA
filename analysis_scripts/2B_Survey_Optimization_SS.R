@@ -116,7 +116,7 @@ for (which_species in c(spp_idx_opt, spp_idx_opt)[1:8]) {
   ## cv is a data input to the SamplingStrata package, assign the initial 
   ## cv constraints 
   cv <- list()
-  cv[["CV1"]] <- srs_cv * 0.15
+  cv[["CV1"]] <- srs_cv * 0.35
   cv[["DOM"]] <- 1:n_dom
   cv[["domainvalue"]] <- 1:n_dom
   cv <- as.data.frame(cv)
@@ -135,10 +135,10 @@ for (which_species in c(spp_idx_opt, spp_idx_opt)[1:8]) {
     solution <- optimStrata(method = "continuous",
                             errors = cv, 
                             framesamp = frame,
-                            iter = 300,
-                            pops = 50,
-                            # iter = 50,
-                            # pops = 30,
+                            # iter = 300,
+                            # pops = 50,
+                            iter = 50,
+                            pops = 30,
                             elitism_rate = 0.1,
                             mut_chance = 1 / (no_strata[1] + 1),
                             nStrata = no_strata,
@@ -162,7 +162,7 @@ for (which_species in c(spp_idx_opt, spp_idx_opt)[1:8]) {
                        subset(x = solution$aggr_strata,
                               select = -c(STRATO, N, COST, CENS, DOM1, X1)))
     # sum_stats <- sum_stats[, c(10, 1:4, 15, 11:12, 6:9)]
-    sum_stats <- sum_stats[, c(10, 1:4, 13, 11:12, 6:7)]
+    sum_stats <- sum_stats[, c(8, 1:4, 13, 11:12, 6:7)]
     
     plot_solution <- 
       switch(which_domain,
