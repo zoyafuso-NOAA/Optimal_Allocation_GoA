@@ -52,8 +52,7 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
                                                     paste0("Y", which_species), 
                                                     paste0("Y", which_species,
                                                            "_SQ_SUM"))]
-  # names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
-  names(frame)[5:6] <- paste0("Y", c("1", "1_SQ_SUM") )
+  names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
   
   ## Domain is the term used in the SamplingStrata package, is used to 
   ## distinguish whether the optimization is done gulf-wide (n_dom == 1) or 
