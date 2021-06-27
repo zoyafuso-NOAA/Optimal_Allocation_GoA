@@ -47,7 +47,7 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
                    "full_domain" = frame_all,
                    "district" = frame_district)[, c("domainvalue", "id", 
                                                     "X1", 
-                                                    # "X2", 
+                                                    "X2",
                                                     "WEIGHT",
                                                     paste0("Y", which_species), 
                                                     paste0("Y", which_species,
@@ -87,13 +87,10 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
   ## If doing a gulf-wide optimization, start at 280 samples (1-boat solution)
   ## If doing a district-level optimization, dole out the 280 samples across
   ##     districts proportional to area
-  # srs_stats <- SamplingStrata::buildStrataDF( 
-  #   dataset = cbind( subset(frame, select = -c(X1, X2)),
-  #                    X1 = 1))
-  srs_stats <- SamplingStrata::buildStrataDF( 
-    dataset = cbind( subset(frame, select = -c(X1)),
+  srs_stats <- SamplingStrata::buildStrataDF(
+    dataset = cbind( subset(frame, select = -c(X1, X2)),
                      X1 = 1))
-  
+
   srs_n <- as.numeric(280 * table(frame$domainvalue) / n_cells)
   
   ## SRS statistics
@@ -148,8 +145,7 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
     sum_stats <- cbind(sum_stats,
                        subset(x = solution$aggr_strata,
                               select = -c(STRATO, N, COST, CENS, DOM1, X1)))
-    # sum_stats <- sum_stats[, c(10, 1:4, 15, 11:12, 6:9)]
-    sum_stats <- sum_stats[, c(8, 1:4, 13, 11:12, 6:7)]
+    sum_stats <- sum_stats[, c(10, 1:4, 15, 11:12, 6:9)]
     
     plot_solution <- 
       switch(which_domain,
