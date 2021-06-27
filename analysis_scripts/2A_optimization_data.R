@@ -92,14 +92,6 @@ y_range <- diff(range(grid_goa$N_km))
 n_iters <- 1000
 
 ##################################################
-####   TEMPORARY SECTION: INFORMATION CRITERION
-##################################################
-max_D <- apply(D_gct, MARGIN = 2, FUN = mean)
-scaled_D_gct <- sweep(D_gct, MARGIN = c(2:3), STATS = max_D, FUN = "/")
-IC <- rowSums(apply(scaled_D_gct, MARGIN = 1:2, mean) + 
-                apply(scaled_D_gct, MARGIN = 1:2, sd)/n_years)
-
-##################################################
 ####   Our df will have fields for:
 ####   domain: only one domain so the value is just 1
 ####   id: unique ID for each sampling cell
@@ -118,9 +110,8 @@ IC <- rowSums(apply(scaled_D_gct, MARGIN = 1:2, mean) +
 frame_all <- cbind(
   data.frame(domainvalue = 1,
              id = 1:n_cells,
-             X1 = IC,
-             # X1 = with(grid_goa, E_km - min(E_km)),
-             # X2 = grid_goa$DEPTH_EFH,
+             X1 = with(grid_goa, E_km - min(E_km)),
+             X2 = grid_goa$DEPTH_EFH,
              WEIGHT = n_years),
   
   matrix(data = apply(X = D_gct,
@@ -141,9 +132,8 @@ frame_district <- cbind(data.frame(
                     breaks = c(-170, -159, -154, -147, -140, -132), 
                     labels = 1:5),
   id = 1:n_cells,
-  X1 = IC,
-  # X1 = with(grid_goa, E_km - min(E_km)),
-  # X2 = grid_goa$DEPTH_EFH,
+  X1 = with(grid_goa, E_km - min(E_km)),
+  X2 = grid_goa$DEPTH_EFH,
   WEIGHT = n_years),
   
   matrix(data = apply(X = D_gct,
@@ -187,7 +177,6 @@ dimnames(true_index)[[1]] <- dimnames(true_mean)[[1]] <-
 ####   Save Data
 ##################################################
 save(list = c("frame_all", "frame_district",
-              "IC", "max_D", "scaled_D_gct",
               "districts", "district_vals", "n_districts", "inpfc_vals_current",
               "true_mean", "true_index", "true_index_district",
               "ns_all", "ns_eval", "ns_opt", 

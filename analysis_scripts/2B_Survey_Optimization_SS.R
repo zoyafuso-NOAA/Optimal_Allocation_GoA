@@ -57,17 +57,6 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[2]) {
   # names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
   names(frame)[5:6] <- paste0("Y", c("1", "1_SQ_SUM") )
   
-  ##################################################
-  ####   TEMPORARY SECTION: INFORMATION CRITERION
-  ##################################################
-  SS_IC <- #order(
-    apply(D_gct[, which_species, ], MARGIN = 1, mean) + 
-    apply(D_gct[, which_species, ], MARGIN = 1, sd) 
-  #     , decreasing = F
-  
-  
-  frame$X1 <- SS_IC
-  
   ## Domain is the term used in the SamplingStrata package, is used to 
   ## distinguish whether the optimization is done gulf-wide (n_dom == 1) or 
   ## at each of the five management districts (n_dom == n_districts)
