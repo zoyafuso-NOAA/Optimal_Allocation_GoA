@@ -23,8 +23,6 @@ library(raster)
 ####   Set up directories based on whether the optimization is being conducted
 ####        on a multi-species or single-species level
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
-
 github_dir <- getwd()
 
 ##################################################
@@ -40,7 +38,7 @@ load("data/processed/grid_goa.RData")
 ##################################################
 which_domain <- c("full_domain", "district")[1]
 
-for (which_species in c(spp_idx_opt, spp_idx_eval)[2]) {
+for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
   
   ##################################################
   ####   Constants to set up based on which_domain and which_species
@@ -267,9 +265,9 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[2]) {
     ## sample size increases
     run <- run + 1
     effort_level <- as.integer(cut(x = current_n, 
-                                   breaks = c(0, 200, samples, 1000), 
+                                   breaks = c(0, 100, 200, samples, 1000), 
                                    labels = 1:5))
-    CV_constraints <- CV_constraints * c(0.80, 0.90, 0.95, 0.975)[effort_level]
+    CV_constraints <- CV_constraints * c(0.70, 0.80, 0.90, 0.95, 0.975)[effort_level]
     
     ## Create CV dataframe in the format of SamplingStrata
     cv <- list()
