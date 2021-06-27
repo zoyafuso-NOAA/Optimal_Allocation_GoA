@@ -99,7 +99,7 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
   ## cv is a data input to the SamplingStrata package, assign the initial 
   ## cv constraints 
   cv <- list()
-  cv[["CV1"]] <- srs_cv * 0.4
+  cv[["CV1"]] <- srs_cv
   cv[["DOM"]] <- 1:n_dom
   cv[["domainvalue"]] <- 1:n_dom
   cv <- as.data.frame(cv)
@@ -120,8 +120,6 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
                             framesamp = frame,
                             iter = 300,
                             pops = 50,
-                            # iter = 50,
-                            # pops = 30,
                             elitism_rate = 0.1,
                             mut_chance = 1 / (no_strata[1] + 1),
                             nStrata = no_strata,
@@ -260,9 +258,9 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
     ## sample size increases
     run <- run + 1
     effort_level <- as.integer(cut(x = current_n, 
-                                   breaks = c(0, 100, 200, samples, 1000), 
+                                   breaks = c(0, 50, 100, 200, samples, 1000), 
                                    labels = 1:5))
-    CV_constraints <- CV_constraints * c(0.70, 0.80, 0.90, 0.95, 0.975)[effort_level]
+    CV_constraints <- CV_constraints * c(0.5, 0.70, 0.80, 0.90, 0.95, 0.975)[effort_level]
     
     ## Create CV dataframe in the format of SamplingStrata
     cv <- list()
