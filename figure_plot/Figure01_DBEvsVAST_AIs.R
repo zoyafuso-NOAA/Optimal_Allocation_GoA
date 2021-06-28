@@ -9,36 +9,23 @@ rm(list = ls())
 ##################################################
 ####  Set up directories  
 ##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
-                       "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/")
-github_dir2 <- paste0(c("/Users/zackoyafuso/Documents/", 
-                        "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
-                      "GitHub/MS_OM_GoA/data/")
-
-output_dir <- paste0(c("/Users/zackoyafuso/", 
-                       "C:/Users/Zack Oyafuso/")[which_machine], 
-                     "Google Drive/MS_Optimizations/TechMemo/figures/")
+output_dir <- "C:/Users/Zack Oyafuso/Google Drive/MS_Optimizations/TechMemo/figures/"
 
 ##################################################
 ####  Load Data
 ##################################################
-load(file = paste0(github_dir, "data/optimization_data.RData"))
+load(file = "data/processed/optimization_data.RData")
 
 ##################################################
 ####  Import Observed vast estimates, add "Pacific" to spiny dogfish
 ##################################################
-load(file = paste0(github_dir, "data/VAST_fit_I_ct.RData"))
-vast_index$species[vast_index$species == "spiny dogfish"] <-
-  "Pacific spiny dogfish"
+load(file = "data/processed/index_bias_corrected.RData")
 
 ##################################################
 ####  Import Observed DBEs
 ####  Subset for the years and species included and calculate SD of biomass
 ##################################################
-DBE <- readRDS(file = paste0(github_dir2, "GOA_biomass_indices_wnames.rds"))
+DBE <- readRDS(file = "data/processed/GOA_biomass_indices_wnames.rds")
 DBE$COMMON_NAME[DBE$COMMON_NAME == "rougheye and blackspotted rockfish"] <-
   "BS and RE rockfishes"
 DBE$COMMON_NAME[DBE$COMMON_NAME == "spiny dogfish"] <- "Pacific spiny dogfish"
@@ -72,8 +59,8 @@ DBE$BIOMASS_SD <- sqrt(DBE$BIOMASS_VAR)
       DBE = subset(x = DBE, 
                    subset = COMMON_NAME == ispp, 
                    select = c(YEAR, TOTAL_BIOMASS, BIOMASS_SD)),
-      VAST = subset(x = vast_index, 
-                    subset = species == ispp,
+      VAST = subset(x = index_bias_corrected, 
+                    subset = Species_Name == ispp,
                     select = c(Year, Estimate_metric_tons, SD_mt))
     )
     

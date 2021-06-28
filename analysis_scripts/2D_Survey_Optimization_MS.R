@@ -37,7 +37,7 @@ scen <- data.frame(nstrata = c(3,5, 10,15),
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-irow = 3; isample = 3
+irow = 1; isample = 2
 
 for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
   for(isample in 1:n_boats) {
@@ -111,19 +111,19 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
     cv <- as.data.frame(cv)
     
     ## Load the single species optimized CVs
-    load(paste0(github_dir, "results/", which_domain, 
-                "/Single_Species_Optimization/",
-                "optimization_knitted_results.RData"))
-    
-    ss_strs_pop_cv <- subset(x = settings,
-                             subset = boat == isample,
-                             select = c("species", paste0("cv_domain_", 
-                                                          1:n_dom)))
-    
-    ss_strs_pop_cv <- ss_strs_pop_cv[match(common_names_opt, 
-                                           ss_strs_pop_cv$species), ]
-    ss_strs_pop_cv <- t(ss_strs_pop_cv[, -1])
-    colnames(ss_strs_pop_cv) <- common_names_opt
+    # load(paste0(github_dir, "results/", which_domain, 
+    #             "/Single_Species_Optimization/",
+    #             "optimization_knitted_results.RData"))
+    # 
+    # ss_strs_pop_cv <- subset(x = settings,
+    #                          subset = boat == isample,
+    #                          select = c("species", paste0("cv_domain_", 
+    #                                                       1:n_dom)))
+    # 
+    # ss_strs_pop_cv <- ss_strs_pop_cv[match(common_names_opt, 
+    #                                        ss_strs_pop_cv$species), ]
+    # ss_strs_pop_cv <- t(ss_strs_pop_cv[, -1])
+    # colnames(ss_strs_pop_cv) <- common_names_opt
     
     ## Run optimization
     while (current_n <= samples[isample] ) { 
@@ -144,10 +144,10 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
       solution <- optimStrata(method = "continuous",
                               errors = cv, 
                               framesamp = frame,
-                              # iter = 300,
-                              # pops = 50,
-                              iter = 50,
-                              pops = 30,
+                              iter = 200,
+                              pops = 50,
+                              # iter = 50,
+                              # pops = 30,
                               elitism_rate = 0.1,
                               mut_chance = 1 / (temp_strata[1] + 1),
                               nStrata = temp_strata,
@@ -253,15 +253,15 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
       
       rect(xleft = districts$W_UTM,
            xright = districts$E_UTM,
-           ybottom = tapply(X = Extrapolation_depths$N_km, 
+           ybottom = tapply(X = grid_goa$N_km, 
                             INDEX = district_vals,
                             FUN = min), 
-           ytop = tapply(X = Extrapolation_depths$N_km, 
+           ytop = tapply(X = grid_goa$N_km, 
                          INDEX = district_vals,
                          FUN = max))
       
       text(x = rowMeans(districts[, c("W_UTM", "E_UTM")]),
-           y = tapply(X = Extrapolation_depths$N_km, 
+           y = tapply(X = grid_goa$N_km, 
                       INDEX = district_vals,
                       FUN = max),
            labels = districts$district,
@@ -285,7 +285,7 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
       #Set up next run by changing upper CV constraints
       run <- run + 1
       
-      cv_constraints <- 0.95 * cv_constraints + 0.05 * ss_strs_pop_cv
+      cv_constraints <- 0.95 * cv_constraints #+ 0.05 * ss_strs_pop_cv
       
       #Create CV dataframe in the formmat of SamplingStrata
       cv <- list()
