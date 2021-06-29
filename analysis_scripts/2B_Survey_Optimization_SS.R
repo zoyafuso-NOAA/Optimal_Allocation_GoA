@@ -259,7 +259,7 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
     run <- run + 1
     effort_level <- as.integer(cut(x = current_n, 
                                    breaks = c(0, 50, 100, 200, samples, 1000), 
-                                   labels = 1:5))
+                                   labels = 1:7))
     CV_constraints <- CV_constraints * c(0.5, 0.70, 0.80, 0.90, 0.95, 0.975)[effort_level]
     
     ## Create CV dataframe in the format of SamplingStrata
