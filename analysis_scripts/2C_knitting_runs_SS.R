@@ -1,33 +1,28 @@
 ###############################################################################
 ## Project:       Knitting Result for univariate STRS optimization
 ## Author:        Zack Oyafuso (zack.oyafuso@noaa.gov)
-## Description:   
+## Description:   For the district-level and gulf-wide optimizations, extract
+##                the solutions closest to the boat 
 ###############################################################################
 rm(list = ls())
 
-###############################
-## Set up directories
-###############################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[3]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
-                       "C:/Users/Zack Oyafuso/Documents",
-                       "C:/Users/zack.oyafuso/Work")[which_machine],
-                     "/GitHub/Optimal_Allocation_GoA/")
-
-###############################
-## Import required packages
-###############################
+##################################################
+####   Import required packages
+##################################################
 library(devtools)
 devtools::install_github(repo = "zoyafuso-NOAA/SamplingStrata")
 library(SamplingStrata)
 
-###########################
-## Load Data
-###########################
-load(paste0(github_dir, "/data/optimization_data.RData"))
+##################################################
+####   Import constants
+##################################################
+load("data/processed/optimization_data.RData")
 
-for(idom in c("full_domain", "district")) {
+##################################################
+####   
+##################################################
+
+for(idom in c("full_domain", "district")) { ## Loop through scales -- start
   
   n_dom <- ifelse(idom == "full_domain", 1, 5)
   
@@ -48,7 +43,7 @@ for(idom in c("full_domain", "district")) {
   for (ispp in 1:ns_all) {
     
     ## For a given species and boat scenario, collect all runs
-    runs = dir(paste0(github_dir, "results/", idom, 
+    runs = dir(paste0("results/", idom, 
                       "/Single_Species_Optimization/",
                       common_names_all[ispp], "/"), 
                full.names = T)
@@ -252,6 +247,6 @@ for(idom in c("full_domain", "district")) {
                      "/Single_Species_Optimization/",
                      "optimization_knitted_results.RData"))
   
-}
+} ## Loop through scales -- start
 
 
