@@ -242,9 +242,7 @@ for(idom in c("full_domain", "district")) { ## Loop through scales -- start
   ## Save
   ####################################
   save(list = vars_to_save,
-       file = paste0(github_dir, 
-                     "results/", idom, 
-                     "/Single_Species_Optimization/",
+       file = paste0("results/", idom, "/Single_Species_Optimization/",
                      "optimization_knitted_results.RData"))
   
 } ## Loop through scales -- start
