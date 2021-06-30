@@ -31,13 +31,13 @@ load("data/processed/grid_goa.RData")
 ##################################################
 ####   Create optimization scenarios
 ##################################################
-scen <- data.frame(nstrata = c(3,5, 10,15),
-                   which_domain = rep(c("district", "full_domain"), each = 2))
+scen <- data.frame(nstrata = c(10,15, 3,5),
+                   which_domain = rep(c("full_domain", "district"), each = 2))
 
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-irow = 1; isample = 2
+irow = 1
 
 for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
   for(isample in 1:n_boats) {
@@ -51,12 +51,12 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
                      "full_domain" = frame_all,
                      "district" = frame_district)[, c("domainvalue", "id", 
                                                       "X1", 
-                                                      # "X2", 
+                                                      "X2",
                                                       "WEIGHT",
                                                       paste0("Y", spp_idx_opt), 
                                                       paste0("Y", spp_idx_opt,
                                                              "_SQ_SUM"))]
-
+    
     ## Only subset the species included in the optimization, indexed by 
     ## spp_idx_opt, then reorganize field names
     names(frame)[names(frame) %in% paste0("Y", spp_idx_opt)] <- 
@@ -82,9 +82,7 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
     ## buildStrataDF calculates the stratum means and variances, X1 = 1 
     ##     means to calculate those statics on the whole domain
     srs_stats <- SamplingStrata::buildStrataDF( 
-      dataset = cbind( subset(frame, select = -c(X1#, 
-                                                 # X2
-                                                 )),
+      dataset = cbind( subset(frame, select = -c(X1, X2 )),
                        X1 = 1))
     
     srs_n <- as.numeric(samples[isample] * table(frame$domainvalue) / n_cells)
@@ -111,19 +109,19 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
     cv <- as.data.frame(cv)
     
     ## Load the single species optimized CVs
-    # load(paste0(github_dir, "results/", which_domain, 
-    #             "/Single_Species_Optimization/",
-    #             "optimization_knitted_results.RData"))
-    # 
-    # ss_strs_pop_cv <- subset(x = settings,
-    #                          subset = boat == isample,
-    #                          select = c("species", paste0("cv_domain_", 
-    #                                                       1:n_dom)))
-    # 
-    # ss_strs_pop_cv <- ss_strs_pop_cv[match(common_names_opt, 
-    #                                        ss_strs_pop_cv$species), ]
-    # ss_strs_pop_cv <- t(ss_strs_pop_cv[, -1])
-    # colnames(ss_strs_pop_cv) <- common_names_opt
+    load(paste0(github_dir, "/results/", which_domain,
+                "/Single_Species_Optimization/", 
+                "optimization_knitted_results.RData"))
+    
+    ss_strs_pop_cv <- subset(x = settings,
+                             subset = boat == isample,
+                             select = c("species", paste0("cv_domain_",
+                                                          1:n_dom)))
+    
+    ss_strs_pop_cv <- ss_strs_pop_cv[match(common_names_opt,
+                                           ss_strs_pop_cv$species), ]
+    ss_strs_pop_cv <- t(ss_strs_pop_cv[, -1])
+    colnames(ss_strs_pop_cv) <- common_names_opt
     
     ## Run optimization
     while (current_n <= samples[isample] ) { 
