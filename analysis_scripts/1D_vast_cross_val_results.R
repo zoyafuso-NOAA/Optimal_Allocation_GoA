@@ -29,8 +29,8 @@ cross_val_results <- data.frame()
 ####   synthesize RRMSE, pred_jnll, maximum gradient
 ##################################################
 
-spp <- sort(unique(data_df$COMMON_NAME))
-for (ispp in spp){ ## Loop through species -- start
+spp_names <- sort(unique(data_df$COMMON_NAME))
+for (ispp in spp_names){ ## Loop through species -- start
   
   mean_obs_cpue <- with(subset(data_df, COMMON_NAME == ispp), 
                         mean(WEIGHT / EFFORT))
