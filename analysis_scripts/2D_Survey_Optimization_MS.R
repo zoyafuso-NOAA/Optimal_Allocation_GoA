@@ -37,7 +37,7 @@ scen <- data.frame(nstrata = c(10,15, 3,5),
 ##################################################
 ####   Collect optimization results from each strata
 ##################################################
-irow = 1
+# irow = 1
 
 for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
   for(isample in 1:n_boats) {
@@ -283,7 +283,7 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
       #Set up next run by changing upper CV constraints
       run <- run + 1
       
-      cv_constraints <- 0.95 * cv_constraints #+ 0.05 * ss_strs_pop_cv
+      cv_constraints <- 0.95 * cv_constraints + 0.05 * ss_strs_pop_cv
       
       #Create CV dataframe in the formmat of SamplingStrata
       cv <- list()
