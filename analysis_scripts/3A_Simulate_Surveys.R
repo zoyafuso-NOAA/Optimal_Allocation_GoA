@@ -25,7 +25,7 @@ library(foreach)
 library(parallel)
 library(doParallel)
 
-cl <- parallel::makeCluster(parallel::detectCores() - 1)
+cl <- parallel::makeCluster(parallel::detectCores())
 doParallel::registerDoParallel(cl)
 
 ##################################################
