@@ -7,16 +7,6 @@
 rm(list = ls())
 
 ##################################################
-####  Set up directories
-##################################################
-which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2, "Zack_GI_PC" = 3)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
-                       "C:/Users/Zack Oyafuso/Documents/",
-                       "C:/Users/zack.oyafuso/Work/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/")
-
-##################################################
 ####   Import Packages
 ##################################################
 library(SamplingStrata)
@@ -24,7 +14,7 @@ library(SamplingStrata)
 ##################################################
 ####   Load Data
 ##################################################
-load(paste0(github_dir, "data/optimization_data.RData"))
+load("data/processed/optimization_data.RData")
 
 scen <- data.frame(domain = rep(c("district", "full_domain"), each = 2),
                    strata = c(3, 5, 10, 15))
@@ -52,7 +42,7 @@ for(irow in 1:nrow(scen)) {
    n_dom <- length(unique(frame$domainvalue))
    
    for (iboat in 1:n_boats) {
-      result_dir <- paste0(github_dir, "results/", idom, 
+      result_dir <- paste0("results/", idom, 
                            "/Multi_Species_Optimization/boat", 
                            iboat, "/Str", istrata, "/")
       
@@ -263,5 +253,4 @@ for(irow in 1:nrow(settings)) {
 ##################################################
 save(list = c("res_df", "settings", "settings_district",
               "strata_list", "strata_stats_list"),
-     file = paste0(github_dir,
-                   "results/MS_optimization_knitted_results.RData"))
+     file = "results/MS_optimization_knitted_results.RData")
