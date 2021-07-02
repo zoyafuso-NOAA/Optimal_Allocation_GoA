@@ -10,10 +10,6 @@ rm(list = ls())
 ####  Set up directories  
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
-                       "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/")
 output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/",
                        "C:/Users/Zack Oyafuso/Google Drive/")[which_machine],
                      "MS_Optimizations/TechMemo/figures/")
@@ -47,9 +43,9 @@ t_col <- function(color, percent = 50, name = NULL) {
 ##################################################
 ####  Load Data
 ##################################################
-load(paste0(github_dir, "data/optimization_data.RData"))
-load(paste0(github_dir, "data/Extrapolation_depths.RData"))
-load(paste0(github_dir, "results/MS_optimization_knitted_results.RData"))
+load("data/processed/optimization_data.RData")
+load("data/processed/grid_goa.RData")
+load("results/MS_optimization_knitted_results.RData")
 
 ##################################################
 ####  Random seed for consistent colors
@@ -63,15 +59,15 @@ strata_list <-
   lapply(X = strata_list,
          FUN = function(x) {
            x[, c("Lower_X1", "Upper_X1")] <- 
-             x[, c("Lower_X1", "Upper_X1")] + min(Extrapolation_depths$E_km)
+             x[, c("Lower_X1", "Upper_X1")] + min(grid_goa$E_km)
            
            temp_idx <- match(x = round(x$Lower_X1), 
-                             table = round(Extrapolation_depths$E_km))
-           x$Lower_X1 <- Extrapolation_depths$Lon[temp_idx]
+                             table = round(grid_goa$E_km))
+           x$Lower_X1 <- grid_goa$Lon[temp_idx]
            
            temp_idx <- match(x = round(x$Upper_X1), 
-                             table = round(Extrapolation_depths$E_km))
-           x$Upper_X1 <- Extrapolation_depths$Lon[temp_idx]
+                             table = round(grid_goa$E_km))
+           x$Upper_X1 <- grid_goa$Lon[temp_idx]
            
            x[, c("Lower_X1", "Upper_X1", "Lower_X2", "Upper_X2")] <- 
              round(x[, c("Lower_X1", "Upper_X1", "Lower_X2", "Upper_X2")], 1)
@@ -85,7 +81,7 @@ strata_list <-
 plot_strata_boundary <- function(
   strata = strata_list[[idx]],
   sol = res_df[, idx],
-  extrapolation_grid = Extrapolation_depths,
+  extrapolation_grid = grid_goa,
   seed_value = seed,
   y_axis_pos = 2) {
   
@@ -173,7 +169,7 @@ plot_strata_boundary <- function(
     
     ## Set up spatial object
     goa <- sp::SpatialPointsDataFrame(
-      coords = Extrapolation_depths[, c("E_km", "N_km")],
+      coords = grid_goa[, c("E_km", "N_km")],
       data = data.frame(Str_no = res_df[, idx]) )
     goa_ras <- raster::raster(x = goa, 
                               resolution = 10)
@@ -203,7 +199,7 @@ plot_strata_boundary <- function(
     ## District labels
     segments(x0 = districts$W_UTM,
              x1 = districts$E_UTM,
-             y0 = tapply(X = Extrapolation_depths$N_km,
+             y0 = tapply(X = grid_goa$N_km,
                          INDEX = district_vals,
                          FUN = min) - 100,
              xpd = NA,
@@ -222,7 +218,7 @@ plot_strata_boundary <- function(
     }
     
     ## Plot stations
-    temp_loc <- Extrapolation_depths[temp_samples, c("E_km", "N_km")]
+    temp_loc <- grid_goa[temp_samples, c("E_km", "N_km")]
     temp_loc$N_km <- temp_loc$N_km
     points(x = temp_loc,
            pch = 16,
@@ -230,7 +226,7 @@ plot_strata_boundary <- function(
     
     ## District labels
     text(x = rowMeans(cbind(districts$W_UTM, districts$E_UTM)),
-         y = tapply(X = Extrapolation_depths$N_km,
+         y = tapply(X = grid_goa$N_km,
                     INDEX = district_vals,
                     FUN = min) - 150,
          cex = 0.90,
@@ -247,10 +243,10 @@ plot_strata_boundary <- function(
                   add = TRUE)
     
     ## Stratum labels
-    text(x = tapply(Extrapolation_depths$E_km, 
+    text(x = tapply(grid_goa$E_km, 
                     res_df[, idx],
                     median),
-         y = tapply(Extrapolation_depths$N_km, 
+         y = tapply(grid_goa$N_km, 
                     res_df[, idx],
                     median) + 0.65 * y_range,
          labels = 1:nrow(strata_list[[idx]]),
@@ -258,8 +254,8 @@ plot_strata_boundary <- function(
          cex = 0.5)
     
     ## Solution label
-    text(x = min(Extrapolation_depths$E_km) + x_range*0.15,
-         y = min(Extrapolation_depths$N_km) + y_range*1.5,
+    text(x = min(grid_goa$E_km) + x_range*0.15,
+         y = min(grid_goa$N_km) + y_range*1.5,
          font = 2, cex = 1.25, xpd = NA,
          labels = paste0(c("2" = "A) ", "5" = "B) ", 
                            "8" = "C) ", "11" = "D) ")[paste0(idx)],
@@ -276,7 +272,7 @@ plot_strata_boundary <- function(
     par(mar = c(2, 4.24, 0, 1))
     plot_strata_boundary(strata = strata_list[[idx]],
                          sol = res_df[, idx],
-                         extrapolation_grid = Extrapolation_depths,
+                         extrapolation_grid = grid_goa,
                          y_axis_pos = 2)
     axis(side = 1)
   }  ## Loop over scenarios -- end

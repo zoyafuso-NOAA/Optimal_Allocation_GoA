@@ -9,13 +9,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
-                       "C:/Users/Zack Oyafuso/Documents/",
-                       "C:/Users/zack.oyafuso/Work/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/")
-
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2)[2]
 output_dir <- paste0(c("/Users/zackoyafuso/",
                        "C:/Users/Zack Oyafuso/")[which_machine],
                      "Google Drive/MS_Optimizations/TechMemo/figures/")
@@ -23,35 +17,34 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
 ##################################
 ## Import plotting percentile time series function
 ##################################
-source(paste0(github_dir, "modified_functions/plot_percentiles.R"))
+source("modified_functions/plot_percentiles.R")
 library(SamplingStrata)
 library(readxl)
 
 ##################################
 ## Import Strata Allocations and spatial grid and predicted density
 ##################################
-load(paste0(github_dir, '/data/optimization_data.RData'))
-load(paste0(github_dir, '/data/Extrapolation_depths.RData'))
-load(paste0(github_dir, "/results/MS_optimization_knitted_results.RData"))
+load("data/processed/optimization_data.RData")
+load("data/processed/grid_goa.RData")
+load("results/MS_optimization_knitted_results.RData")
 
-GOA_allocations <- readxl::read_xlsx(
-  path = paste0(github_dir, '/data/GOA 2019 stations by stratum.xlsx')
-)
-GOA_allocations3 <- readxl::read_xlsx(
-  path = paste0(github_dir, '/data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')
-) 
+GOA_allocations <- 
+  readxl::read_xlsx(path = 'data/GOA 2019 stations by stratum.xlsx')
+
+GOA_allocations3 <- 
+  readxl::read_xlsx(path = 'data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')
 
 ##################################
 ## Specify Management Districts
 ##################################
-new_strata_labels = 1:length(unique(Extrapolation_depths$stratum))
-names(new_strata_labels) <- sort(unique(Extrapolation_depths$stratum))
+new_strata_labels = 1:length(unique(grid_goa$stratum))
+names(new_strata_labels) <- sort(unique(grid_goa$stratum))
 
 ##################################
 ## Rename Current Stratum labels
 ##################################
-Extrapolation_depths$stratum_new_label <- 
-  new_strata_labels[paste(Extrapolation_depths$stratum)]
+grid_goa$stratum_new_label <- 
+  new_strata_labels[paste(grid_goa$stratum)]
 
 ##################################################
 ####   Create dataframe of effort allocations across boats
@@ -82,9 +75,8 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
                               rep(c("district", "full_domain"), each = 2)))
 
 for (irow in 1:nrow(scen)) {
-  scen_name <- paste0("SUR_", scen$survey_type[irow], "_", 
-                      scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  file_name <- paste0(github_dir, "results/sim_dens_surveys/", 
+  scen_name <- paste0(scen$domain[irow], "_STR_", scen$strata[irow], "_")
+  file_name <- paste0("results/survey_simulations/", 
                       scen_name, "simulation_results.RData")
   
   load(file_name)
@@ -135,7 +127,7 @@ for (iscen in 1:(nrow(settings) + 3)) {
   
   #Clean up order of strata for the current survey design
   if(iscen %in% (nrow(settings) + (1:3)) ) {
-    temp_frame$X1 <- Extrapolation_depths$stratum_new_label
+    temp_frame$X1 <- grid_goa$stratum_new_label
     temp_agg_strata <- buildStrataDF(dataset = temp_frame)
     
     idx <- order(as.numeric(temp_agg_strata$STRATO))
@@ -177,8 +169,7 @@ for (imetric in c("true_cv", "rrmse_cv")) { ## loop over metric -- start
     
     ## Calculate max y for plotting
     merged_metric <- 
-      lapply(X = with(scen, paste0("SUR_", survey_type, "_", 
-                                   domain, "_STR_", strata, "_", imetric )), 
+      lapply(X = with(scen, paste0(domain, "_STR_", strata, "_", imetric )), 
              FUN = function(x) get(x)[1:n_years,
                                       common_names_all[ispp],
                                       paste0("boat_2")])

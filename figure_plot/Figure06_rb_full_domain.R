@@ -9,12 +9,7 @@ rm(list = ls())
 ##################################################
 ####  Set up directories
 ##################################################
-which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/",
-                       "C:/Users/Zack Oyafuso/Documents/",
-                       "C:/Users/zack.oyafuso/Work/")[which_machine],
-                     "GitHub/Optimal_Allocation_GoA/")
+which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2)[2]
 
 output_dir <- paste0(c("/Users/zackoyafuso/",
                        "C:/Users/Zack Oyafuso/")[which_machine],
@@ -23,13 +18,13 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
 ##################################
 ## Import plotting percentile time series function
 ##################################
-source(paste0(github_dir, "modified_functions/plot_percentiles.R"))
+source("modified_functions/plot_percentiles.R")
 
 ##################################
 ## Import Strata Allocations and spatial grid and predicted density
 ##################################
-load(paste0(github_dir, '/data/optimization_data.RData'))
-load(paste0(github_dir, '/data/Extrapolation_depths.RData'))
+load("data/processed/optimization_data.RData")
+load("data/processed/grid_goa.RData")
 
 scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
                    strata = c("cur", 3, 5, 10, 15),
@@ -37,9 +32,8 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
                               rep(c("district", "full_domain"), each = 2)))
 
 for (irow in 1:nrow(scen)) {
-  scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
-                      scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  file_name <- paste0(github_dir, "results/sim_dens_surveys/",
+  scen_name <- paste0(scen$domain[irow], "_STR_", scen$strata[irow], "_")
+  file_name <- paste0("results/survey_simulations/",
                       scen_name, "simulation_results.RData")
   
   load(file_name)
@@ -89,10 +83,7 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
       y_max <- max(abs(unlist(
         lapply(X = lapply(X = c(1, 5, 2),
                           FUN = function(x) 
-                            get(paste0("SUR_", 
-                                       scen$survey_type[irow], 
-                                       "_",
-                                       scen$domain[irow], 
+                            get(paste0(scen$domain[irow], 
                                        "_STR_", 
                                        scen$strata[irow], 
                                        "_rb_agg"))[,
@@ -105,8 +96,7 @@ gen_layout <- matrix(c(5, 1,2,3, 4,4,4,4), ncol = 2)
       
       for (irow in c(1, 5, 2) ) {
         ## subset result object based on survey scenario
-        scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
-                            scen$domain[irow], "_STR_", scen$strata[irow], "_")
+        scen_name <- paste0(scen$domain[irow], "_STR_", scen$strata[irow], "_")
         rb_agg <- get(paste0(scen_name, "rb_agg"))[ , ispp, "boat_2" , ]
         
         ## Base plot

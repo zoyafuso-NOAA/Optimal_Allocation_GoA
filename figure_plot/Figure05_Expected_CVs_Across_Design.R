@@ -9,10 +9,6 @@ rm(list = ls())
 ####  Set up directories  
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
-                       "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/")
 output_dir <- paste0(c("/Users/zackoyafuso/", 
                        "C:/Users/Zack Oyafuso/")[which_machine], 
                      "Google Drive/MS_Optimizations/TechMemo/figures/")
@@ -31,38 +27,31 @@ library(readxl)
 ##################################################
 ####  Load Data
 ##################################################
-load(paste0(github_dir, 
-            "data/optimization_data.RData"))
-load(paste0(github_dir, 
-            "data/Extrapolation_depths.RData"))
-load(paste0(github_dir, 
-            "data/VAST_fit_D_gct.RData"))
-MS_objects <- 
-  load(paste0(github_dir,
-              "results/MS_optimization_knitted_results.RData"))
+load("data/processed/optimization_data.RData")
+load("data/processed/grid_goa.RData")
+load("data/processed/VAST_fit_D_gct.RData")
+
+MS_objects <- load("results/MS_optimization_knitted_results.RData")
 
 for (ivar in MS_objects) assign(x = paste0(ivar, "_MS"), value = get(ivar))
 
-SS_objects <- 
-  load(paste0(github_dir, 
-              "results/full_domain/Single_Species_Optimization",
-              "/optimization_knitted_results.RData"))
+SS_objects <- load(paste0("results/full_domain/Single_Species_Optimization",
+                          "/optimization_knitted_results.RData"))
 for (ivar in SS_objects) assign(x = paste0(ivar, "_SS"), value = get(ivar))
 rm(list = SS_objects)
 
-goa_allocations <- readxl::read_xlsx(
-  path = paste0(github_dir, 
-                '/data/GOA 2019 stations by stratum.xlsx'))
+goa_allocations <- 
+  readxl::read_xlsx(path = 'data/GOA 2019 stations by stratum.xlsx')
 
 ##################################################
 ####  Current survey allocation
 ##################################################
 ## Rename Current Stratum labels
-new_strata_labels = 1:length(unique(Extrapolation_depths$stratum))
-names(new_strata_labels) <- sort(unique(Extrapolation_depths$stratum))
+new_strata_labels = 1:length(unique(grid_goa$stratum))
+names(new_strata_labels) <- sort(unique(grid_goa$stratum))
 
-Extrapolation_depths$stratum_new_label <- 
-  new_strata_labels[paste(Extrapolation_depths$stratum)]
+grid_goa$stratum_new_label <- 
+  new_strata_labels[paste(grid_goa$stratum)]
 
 allocations <- data.frame(stratum = sort(unique(goa_allocations$Stratum)),
                           nh = c(goa_allocations$`Number stations`))
@@ -109,7 +98,7 @@ srs_cv <- as.numeric(sqrt(srs_var) / srs_mean)
 ##################################################
 ####  Calculate Expected CV of current design across ALL species
 ##################################################
-frame$X1 <- Extrapolation_depths$stratum_new_label
+frame$X1 <- grid_goa$stratum_new_label
 strata_stats <- SamplingStrata::buildStrataDF(dataset = frame)
 strata_stats <- strata_stats[order(as.numeric(strata_stats$STRATO)), ]
 strata_stats$SOLUZ <-  allocations$nh
@@ -123,7 +112,7 @@ current_strs_cv <- as.numeric(temp_cv)
 ####  Calculate expected CV for all species for the 
 ####  gulf-wide (full_domain) 15 strata solution (isol == 8)
 ##################################################
-isol <- 8
+isol <- 2
 frame$X1 <- res_df_MS[, isol]
 strata_stats <- SamplingStrata::buildStrataDF(dataset = frame)
 strata_stats <- strata_stats[order(as.numeric(strata_stats$STRATO)), ]

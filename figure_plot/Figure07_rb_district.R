@@ -12,12 +12,6 @@ library(raster)
 ####  Set up directories
 ##################################################
 which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2, 'Zack_GI_PC' = 3)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/",
-                       "C:/Users/Zack Oyafuso/Documents/",
-                       "C:/Users/zack.oyafuso/Work/")[which_machine],
-                     "GitHub/Optimal_Allocation_GoA/")
-
 output_dir <- paste0(c("/Users/zackoyafuso/",
                        "C:/Users/Zack Oyafuso/")[which_machine],
                      "Google Drive/MS_Optimizations/TechMemo/figures/")
@@ -25,13 +19,13 @@ output_dir <- paste0(c("/Users/zackoyafuso/",
 ##################################
 ## Import plotting percentile time series function
 ##################################
-source(paste0(github_dir, "modified_functions/plot_percentiles.R"))
+source("modified_functions/plot_percentiles.R")
 
 ##################################
 ## Import Strata Allocations and spatial grid and predicted density
 ##################################
-load(paste0(github_dir, '/data/optimization_data.RData'))
-load(paste0(github_dir, '/data/Extrapolation_depths.RData'))
+load('data/processed/optimization_data.RData')
+load('data/processed/grid_goa.RData')
 
 scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
                    strata = c("cur", 3, 5, 10, 15),
@@ -39,9 +33,8 @@ scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
                               rep(c("district", "full_domain"), each = 2)))
 
 for (irow in 1:nrow(scen)) {
-  scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
-                      scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  file_name <- paste0(github_dir, "results/sim_dens_surveys/",
+  scen_name <- paste0(scen$domain[irow], "_STR_", scen$strata[irow], "_")
+  file_name <- paste0("results/survey_simulations/",
                       scen_name, "simulation_results.RData")
   
   load(file_name)
@@ -66,7 +59,7 @@ legend_layout <- matrix(c(7, 1, 1, 1,
 # layout(legend_layout)
 plot_legend <- function() {
   goa <- sp::SpatialPointsDataFrame(
-    coords = Extrapolation_depths[, c("E_km", "N_km")],
+    coords = grid_goa[, c("E_km", "N_km")],
     data = data.frame(Str_no = as.integer(district_vals) ) )
   goa_ras <- raster::raster(x = goa, 
                             resolution = 10)
@@ -77,14 +70,14 @@ plot_legend <- function() {
   raster::image(goa_ras, asp = 1, axes = F, col = palette()[-1])
   segments(x0 = districts$W_UTM,
            x1 = districts$E_UTM,
-           y0 = tapply(X = Extrapolation_depths$N_km,
+           y0 = tapply(X = grid_goa$N_km,
                        INDEX = as.integer(district_vals),
                        FUN = min) + c(-50, 500, -100, 200, -100),
            xpd = NA,
            lwd = 2)
   
   text(x = rowMeans(cbind(districts$W_UTM, districts$E_UTM)),
-       y = tapply(X = Extrapolation_depths$N_km,
+       y = tapply(X = grid_goa$N_km,
                   INDEX = district_vals,
                   FUN = min) + c(-400, 450, -450, 150, -450),
        cex = 0.90,
@@ -176,8 +169,7 @@ for (which_spp in paste(1:4)) {
     plot_this <- list()
     for (irow in c(1, 4, 2) ) { 
       ## subset result object based on survey scenario
-      scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
-                          scen$domain[irow], "_STR_", scen$strata[irow], "_")
+      scen_name <- paste0(scen$domain[irow], "_STR_", scen$strata[irow], "_")
       # rb_district <- get(paste0(scen_name, "log_rb_district"))
       rb_district <- get(paste0(scen_name, "log_rb_district"))
       
@@ -198,8 +190,7 @@ for (which_spp in paste(1:4)) {
     
     for (irow in c(1, 4, 2) ) { ## Loop over design scenario -- start
       ## subset result object based on survey scenario
-      scen_name <- paste0("SUR_", scen$survey_type[irow], "_",
-                          scen$domain[irow], "_STR_", scen$strata[irow], "_")
+      scen_name <- paste0(scen$domain[irow], "_STR_", scen$strata[irow], "_")
       rb_district <- get(paste0(scen_name, "log_rb_district"))
       
       for (idistrict in 1:5) { ## Loop over district -- start

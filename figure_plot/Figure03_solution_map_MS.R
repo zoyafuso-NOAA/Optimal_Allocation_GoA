@@ -17,11 +17,6 @@ library(raster)
 ####        on a multi-species or single-species level
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents", 
-                       "C:/Users/Zack Oyafuso/Documents")[which_machine],
-                     "/GitHub/Optimal_Allocation_GoA/")
-
 output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/",
                        "C:/Users/Zack Oyafuso/Google Drive/")[which_machine],
                      "MS_Optimizations/TechMemo/figures/")
@@ -30,19 +25,13 @@ output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/",
 ####   Load Data
 ####   Load Population CVs for use in the thresholds
 ##################################################
-load(paste0(github_dir, "data/optimization_data.RData"))
-load(paste0(github_dir, "data/Extrapolation_depths.RData"))
-load(paste0(github_dir, "results/MS_optimization_knitted_results.RData"))
+load("data/processed/optimization_data.RData")
+load("data/processed/grid_goa.RData")
+load("results/MS_optimization_knitted_results.RData")
 
 seed <- 234233
 districts$E_UTM[4] <- 1240
 districts$W_UTM[5] <- 1240
-
-##################################################
-####   Constants
-##################################################
-x_range <- diff(range(Extrapolation_depths$E_km))
-y_range <- diff(range(Extrapolation_depths$N_km))
 
 ##################################################
 ####    Plot
@@ -70,8 +59,8 @@ y_range <- diff(range(Extrapolation_depths$N_km))
       ## Base Plot layer
       plot(x = 1, y = 1, asp = 1,
            type = "n", axes = F, ann = F,
-           xlim = range(Extrapolation_depths$E_km),
-           ylim = with(Extrapolation_depths, 
+           xlim = range(grid_goa$E_km),
+           ylim = with(grid_goa, 
                        c(min(N_km), 
                          max(N_km) + 2.1 * y_range)))
       box()
@@ -97,7 +86,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
         
         ## Set up spatial object to plot solution
         goa <- sp::SpatialPointsDataFrame(
-          coords = Extrapolation_depths[, c("E_km", "N_km")],
+          coords = grid_goa[, c("E_km", "N_km")],
           data = data.frame(Str_no = res_df[, sol_idx]) )
         goa_ras <- raster::raster(x = goa, 
                                   resolution = 10)
@@ -122,8 +111,8 @@ y_range <- diff(range(Extrapolation_depths$N_km))
               col = strata_cols)
         
         ## Sample Size label
-        text(x = min(Extrapolation_depths$E_km) + x_range * 0.15,
-             y = min(Extrapolation_depths$N_km) + offset_y + y_range * 0.55,
+        text(x = min(grid_goa$E_km) + x_range * 0.15,
+             y = min(grid_goa$N_km) + offset_y + y_range * 0.55,
              label = paste("n =", samples[iboat]),
              cex = 1.5,
              font = 2)
@@ -131,10 +120,10 @@ y_range <- diff(range(Extrapolation_depths$N_km))
         ## District boxes
         rect(xleft = districts$W_UTM,
              xright = districts$E_UTM,
-             ybottom = tapply(X = Extrapolation_depths$N_km,
+             ybottom = tapply(X = grid_goa$N_km,
                               INDEX = district_vals,
                               FUN = min) + offset_y,
-             ytop = tapply(X = Extrapolation_depths$N_km,
+             ytop = tapply(X = grid_goa$N_km,
                            INDEX = district_vals,
                            FUN = max) + offset_y)
         
@@ -152,7 +141,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
         }
         
         ## Plot stations
-        temp_loc <- Extrapolation_depths[temp_samples, c("E_km", "N_km")]
+        temp_loc <- grid_goa[temp_samples, c("E_km", "N_km")]
         temp_loc$N_km <- temp_loc$N_km + offset_y
         points(x = temp_loc,
                pch = 16,
@@ -164,7 +153,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
   
   ## Districts Legend
   goa <- sp::SpatialPointsDataFrame(
-    coords = Extrapolation_depths[, c("E_km", "N_km")],
+    coords = grid_goa[, c("E_km", "N_km")],
     data = data.frame(Str_no = res_df[, sol_idx]) )
   goa_ras <- raster::raster(x = goa, 
                             resolution = 10)
@@ -181,17 +170,17 @@ y_range <- diff(range(Extrapolation_depths$N_km))
   
   rect(xleft = districts$W_UTM,
        xright = districts$E_UTM,
-       ybottom = tapply(X = Extrapolation_depths$N_km,
+       ybottom = tapply(X = grid_goa$N_km,
                         INDEX = district_vals,
                         FUN = min),
-       ytop = tapply(X = Extrapolation_depths$N_km,
+       ytop = tapply(X = grid_goa$N_km,
                      INDEX = district_vals,
                      FUN = max) )
   
-  text(x = tapply(X = Extrapolation_depths$E_km, 
+  text(x = tapply(X = grid_goa$E_km, 
                   INDEX = district_vals,
                   FUN = mean),
-       y = tapply(X = Extrapolation_depths$N_km, 
+       y = tapply(X = grid_goa$N_km, 
                   INDEX = district_vals,
                   FUN = mean),
        labels = districts$district,

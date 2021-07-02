@@ -6,14 +6,9 @@
 rm(list = ls())
 
 ##################################################
-####  Set up directories  
+####  Set up output directories  
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
-                       "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/")
-
 output_dir <- paste0(c("/Users/zackoyafuso/", 
                        "C:/Users/Zack Oyafuso/")[which_machine], 
                      "Google Drive/MS_Optimizations/TechMemo/figures/")
@@ -28,9 +23,9 @@ library(RColorBrewer)
 ##################################################
 ####    Load predicted density and optimization results 
 ##################################################
-load(paste0(github_dir, "data/optimization_data.RData"))
-load(paste0(github_dir, "/data/Extrapolation_depths.RData"))
-load(paste0(github_dir, "results/full_domain/Single_Species_Optimization/", 
+load("data/processed/optimization_data.RData")
+load("data/processed/grid_goa.RData")
+load(paste0("results/full_domain/Single_Species_Optimization/",
             "optimization_knitted_results.RData"))
 
 ##################################################
@@ -38,8 +33,6 @@ load(paste0(github_dir, "results/full_domain/Single_Species_Optimization/",
 ##################################################
 idomain <- "full_domain"
 isample <- 2 #1, 2, or 3 boat solution
-x_range <- diff(range(Extrapolation_depths$E_km))
-y_range <- diff(range(Extrapolation_depths$N_km))
 
 ##################################################
 ####   Plot
@@ -60,8 +53,8 @@ y_range <- diff(range(Extrapolation_depths$N_km))
       ## Base Plot
       plot(x = 1, y = 1, 
            type = "n", axes = F, ann = F,
-           xlim = range(Extrapolation_depths$E_km),
-           ylim = with(Extrapolation_depths, 
+           xlim = range(grid_goa$E_km),
+           ylim = with(grid_goa, 
                        c(min(N_km), max(N_km) + 7 * y_range)),
            asp = 1)
       
@@ -77,7 +70,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
     
     ## Set up spatial object to plot solution
     goa <- SpatialPointsDataFrame(
-      coords = Extrapolation_depths[, c("E_km", "N_km")],
+      coords = grid_goa[, c("E_km", "N_km")],
       data = data.frame("Str_no" = res_df[, idx],
                         stringsAsFactors = TRUE))
     
@@ -102,8 +95,8 @@ y_range <- diff(range(Extrapolation_depths$N_km))
           add = T)
     
     ## Species label
-    text(x = min(Extrapolation_depths$E_km) + x_range * 0.72,
-         y = min(Extrapolation_depths$N_km) + offset_y + y_range * 0.6,
+    text(x = min(grid_goa$E_km) + x_range * 0.72,
+         y = min(grid_goa$N_km) + offset_y + y_range * 0.6,
          labels =  c(rev(common_names_eval), rev(common_names_opt))[ispp],
          col = ifelse(c(rev(common_names_eval),
                         rev(common_names_opt))[ispp] %in% common_names_opt, 
@@ -125,7 +118,7 @@ y_range <- diff(range(Extrapolation_depths$N_km))
     }
     
     ## Plot station locations
-    temp_loc <- Extrapolation_depths[temp_samples, c("E_km", "N_km")]
+    temp_loc <- grid_goa[temp_samples, c("E_km", "N_km")]
     temp_loc$N_km <- temp_loc$N_km + offset_y
     points(x = temp_loc,
            pch = 16,
