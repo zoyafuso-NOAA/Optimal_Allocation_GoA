@@ -12,15 +12,11 @@ rm(list = ls())
 ####  Set up directories  
 ##################################################
 which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2)[2]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
-                       "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/")
 output_dir <- paste0(c("/Users/zackoyafuso/", 
                        "C:/Users/Zack Oyafuso/")[which_machine], 
                      "Google Drive/MS_Optimizations/TechMemo/figures/")
 
-VAST_sim_data_dir <- "C:/Users/Zack Oyafuso/Desktop/VAST_Runs/Simulate_Data/"
+VAST_sim_data_dir <- "D:/VAST_Runs/"
 
 ##################################################
 ####  Install a forked version of the SamplingStrata Package from 
@@ -39,14 +35,13 @@ library(plotrix)
 ##################################################
 ####  Load Data
 ##################################################
-load(paste0(github_dir, 
-            "data/optimization_data.RData"))
-load(paste0(github_dir, 
-            "data/Extrapolation_depths.RData"))
-load(paste0(github_dir,
-            "results/MS_optimization_knitted_results.RData"))
-source( paste0(github_dir, "/modified_functions/sim_fns.R") )
-# load(paste0(github_dir, '/data/fit_density.RData'))
+load("data/processed/optimization_data.RData")
+load("data/processed/grid_goa.RData")
+load("data/processed/prednll_VAST_models.RData")
+load("data/processed/VAST_fit_D_gct.RData")
+load("results/MS_optimization_knitted_results.RData")
+source("modified_functions/sim_fns.R")
+
 
 
 ##################################################
@@ -65,7 +60,7 @@ spp_order <- c(1:9, 15, 11, 10, 12:14) #For plotting
 
 plot_solution <- res_df[, sol_idx]
 goa <- sp::SpatialPointsDataFrame(
-  coords = Extrapolation_depths[,c("E_km", "N_km")],
+  coords = grid_goa[,c("E_km", "N_km")],
   data = data.frame(Str_no = plot_solution) )
 goa_ras <- raster::raster(x = goa, 
                           resolution = 5)
@@ -73,8 +68,8 @@ goa_ras <- raster::rasterize(x = goa,
                              y = goa_ras, 
                              field = "Str_no")
 
-xrange <- range(Extrapolation_depths[, "E_km"])
-yrange <- range(Extrapolation_depths[, "N_km"])
+xrange <- range(grid_goa[, "E_km"])
+yrange <- range(grid_goa[, "N_km"])
 xrange_diff <- diff(xrange)
 yrange_diff <- diff(yrange)
 
@@ -171,7 +166,13 @@ temp_res <- array(dim = c(length(threshold) + 1, n_years, ns_all, n_iters),
                   dimnames = list(NULL, NULL, common_names_all, NULL))
 
 for (ispp in common_names_all) {
-  load(paste0(VAST_sim_data_dir, ispp, "/simulated_data.RData"))
+  
+  ## Load species specific simulated data
+  depth_in_model <- c(F, T)[which.min(pred_jnll[pred_jnll$spp_name == ispp, 
+                                                2:3])]
+  load(paste0(VAST_sim_data_dir, ispp, 
+              ifelse(test = depth_in_model, yes = "_depth", no = ""),
+              "/simulated_data.RData"))
   
   for (isurvey in 1:(length(threshold)+1) ) {
     for (isim in 1:n_iters) {
@@ -180,9 +181,9 @@ for (ispp in common_names_all) {
       sim_survey <- do_STRS(input = list(
         "density" = sweep(x = sim_data[, , isim],
                           MARGIN = 1,
-                          STATS = Extrapolation_depths$Area_km2,
+                          STATS = grid_goa$Area_km2,
                           FUN = "/"),
-        "cell_areas" = Extrapolation_depths$Area_km2,
+        "cell_areas" = grid_goa$Area_km2,
         "solution" = res_df[, sol_idx],
         "allocation" = tradeoff_sample_allocations[, isurvey],
         "true_density" = true_mean[ispp, ],
@@ -202,7 +203,7 @@ for (ispp in common_names_opt) {
                                  MARGIN = 1:2,
                                  FUN = sd),
                        MARGIN = 2,
-                       STATS = true_index[ispp, ],
+                       STATS = true_index[ispp, ] / 1000,
                        FUN = '/'))
   boxplot(plot_this,
           main = ispp,

@@ -124,6 +124,9 @@ for(irow in 1:nrow(pred_jnll)) { ## Loop over species -- start
   ## Extract file name of best model
   ispp <- pred_jnll$spp_name[irow]
   depth_in_model <- c(FALSE, TRUE)[which.min(pred_jnll[irow, 2:3])]
+  
+  if(irow == 21) depth_in_model <- FALSE
+  
   filename <- paste0(VAST_dir, ispp, ifelse(test = depth_in_model, 
                                             yes = "_depth/", 
                                             no = "/"),

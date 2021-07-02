@@ -133,6 +133,8 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
     ## Load species specific simulated data
     depth_in_model <- c(F, T)[which.min(pred_jnll[pred_jnll$spp_name == ispp, 
                                                   2:3])]
+    if(ispp == "shortraker rockfish") depth_in_model <- FALSE
+    
     load(paste0(VAST_sim_data_dir, ispp, 
                 ifelse(test = depth_in_model, yes = "_depth", no = ""),
                 "/simulated_data.RData"))
