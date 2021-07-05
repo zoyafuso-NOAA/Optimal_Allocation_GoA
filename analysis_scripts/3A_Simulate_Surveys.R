@@ -141,7 +141,7 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
     
     for (iter in 1:n_iters) { ## loop over survey replicates--start
       set.seed(n_iters + iter)
-      for (iboat in 1:n_boats) { ## loop over boat-effort--start
+      for (iboat in 2) { ## loop over boat-effort--start
         
         ## Temporary input objects for the survey simulation
         temp_density <- sweep(x = sim_data[, , iter] / 0.001,
@@ -199,7 +199,7 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
         ##################################
         ## Calculate Performance Metrics
         ##################################
-        for (iboat in 1:n_boats) { ## subloop over boat-effort--start
+        for (iboat in 2) { ## subloop over boat-effort--start
           for(iyear in 1:n_years) { ## subloop over years--start
             
             ## Calculate True CV

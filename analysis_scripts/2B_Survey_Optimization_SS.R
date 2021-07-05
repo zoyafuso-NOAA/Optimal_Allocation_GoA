@@ -54,6 +54,8 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
                                                            "_SQ_SUM"))]
   names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
   
+  frame$X2 <- ifelse(frame$X2 > 300, yes = 1000, no = frame$X2)
+  
   ## Domain is the term used in the SamplingStrata package, is used to 
   ## distinguish whether the optimization is done gulf-wide (n_dom == 1) or 
   ## at each of the five management districts (n_dom == n_districts)
@@ -90,7 +92,7 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
     dataset = cbind( subset(frame, select = -c(X1, X2)),
                      X1 = 1))
   
-  srs_n <- as.numeric(280 * table(frame$domainvalue) / n_cells)
+  srs_n <- as.numeric(samples[2] * table(frame$domainvalue) / n_cells)
   
   ## SRS statistics
   srs_var <- srs_stats$S1^2 * (1 - srs_n / n_cells) / srs_n
@@ -104,7 +106,7 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
   cv[["domainvalue"]] <- 1:n_dom
   cv <- as.data.frame(cv)
   
-  while (current_n <= 820 ) {
+  while (current_n <= samples[2] ) {
     
     ## Set wd for output files, create a directory if it doesn"t exist yet
     temp_dir = paste0(result_dir, "Run", run)

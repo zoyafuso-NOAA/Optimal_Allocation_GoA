@@ -113,7 +113,7 @@ for(idom in c("full_domain", "district")) { ## Loop through scales -- start
   settings <- data.frame()
   
   for (ispp in 1:ns_all) {
-    for (isample in 1:n_boats) {
+    for (isample in 2) {
       temp_idx <- settings_total_n$species == common_names_all[ispp]
       
       if(sum(temp_idx) != 0) {

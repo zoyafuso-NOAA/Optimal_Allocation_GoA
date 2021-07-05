@@ -40,7 +40,7 @@ scen <- data.frame(nstrata = c(10,15, 3,5),
 # irow = 1
 
 for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
-  for(isample in 1:n_boats) {
+  for(isample in 2) {
     
     ##  Constants to specify before doing optimization
     ##  The optimization at the full_domain (gulf-wide) uses a different
@@ -63,6 +63,8 @@ for (irow in 1:nrow(scen)) { ## Loop through scen dataframe -- start
       paste0("Y", 1:ns_opt)
     names(frame)[names(frame) %in% paste0("Y", spp_idx_opt, "_SQ_SUM")] <- 
       paste0("Y", 1:ns_opt, "_SQ_SUM")
+    
+    frame$X2 <- ifelse(frame$X2 > 300, yes = 1000, no = frame$X2)
     
     ## n_dom: domain is the term used in the optimization
     ##        1 domain if conducting a gulf-wide optimization

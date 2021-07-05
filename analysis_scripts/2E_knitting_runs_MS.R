@@ -41,7 +41,7 @@ for(irow in 1:nrow(scen)) {
    
    n_dom <- length(unique(frame$domainvalue))
    
-   for (iboat in 1:n_boats) {
+   for (iboat in 2) {
       result_dir <- paste0("results/", idom, 
                            "/Multi_Species_Optimization/boat", 
                            iboat, "/Str", istrata, "/")
