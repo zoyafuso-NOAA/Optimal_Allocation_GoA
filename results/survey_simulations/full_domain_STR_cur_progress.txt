@@ -1,2 +1,0 @@
-full_domain_STR_cur_
-Finished: Iteration 1000, yelloweye rockfish,  scenario, cur strata
