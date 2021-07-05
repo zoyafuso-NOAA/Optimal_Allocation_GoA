@@ -12,7 +12,13 @@ rm(list = ls())
 which_machine <- c('Zack_MAC' = 1, 'Zack_PC' = 2)[2]
 output_dir <- paste0(c("/Users/zackoyafuso/",
                        "C:/Users/Zack Oyafuso/")[which_machine],
-                     "Google Drive/MS_Optimizations/TechMemo/figures/")
+                     "Google Drive/MS_Optimizations/TechMemo/")
+
+##################################################
+####   Set up appendix output directories
+##################################################
+if(!dir.exists(paste0(output_dir, "/appendix/Appendix E plots/" )))
+  dir.create(paste0(output_dir, "/appendix/Appendix E plots/" ))
 
 ##################################
 ## Import plotting percentile time series function
@@ -148,15 +154,23 @@ for (iscen in 1:(nrow(settings) + 3)) {
 ####   Plot True CV and RRMSE
 ##################################################
 
-for (imetric in c("true_cv", "rrmse_cv")) { ## loop over metric -- start
+plot_scen <- expand.grid(metric = c("true_cv", "rrmse_cv"),
+                         boat = c(2, 1, 3),
+                         stringsAsFactors = FALSE)
+plot_scen$fig_name <- c("figures/Figure08_TrueCV.png", 
+                        "figures/Figure09_RRMSECV.png",
+                        paste0("appendix/Appendix E plots/Appendix E", 
+                               1:4, '.png') )
+
+for(irow in 1:nrow(plot_scen)){
+  plot_filename <- paste0(output_dir, plot_scen$fig_name[irow])
+  imetric <- plot_scen$metric[irow]
+  iboat <- plot_scen$boat[irow]
   
   ## Open Device
-  png(filename = paste0(output_dir,
-                        ifelse(imetric == "true_cv",
-                               "Figure08_TrueCV.png",
-                               "Figure09_RRMSECV.png") ),
-      width = 170, height = 200, units = "mm",
-      res = 500)
+  png(filename = plot_filename,
+      width = 170, height = 200, units = "mm", res = 500)
+  
   
   ## Plot layout
   layout(mat = matrix(c(1:ns_all, ns_all + 1, ns_all + 1), 
@@ -172,7 +186,7 @@ for (imetric in c("true_cv", "rrmse_cv")) { ## loop over metric -- start
       lapply(X = with(scen, paste0(domain, "_STR_", strata, "_", imetric )), 
              FUN = function(x) get(x)[1:n_years,
                                       common_names_all[ispp],
-                                      paste0("boat_2")])
+                                      paste0("boat_", iboat) ])
     ymax_ <- max(unlist(merged_metric)) * 1.1
     
     ## Plot metric
@@ -230,4 +244,5 @@ for (imetric in c("true_cv", "rrmse_cv")) { ## loop over metric -- start
   
   ## Close Device
   dev.off()
-} ## loop over  metric -- end
+}
+

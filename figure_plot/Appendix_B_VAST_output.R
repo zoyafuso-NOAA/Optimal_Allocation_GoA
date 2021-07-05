@@ -14,7 +14,7 @@
 rm(list = ls())
 
 VAST_dir <- "D:/VAST_Runs/"
-output_dir <- "C:/Users/Zack Oyafuso/Google Drive/MS_Optimizations/TechMemo/appendix/Appendix A plots/"
+output_dir <- "C:/Users/Zack Oyafuso/Google Drive/MS_Optimizations/TechMemo/appendix/Appendix B plots/"
 if(!dir.exists(output_dir)) dir.create(path = output_dir)
 
 ##################################################
@@ -77,6 +77,9 @@ for (which_spp in 1:nrow(pred_jnll)) {
   ## with the "best" (i.e., lower RRMSE) predictive performance 
   ###################################
   depth_in_model <-  c(F, T)[which.min(pred_jnll[which_spp, 2:3])]
+  
+  if(which_spp == 21) depth_in_model <- FALSE
+  
   result_dir <- paste0(VAST_dir, 
                        pred_jnll$spp_name[which_spp],
                        ifelse(test = depth_in_model, 
@@ -169,7 +172,7 @@ for (which_spp in 1:nrow(pred_jnll)) {
   text(x = -0.25, 
        y = 0.5,
        labels = paste0(
-         "Appendix Figure A-", which_spp, ". -- ",
+         "Appendix Figure B-", which_spp, ". -- ",
          plot_spp_names[which_spp], " (depth ", 
          ifelse(depth_in_model, yes = "included).", no = "excluded)."), 
          "\n                                        ",
