@@ -17,7 +17,7 @@ github_dir <- paste0(c("/Users/zackoyafuso/Documents/",
                      "GitHub/Optimal_Allocation_GoA/")
 output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/",
                        "C:/Users/Zack Oyafuso/Google Drive/")[which_machine],
-                     "MS_Optimizations/TechMemo/appendix/")
+                     "MS_Optimizations/TechMemo/appendix/Appendix C plots/")
 
 ##################################################
 ####  Libraries
@@ -143,40 +143,15 @@ plot_settings <- data.frame(district = districts$district,
                             y_inter = c(0.9, 1, 1, 1, 1))
 
 ##################################################
-####  Appendix Figure Label
-##################################################
-figure_label <- switch(
-  which_plot,
-  "main" = 
-    paste0(
-      "Appendix Figure C-1. -- Stratum boundaries of the current stratified",
-      " random design (open polygons)\n",
-      "                                         ",
-      "superimposed on the optimized strata boundaries ",
-      "(District-level optimization,\n",
-      "                                         ",
-      "three strata per district, filled polygons)."),
-  "appendix" = 
-    paste0(
-      "Appendix Figure C-2. -- Stratum boundaries of the current stratified",
-      " random design (open polygons)\n", 
-      "                                         ",
-      "superimposed on the optimized strata boundaries ",
-      "(District-level optimization,\n",
-      "                                         ",
-      "three strata per district, filled polygons).\n", 
-      "                                         ",
-      "Depths > 300 m were set to 300 m."))
-
-
-##################################################
 ####  Plot
 ##################################################
 {
   
   ## Set up plot
-  # pdf(paste0(output_dir, "Appendix C.pdf"), 
-  #     width = 6, height = 6.5, fonts = "serif")
+  png(filename = paste0(output_dir, "Appendix C", switch(which_plot,
+                                              "main" = "1",
+                                              "appendix" = 2) ,".png"),
+      units = "in", width = 6, height = 6.5, res = 500, family = "serif")
   
   ## Set up plot layout
   par(mar = c(0, 0, 0, 0), 
@@ -291,7 +266,7 @@ figure_label <- switch(
                                field = "Str_no")
   
   ## Plot
-  par(mar = c(0.5, 5 ,3 ,0))
+  par(mar = c(0.5, 0.5, 0.5, 0.5))
   raster::image(goa_ras,
                 col = "grey",
                 asp = 1,
@@ -322,17 +297,14 @@ figure_label <- switch(
        font = 2)
   
   ## Plot figure capture
-  text(x = goa_ras@extent[1] - 950,
-       y = goa_ras@extent[3] + 950,
-       labels = figure_label,
-       xpd = NA, 
-       pos = 4, offset = 0,
-       cex = 0.7)
+  # text(x = goa_ras@extent[1] - 950,
+  #      y = goa_ras@extent[3] + 950,
+  #      labels = figure_label,
+  #      xpd = NA, 
+  #      pos = 4, offset = 0,
+  #      cex = 0.7)
   box(which = "figure")
   
-  # dev.off()
-  
-  
-  # shell.exec(paste0(output_dir, "Appendix C.pdf"))
+  dev.off()
   
 }
