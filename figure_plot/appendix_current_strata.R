@@ -10,12 +10,14 @@ set.seed(23433)
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
 
+which_plot <- c("main", "appendix")[1]
+
 github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
                        "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
                      "GitHub/Optimal_Allocation_GoA/")
 output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/",
                        "C:/Users/Zack Oyafuso/Google Drive/")[which_machine],
-                     "MS_Optimizations/TechMemo/appendix/")
+                     "MS_Optimizations/TechMemo/appendix/Appendix C plots/")
 
 ##################################################
 ####  Libraries
@@ -29,7 +31,7 @@ library(RColorBrewer)
 ####  AK_land: alaska land polygons
 ####  goa_strata: Current GoA strata polygons
 ####  MS_optimization_knitted_results: optimal solutions
-####  Extrapolation_depths.RData: goa_grid that corresponds to the solutions
+####  grid_goa.RData: goa_grid that corresponds to the solutions
 ####  optimization_data.RData: constants 
 ##################################################
 AK_land <- rgdal::readOGR(paste0(github_dir,
@@ -43,8 +45,8 @@ goa_strata <- sp::spTransform(x = goa_strata,
                               CRSobj = "+proj=utm +units=km +zone=5")
 
 load(paste0(github_dir, "results/MS_optimization_knitted_results.RData"))
-load(paste0(github_dir, "data/Extrapolation_depths.RData"))
-load(paste0(github_dir, "data/optimization_data.RData"))
+load(paste0(github_dir, "data/processed/grid_goa.RData"))
+load(paste0(github_dir, "data/processed/optimization_data.RData"))
 
 n_districts <- 5
 n_depth_zones <- 4
@@ -52,7 +54,8 @@ n_depth_zones <- 4
 ##################################################
 ####  Which optimal solution to plot?
 ##################################################
-sol_idx <- with(settings, which(boat == 2 & strata == 3 & domain == "district"))
+sol_idx <- with(settings, 
+                which(boat == 2 & strata == 3 & domain == "district"))
 
 ##################################################
 ####  Current GoA Strata names
@@ -140,25 +143,15 @@ plot_settings <- data.frame(district = districts$district,
                             y_inter = c(0.9, 1, 1, 1, 1))
 
 ##################################################
-####  Appendix Figure Label
-##################################################
-figure_label <- 
-  paste0("Appendix Figure C-1. -- Stratum boundaries of the current stratified",
-         " random design (open polygons)\n", 
-         "                                         ",
-         "superimposed on the optimized strata boundaries ",
-         "(District-level optimization,\n",
-         "                                         ",
-         "three strata per district, filled polygons).")
-
-##################################################
 ####  Plot
 ##################################################
 {
-  
+
   ## Set up plot
-  pdf(paste0(output_dir, "Appendix C.pdf"), 
-      width = 6, height = 6.5, fonts = "serif")
+  png(filename = paste0(output_dir, "Appendix C", switch(which_plot,
+                                                         "main" = "1",
+                                                         "appendix" = 2) ,".png"),
+      units = "in", width = 6, height = 6.5, res = 500, family = "serif")
   
   ## Set up plot layout
   par(mar = c(0, 0, 0, 0), 
@@ -174,8 +167,8 @@ figure_label <-
     
     ## Set up spatial object
     goa <- sp::SpatialPointsDataFrame(
-      coords = Extrapolation_depths[district_vals == idistrict_idx, 
-                                    c("E_km", "N_km")],
+      coords = grid_goa[district_vals == idistrict_idx, 
+                        c("E_km", "N_km")],
       data = data.frame(Str_no = sub_res_df) )
     goa_ras <- raster::raster(x = goa, 
                               resolution = 3.8)
@@ -203,6 +196,8 @@ figure_label <-
     
     ## Plot current strata by depth zone
     for(istratas in 1:n_depth_zones) { ## For each depth zone--start loop
+      
+      set.seed(idistrict_idx)
       
       ## Plot land
       plot( raster::shift(
@@ -263,8 +258,8 @@ figure_label <-
   
   ## Districts Legend: first plot spatial domain
   goa <- sp::SpatialPointsDataFrame(
-    coords = Extrapolation_depths[, c("E_km", "N_km")],
-    data = data.frame(Str_no = 1:nrow(Extrapolation_depths))) 
+    coords = grid_goa[, c("E_km", "N_km")],
+    data = data.frame(Str_no = 1:nrow(grid_goa))) 
   
   goa_ras <- raster::raster(x = goa, 
                             resolution = 10)
@@ -273,7 +268,7 @@ figure_label <-
                                field = "Str_no")
   
   ## Plot
-  par(mar = c(0.5, 5 ,3 ,0))
+  par(mar = c(0.5, 0.5, 0.5, 0.5))
   raster::image(goa_ras,
                 col = "grey",
                 asp = 1,
@@ -287,33 +282,24 @@ figure_label <-
   ## Plot and label district boxes
   rect(xleft = districts$W_UTM,
        xright = districts$E_UTM,
-       ybottom = tapply(X = Extrapolation_depths$N_km,
+       ybottom = tapply(X = grid_goa$N_km,
                         INDEX = district_vals,
                         FUN = min),
-       ytop = tapply(X = Extrapolation_depths$N_km,
+       ytop = tapply(X = grid_goa$N_km,
                      INDEX = district_vals,
                      FUN = max) )
   
-  text(x = tapply(X = Extrapolation_depths$E_km, 
+  text(x = tapply(X = grid_goa$E_km, 
                   INDEX = district_vals,
                   FUN = mean),
-       y = tapply(X = Extrapolation_depths$N_km, 
+       y = tapply(X = grid_goa$N_km, 
                   INDEX = district_vals,
                   FUN = mean),
        labels = LETTERS[1:5],
        font = 2)
   
-  ## Plot figure capture
-  text(x = goa_ras@extent[1] - 950,
-       y = goa_ras@extent[3] + 950,
-       labels = figure_label,
-       xpd = NA, 
-       pos = 4, offset = 0,
-       cex = 0.7)
   box(which = "figure")
   
   dev.off()
   
-  
-  shell.exec(paste0(output_dir, "Appendix C.pdf"))
 }
