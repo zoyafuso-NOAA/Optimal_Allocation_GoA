@@ -149,8 +149,8 @@ plot_settings <- data.frame(district = districts$district,
   
   ## Set up plot
   png(filename = paste0(output_dir, "Appendix C", switch(which_plot,
-                                              "main" = "1",
-                                              "appendix" = 2) ,".png"),
+                                                         "main" = "1",
+                                                         "appendix" = 2) ,".png"),
       units = "in", width = 6, height = 6.5, res = 500, family = "serif")
   
   ## Set up plot layout
@@ -196,6 +196,8 @@ plot_settings <- data.frame(district = districts$district,
     
     ## Plot current strata by depth zone
     for(istratas in 1:n_depth_zones) { ## For each depth zone--start loop
+      
+      set.seed(idistrict_idx)
       
       ## Plot land
       plot( raster::shift(
@@ -296,13 +298,6 @@ plot_settings <- data.frame(district = districts$district,
        labels = LETTERS[1:5],
        font = 2)
   
-  ## Plot figure capture
-  # text(x = goa_ras@extent[1] - 950,
-  #      y = goa_ras@extent[3] + 950,
-  #      labels = figure_label,
-  #      xpd = NA, 
-  #      pos = 4, offset = 0,
-  #      cex = 0.7)
   box(which = "figure")
   
   dev.off()
