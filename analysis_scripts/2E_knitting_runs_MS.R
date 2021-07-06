@@ -151,7 +151,7 @@ idx <-  as.vector(
           ## on each split, calculate which solution id is closest to the 
           ## 1, 2, and 3, boat (280, 550, 820 stations) scenarios
           FUN = function(x) {
-             sapply(X = samples, 
+             sapply(X = samples[2], 
                     FUN = function(y) 
                        x$id[which.min(abs(x$n - y))])
           }
