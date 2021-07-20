@@ -8,11 +8,8 @@ for abundance estimation."
 
 ## Package Requirements
 
-A handful of R packages are required. R version 4.0.2 was used for the 
+A handful of R packages are required. R version 4.0.2 is used for the 
 analysis. Some conventional packages for plotting and manipulating data:
-
-VAST version 3.6.1,
-and FishStatsUtils version 2.8.0 (2020-09-22). 
 
 ```
 library(tidyverse)
@@ -21,8 +18,8 @@ library(raster)
 library(RColorBrewer)
 ```
 
-The creation of the operating models was done using the [VAST R package](https://github.com/James-Thorson-NOAA/VAST)
-version 3.6.1 and FishStatsUtils version 2.8.0.
+The [VAST R package](https://github.com/James-Thorson-NOAA/VAST)
+version 3.6.1 and FishStatsUtils version 2.8.0 is used for the creation of the operating models.
 
 ```
 library(VAST)
@@ -30,8 +27,8 @@ library(VAST)
 
 The bulk of the optimization is done within the SamplingStrata R Package 
 (https://github.com/barcaroli/SamplingStrata). There is one function in 
-the package, BuildStrataDF() that I modify for this analysis, so it is 
-best to use a forked version of the package that I modified:
+the package, BuildStrataDF() that is modified for this analysis, so it is 
+best to use a forked version of the package on Oyafuso's GitHub:
 
 ```
 library(devtools)
@@ -39,8 +36,7 @@ devtools::install_github(repo = "zoyafuso-NOAA/SamplingStrata")
 library(SamplingStrata)
 ```
 
-Lastly, the TSP package was imported to calculate the shortest path
-that visits each station.
+Lastly, the TSP package is used to calculate the shortest path that visits each station through the travelling salesperson problem.
 
 ```
 library(TSP)
@@ -95,8 +91,7 @@ surveys:
 
 The survey optimization framework is modularized into separate scripts. These
 are the scripts used below and the sections following are the order in which
-the optimization is conducted. As of now, there are no high-level wrapper
-functions that may ease wider general use. 
+the optimization is conducted. Refer to the wiki page for more detail on each script. 
 
 [optimization_data.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/optimization_data.R):
 Synthesizes data inputs and constants common to all subsequent scripts. 
