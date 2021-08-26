@@ -402,6 +402,11 @@ for (ispp in spp_names[1:6]) {
                "PredTF_i" = pred_TF))
     
     ##################################################
+    ####   Save model fit
+    ##################################################
+    save(list = "fit_sim", file = paste0(result_dir, "/fit_sim.RData"))
+    
+    ##################################################
     ####   Simulate 1000 iterations of data
     ##################################################
     sim_data <- array(data = NA, dim = c(nrow(grid_goa),
