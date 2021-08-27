@@ -27,8 +27,8 @@ load("data/processed/grid_goa.RData")
 ##################################################
 ####   Result object
 ##################################################
-dens_vals <- array(dim = c(ns_opt, n_cells, n_years, 5),
-                   dimnames = list(common_names_opt, NULL, NULL, 
+dens_vals <- array(dim = c(n_cells, ns_opt, n_years, 5),
+                   dimnames = list(NULL, common_names_opt, NULL, 
                                    c(paste0("Type ", 0:4))))
 
 ##################################################
@@ -51,20 +51,27 @@ for (ispp in common_names_opt) {
   
   dyn.load(paste0(temp_VAST_dir, "VAST_v12_0_0.dll"))
   
-  dens_vals[ispp, , , "Type 0"] <- fit_sim$Report$D_gct[, 1, years_included]
+  dens_vals[, ispp, , "Type 0"] <- fit_sim$Report$D_gct[, 1, years_included]
   print("Finished with Type 0")
   
   for (itype in 1:4) {
-    sim_val <- FishStatsUtils::simulate_data(fit = fit_sim, 
-                                             type = itype, 
+    sim_val <- FishStatsUtils::simulate_data(fit = fit_sim,
+                                             type = itype,
                                              random_seed = 123423)
     
     pred_TF <- (1:length(sim_val$b_i))[-c(1:7900)]
     
-    dens_vals[ispp, , ,paste0("Type ", itype)] <- 
-      matrix(data = sim_val$b_i[pred_TF] * 0.001, 
-             nrow = n_cells, 
-             ncol = n_years)
+    temp_density <- matrix(data = sim_val$b_i[pred_TF],
+                           nrow = n_cells,
+                           ncol = n_years)
+    
+    ## Temporary input objects for the survey simulation
+    temp_density <- sweep(x = temp_density,
+                          MARGIN = 1,
+                          STATS = grid_goa$Area_km2,
+                          FUN = "/")
+    
+    dens_vals[, ispp, , paste0("Type ", itype)] <- temp_density
     
     print(paste("Finished with Type", itype))
   }
@@ -80,7 +87,7 @@ scen <- expand.grid(type = 0:4,
                     strata_vars = 1:2,
                     deep_stations = c(TRUE, FALSE))
 
-for (irow in 1:nrow(scen)) {
+for (irow in 1:10) {
   frame <- frame_district[, c("domainvalue", "id", 
                               "WEIGHT",
                               paste0("Y", spp_idx_opt), 
@@ -123,11 +130,11 @@ for (irow in 1:nrow(scen)) {
   ##################################################
   if (scen$deep_stations[irow] == FALSE) {
     if (scen$strata_vars[irow] == 1) frame$X1 <- ifelse(test = frame$X1 > 300, 
-                                                  yes = 1000, 
-                                                  no = frame$X1) 
+                                                        yes = 1000, 
+                                                        no = frame$X1) 
     if (scen$strata_vars[irow]  == 2) frame$X2 <- ifelse(test = frame$X2 > 300, 
-                                                  yes = 1000, 
-                                                  no = frame$X2) 
+                                                         yes = 1000, 
+                                                         no = frame$X2) 
   }
   
   ## Initiate CVs to be those calculated under SRS, assign to a variable 
@@ -172,13 +179,13 @@ for (irow in 1:nrow(scen)) {
   solution <- optimStrata(method = "continuous",
                           errors = cv, 
                           framesamp = frame,
-                          iter = 100,
+                          iter = 300,
                           pops = 50,
                           # iter = 10,
                           # pops = 10,
                           elitism_rate = 0.1,
                           mut_chance = 1 / 6,
-                          nStrata = rep(5, n_districts),
+                          nStrata = rep(3, n_districts),
                           showPlot = T,
                           writeFiles = T)
   
