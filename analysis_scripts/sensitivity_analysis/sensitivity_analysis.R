@@ -122,10 +122,10 @@ for (irow in 1:nrow(scen)) {
   ####   Discretize deep stations if needed
   ##################################################
   if (scen$deep_stations[irow] == FALSE) {
-    if (scen$strata_vars == 1) frame$X1 <- ifelse(test = frame$X1 > 300, 
+    if (scen$strata_vars[irow] == 1) frame$X1 <- ifelse(test = frame$X1 > 300, 
                                                   yes = 1000, 
                                                   no = frame$X1) 
-    if (scen$strata_vars == 2) frame$X2 <- ifelse(test = frame$X2 > 300, 
+    if (scen$strata_vars[irow]  == 2) frame$X2 <- ifelse(test = frame$X2 > 300, 
                                                   yes = 1000, 
                                                   no = frame$X2) 
   }
@@ -172,7 +172,7 @@ for (irow in 1:nrow(scen)) {
   solution <- optimStrata(method = "continuous",
                           errors = cv, 
                           framesamp = frame,
-                          iter = 300,
+                          iter = 100,
                           pops = 50,
                           # iter = 10,
                           # pops = 10,
