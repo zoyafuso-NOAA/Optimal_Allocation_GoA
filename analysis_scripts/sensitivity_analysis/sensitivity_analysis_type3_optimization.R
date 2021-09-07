@@ -27,11 +27,11 @@ load("data/processed/grid_goa.RData")
 ##################################################
 ####   Sensitivty Scenarios
 ##################################################
-scen <- expand.grid(isim = 1:10,
-                    strata_vars = 1:2,
-                    deep_stations = c(TRUE, FALSE))
+scen <- expand.grid(strata_vars = 1:2,
+                    deep_stations = c(TRUE, FALSE),
+                    isim = 1:10)
 
-for (irow in 1:20) {
+for (irow in 1:12) {
   frame <- frame_district[, c("domainvalue", "id", 
                               "WEIGHT",
                               paste0("Y", spp_idx_opt), 
@@ -48,7 +48,7 @@ for (irow in 1:20) {
   ##################################################
   ####   Import simulated dataset
   ##################################################
-  load(paste0("results/sensitivity_analysis_type3/dens_vals_sim", 
+  load(paste0(github_dir, "/results/sensitivity_analysis_type3/dens_vals_sim", 
          scen$isim[irow],".RData"))
   
   ##################################################
