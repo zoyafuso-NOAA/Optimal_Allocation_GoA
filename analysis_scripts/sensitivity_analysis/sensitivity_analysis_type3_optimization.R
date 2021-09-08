@@ -135,7 +135,7 @@ for (irow in 1:12) {
                           # pops = 10,
                           elitism_rate = 0.1,
                           mut_chance = 1 / 6,
-                          nStrata = rep(5, n_districts),
+                          nStrata = rep(3, n_districts),
                           showPlot = T,
                           writeFiles = T)
   
