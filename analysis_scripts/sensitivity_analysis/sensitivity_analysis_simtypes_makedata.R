@@ -8,7 +8,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-VAST_sim_data_dir <- "D:/VAST_Runs/"
+VAST_sim_data_dir <- "E:/VAST_Runs/"
 github_dir <- getwd()
 
 library(VAST)
@@ -59,6 +59,10 @@ for (itype in c(4)) {
     }
     
     if(itype != 0) {
+      sim_val <- FishStatsUtils::simulate_data(fit = fit_sim,
+                                               type = 1,
+                                               random_seed = 123423)
+      
       sim_val <- FishStatsUtils::simulate_data(fit = fit_sim,
                                                type = itype,
                                                random_seed = 123423)
