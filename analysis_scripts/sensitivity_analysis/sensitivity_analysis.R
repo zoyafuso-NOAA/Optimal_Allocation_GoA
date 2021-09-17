@@ -8,7 +8,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-VAST_sim_data_dir <- "F:/VAST_Runs/"
+VAST_sim_data_dir <- "D:/VAST_Runs/"
 github_dir <- getwd()
 
 library(VAST)
