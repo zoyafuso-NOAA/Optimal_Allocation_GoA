@@ -39,7 +39,7 @@ ns_all <- length(common_names_all)
 spp_idx_opt <- c(25, 14, #cods 
                  1, 7, 18, 12, 24, 5, 15, #flatfishes
                  16, 4, 23, 6, 13, 22 #rockfish types
-                 )
+)
 common_names_opt <- common_names_all[spp_idx_opt]
 ns_opt <- length(common_names_opt)
 
@@ -74,15 +74,15 @@ n_districts <- nrow(districts)
 ## International North Pacific Fisheries Commission statistical areas
 inpfc_vals_current <- district_vals
 inpfc_vals_current[grid_goa$stratum %in% 
-                        c(10:13, 110:112, 210, 310, 410, 510)] <- 1
+                     c(10:13, 110:112, 210, 310, 410, 510)] <- 1
 inpfc_vals_current[grid_goa$stratum %in% 
-                        c(20:22, 120:122, 220:221, 320, 420, 520)] <- 2
+                     c(20:22, 120:122, 220:221, 320, 420, 520)] <- 2
 inpfc_vals_current[grid_goa$stratum %in% 
-                        c(30:33, 35, 130:134, 230:232, 330, 430, 530)] <- 3
+                     c(30:33, 35, 130:134, 230:232, 330, 430, 530)] <- 3
 inpfc_vals_current[grid_goa$stratum %in% 
-                        c(40:41, 140:143, 240:241, 340:341, 440, 540)] <- 4
+                     c(40:41, 140:143, 240:241, 340:341, 440, 540)] <- 4
 inpfc_vals_current[grid_goa$stratum %in% 
-                        c(50, 150:151, 250:251, 350:351, 450, 550)] <- 5
+                     c(50, 150:151, 250:251, 350:351, 450, 550)] <- 5
 
 ## ranges of the spatial domain for plotting
 x_range <- diff(range(grid_goa$E_km))
@@ -172,11 +172,27 @@ true_index_district <- aperm(a = true_index_district,
 dimnames(true_index)[[1]] <- dimnames(true_mean)[[1]] <- 
   dimnames(true_index_district)[[1]] <- common_names_all
 
+##################################################
+####   Scenarios to Explore
+##################################################
+scenarios <- data.frame(
+  scen_name = LETTERS[1:11],
+  scale_opt = c("full_domain", rep(x = "district", times = 10)),
+  stratum_vars = c("depth_lon", "depth_lon", "depth", "depth_lon", "depth", 
+                   "depth_lon", "depth_lon", "depth", "depth", "depth_lon", 
+                   "depth"),
+  data_type = c(rep(x = "MLE", times = 5), "measurement", "fixed_random",  
+                "measurement", "fixed_random", "MLE", "MLE" ),
+  depth_dis = c(rep(x = 1000, times = 3), rep(x = 300, times = 2), 
+                rep(x = 1000, times = 6)),
+  max_depth = c(rep(x = 1000, times = 9), rep(x = 700, times = 2)),
+  stringsAsFactors = FALSE)
+
 
 ##################################################
 ####   Save Data
 ##################################################
-save(list = c("frame_all", "frame_district",
+save(list = c("frame_all", "frame_district", "scenarios",
               "districts", "district_vals", "n_districts", "inpfc_vals_current",
               "true_mean", "true_index", "true_index_district",
               "ns_all", "ns_eval", "ns_opt", 
