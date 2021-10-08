@@ -113,47 +113,6 @@ n_iters <- 1000
 ####   Y1_SQ_SUM, Y2_SQ_SUM, ... : density-squared for a given cell, 
 ####           summed across observed years
 ##################################################
-# frame_all <- cbind(
-#   data.frame(domainvalue = 1,
-#              id = 1:n_cells,
-#              X1 = grid_goa$DEPTH_EFH,
-#              X2 = with(grid_goa, E_km - min(E_km)),
-#              WEIGHT = n_years),
-#   
-#   matrix(data = apply(X = D_gct,
-#                       MARGIN = c(1, 2), 
-#                       FUN = sum),
-#          ncol = ns_all,
-#          dimnames = list(NULL, paste0("Y", 1:ns_all))),
-#   
-#   matrix(data = apply(X = D_gct,
-#                       MARGIN = c(1, 2), 
-#                       FUN = function(x) sum(x^2)),
-#          ncol = ns_all,
-#          dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
-# )
-# 
-# frame_district <- cbind(data.frame(
-#   domainvalue = cut(x = grid_goa$Lon, 
-#                     breaks = c(-170, -159, -154, -147, -140, -132), 
-#                     labels = 1:5),
-#   id = 1:n_cells,
-#   X1 = grid_goa$DEPTH_EFH,
-#   X2 = with(grid_goa, E_km - min(E_km)),
-#   WEIGHT = n_years),
-#   
-#   matrix(data = apply(X = D_gct,
-#                       MARGIN = c(1, 2), 
-#                       FUN = sum),
-#          ncol = ns_all,
-#          dimnames = list(NULL, paste0("Y", 1:ns_all))),
-#   
-#   matrix(data = apply(X = D_gct,
-#                       MARGIN = c(1, 2), 
-#                       FUN = function(x) sum(x^2)),
-#          ncol = ns_all,
-#          dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
-# )
 
 ##################################################
 ####   Calculate true mean density and true abundance index along with
@@ -198,11 +157,11 @@ scenarios <- data.frame(
 ####   Loop over species and simulate data with the four different options
 ####   in the FishStatsUtils::simulate_data() function
 ##################################################
-dens_vals <- array(dim = c(n_cells, ns_opt, n_years, 3),
-                   dimnames = list(NULL, common_names_opt, NULL, 
-                                   c("MLE", "measurement", "fixed_random")))
 
 for (itype in c("MLE", "measurement", "fixed_random")) {
+  temp_dens_vals <- array(dim = c(n_cells, ns_all, n_years),
+                          dimnames = list(NULL, common_names_all, NULL))
+  
   for (ispp in common_names_opt) {
     
     pred_jnll_score <- subset(x = pred_jnll, 
@@ -219,8 +178,7 @@ for (itype in c("MLE", "measurement", "fixed_random")) {
     dyn.load(paste0(temp_VAST_dir, "VAST_v12_0_0.dll"))
     
     if(itype == "MLE") {
-      dens_vals[, ispp, , "MLE"] <- 
-        fit_sim$Report$D_gct[, 1, years_included]
+      temp_dens_vals[, ispp, ] <- fit_sim$Report$D_gct[, 1, years_included]
     }
     
     if(itype != "MLE") {
@@ -243,33 +201,29 @@ for (itype in c("MLE", "measurement", "fixed_random")) {
                             STATS = grid_goa$Area_km2,
                             FUN = "/")
       
-      dens_vals[, ispp, , itype] <- temp_density
+      temp_dens_vals[, ispp, ] <- temp_density
     }
     
     dyn.unload(paste0(temp_VAST_dir, "VAST_v12_0_0.dll"))
     print(paste("Finished with Type", itype, ispp))
   }
   
-  #Save
-  
-  # save(dens_vals, 
-  #      file = paste0(github_dir, 
-  #                    "/results/sensitivity_analysis/dens_vals_type", itype,
-  #                    ".RData"))
+  ## Write as an object in global environment
+  assign(x = paste0("dens_vals_", itype), value = temp_dens_vals)
 }
 
 
 ##################################################
 ####   Save Data
 ##################################################
-save(list = c(#"frame_all", "frame_district", 
-  "scenarios", "dens_vals",
-  "districts", "district_vals", "n_districts", "inpfc_vals_current",
-  "true_mean", "true_index", "true_index_district",
-  "ns_all", "ns_eval", "ns_opt", 
-  "x_range", "y_range",
-  "common_names_all", "common_names_eval", "common_names_opt",
-  "spp_idx_eval", "spp_idx_opt",
-  "year_set", "years_included", "n_years", 
-  "n_cells", "samples", "n_boats", "n_iters"),
-  file = "data/processed/optimization_data.RData")
+save(list = c("scenarios", 
+              paste0("dens_vals_", c("MLE", "measurement", "fixed_random")),
+              "districts", "district_vals", "n_districts", "inpfc_vals_current",
+              "true_mean", "true_index", "true_index_district",
+              "ns_all", "ns_eval", "ns_opt", 
+              "x_range", "y_range",
+              "common_names_all", "common_names_eval", "common_names_opt",
+              "spp_idx_eval", "spp_idx_opt",
+              "year_set", "years_included", "n_years", 
+              "n_cells", "samples", "n_boats", "n_iters"),
+     file = "data/processed/optimization_data.RData")
