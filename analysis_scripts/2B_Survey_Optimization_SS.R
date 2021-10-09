@@ -36,81 +36,103 @@ load("data/processed/grid_goa.RData")
 ##################################################
 ####   Constants to specify before doing optimization
 ##################################################
-which_domain <- c("full_domain", "district")[1]
-
-for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
-  
-  ##################################################
-  ####   Constants to set up based on which_domain and which_species
-  ##################################################
-  frame <- switch( which_domain,
-                   "full_domain" = frame_all,
-                   "district" = frame_district)[, c("domainvalue", "id", 
-                                                    "X1", 
-                                                    "X2",
-                                                    "WEIGHT",
-                                                    paste0("Y", which_species), 
-                                                    paste0("Y", which_species,
-                                                           "_SQ_SUM"))]
-  names(frame)[6:7] <- paste0("Y", c("1", "1_SQ_SUM") )
-  
+for (iscen in 1:nrow(scenarios)) {
   ## Domain is the term used in the SamplingStrata package, is used to 
   ## distinguish whether the optimization is done gulf-wide (n_dom == 1) or 
   ## at each of the five management districts (n_dom == n_districts)
+  which_domain <- scenarios$scale_opt[iscen]
   n_dom <- ifelse(test = which_domain == "full_domain", 
                   yes = 1, 
                   no = n_districts)
+  
+  ## Subset depths < 700 m if needed
+  cell_idx <- rep(x = TRUE, times = n_cells)
+  if (scenarios$max_depth[iscen] == 700) cell_idx[depth_input > 700] <- FALSE
+  
+  domain_input <- switch(which_domain,
+                         "full_domain" = rep(1, sum(cell_idx)),
+                         "district" = district_vals[cell_idx])
   
   ## For the gulf-wide optimization, use 10 strata
   ## For the district-level optimization, use 5 strata per district
   no_strata <- switch(which_domain,
                       "full_domain" = 10,
-                      # "full_domain" = 5,
                       "district" = rep(5, n_dom))
   
-  ## Set the result directory to which optimization outputs will save 
-  result_dir = paste0(github_dir, "/results/", which_domain, 
-                      "/Single_Species_Optimization/", 
-                      common_names_all[which_species], '/')
-  if(!dir.exists(result_dir)) dir.create(path = result_dir, recursive = T)
+  ## Change depths > 300 m if needed
+  depth_input <- grid_goa$DEPTH_EFH[cell_idx]
+  if (scenarios$depth_dis[iscen] == 300) depth_input[depth_input > 300] <- 300
   
-  ##################################################
-  ####   Run optimization
-  ##################################################
+  lon_input <- with(grid_goa[cell_idx, ], E_km - min(E_km))
   
-  ##Initial Conditions
-  run <- 1
-  current_n <- 0
+  ## Subset strata variables
   
-  ## Initiate CVs to be those calculated under simple random sampling (SRS)
-  ## If doing a gulf-wide optimization, start at 280 samples (1-boat solution)
-  ## If doing a district-level optimization, dole out the 280 samples across
-  ##     districts proportional to area
-  srs_stats <- SamplingStrata::buildStrataDF(
-    dataset = cbind( subset(frame, select = -c(X1, X2)),
-                     X1 = 1))
+  stratum_var_input <- switch(scenarios$stratum_vars[iscen], 
+                              "depth_lon" = data.frame(X1 = depth_input,
+                                                       X2 = lon_input),
+                              "depth" = data.frame(X1 = depth_input))
   
-  srs_n <- as.numeric(280 * table(frame$domainvalue) / n_cells)
-  
-  ## SRS statistics
-  srs_var <- srs_stats$S1^2 * (1 - srs_n / n_cells) / srs_n
-  srs_cv <- sqrt(srs_var) / srs_stats$M1
-  
-  ## cv is a data input to the SamplingStrata package, assign the initial 
-  ## cv constraints 
-  cv <- list()
-  cv[["CV1"]] <- srs_cv
-  cv[["DOM"]] <- 1:n_dom
-  cv[["domainvalue"]] <- 1:n_dom
-  cv <- as.data.frame(cv)
-  
-  while (current_n <= 820 ) {
+  for (which_species in c(spp_idx_opt)) {
+    
+    ## Which density values are we using?
+    density_input <- 
+      get(x = paste0("dens_vals_", 
+                     scenarios$data_type[iscen]))[cell_idx, which_species, ]
+    
+    ## Create data input
+    frame <- cbind(
+      data.frame(domainvalue = domain_input,
+                 id = (1:n_cells)[cell_idx],
+                 stratum_var_input,
+                 WEIGHT = n_years),
+      
+      matrix(data = apply(X = density_input,
+                          MARGIN = 1,
+                          FUN = sum),
+             ncol = 1,
+             dimnames = list(NULL, paste0("Y1"))),
+      
+      matrix(data = apply(X = density_input,
+                          MARGIN = 1,
+                          FUN = function(x) sum(x^2)),
+             ncol = 1,
+             dimnames = list(NULL, paste0("Y", 1, "_SQ_SUM")))
+    )
+    
+    ## Set the result directory to which optimization outputs will save 
+    result_dir = paste0(github_dir, "/results/scenario_", 
+                        scenarios$scen_name[iscen], 
+                        "/Single_Species_Optimization/", 
+                        common_names_all[which_species], '/')
+    if(!dir.exists(result_dir)) dir.create(path = result_dir, recursive = T)
+    
+    ##################################################
+    ####   Run optimization at SRS CV constraints
+    ##################################################
+    ## Initiate CVs to be those calculated under simple random sampling (SRS)
+    ## If doing a gulf-wide optimization, start at 280 samples (1-boat solution)
+    ## If doing a district-level optimization, dole out the 280 samples across
+    ##     districts proportional to area
+    srs_stats <- SamplingStrata::buildStrataDF(
+      dataset = cbind( frame[, -grep(x = names(frame), pattern = "X")],       
+                       X1 = 1))
+    
+    srs_n <- as.numeric(550 * table(frame$domainvalue) / n_cells)
+    
+    ## SRS statistics
+    srs_var <- srs_stats$S1^2 * (1 - srs_n / n_cells) / srs_n
+    srs_cv <- sqrt(srs_var) / srs_stats$M1
+    
+    ## cv is a data input to the SamplingStrata package, assign the initial 
+    ## cv constraints 
+    cv <- list()
+    cv[["CV1"]] <- srs_cv
+    cv[["DOM"]] <- 1:n_dom
+    cv[["domainvalue"]] <- 1:n_dom
+    cv <- as.data.frame(cv)
     
     ## Set wd for output files, create a directory if it doesn"t exist yet
-    temp_dir = paste0(result_dir, "Run", run)
-    if(!dir.exists(temp_dir)) dir.create(temp_dir, recursive = T)
-    
-    setwd(temp_dir)
+    setwd(result_dir)
     
     #Run optimization, set up a plot layout to show optimization updates
     par(mfrow = c(6, 6), mar = c(2, 2, 0, 0))
@@ -119,7 +141,7 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
                             errors = cv, 
                             framesamp = frame,
                             iter = 300,
-                            pops = 50,
+                            pops = 100,
                             elitism_rate = 0.1,
                             mut_chance = 1 / (no_strata[1] + 1),
                             nStrata = no_strata,
@@ -142,7 +164,7 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
     sum_stats <- cbind(sum_stats,
                        subset(x = solution$aggr_strata,
                               select = -c(STRATO, N, COST, CENS, DOM1, X1)))
-    sum_stats <- sum_stats[, c(10, 1:4, 15, 11:12, 6:9)]
+    # sum_stats <- sum_stats[, c(10, 1:4, 15, 11:12, 6:9)]
     
     plot_solution <- 
       switch(which_domain,
@@ -154,24 +176,18 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
     
     plot_solution <- as.integer(plot_solution)
     
-    ## Save Output
-    CV_constraints <- expected_CV(strata = solution$aggr_strata)
-    current_n <- sum(sum_stats$Allocation)
-    result_list <- list(solution = solution, 
-                        sum_stats = sum_stats, 
-                        CV_constraints = CV_constraints, 
-                        n = current_n,
-                        sol_by_cell = plot_solution)
-    save(list = "result_list", file = "result_list.RData")
-    
-    ## Save a plot of the solution
+    ##################################################
+    ####   Save a plot of the solution
+    ##################################################
+    temp_ids <- rep(0, n_cells)
+    temp_ids[cell_idx] <- plot_solution
     goa <- sp::SpatialPointsDataFrame(
       coords = grid_goa[, c("E_km", "N_km")],
-      data = data.frame(Str_no = plot_solution) )
-    goa_ras <- raster::raster(x = goa, 
+      data = data.frame(Str_no = temp_ids) )
+    goa_ras <- raster::raster(x = goa,
                               resolution = 5)
-    goa_ras <- raster::rasterize(x = goa, 
-                                 y = goa_ras, 
+    goa_ras <- raster::rasterize(x = goa,
+                                 y = goa_ras,
                                  field = "Str_no")
     
     png(filename = "solution.png",
@@ -180,26 +196,26 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
         units = "in",
         res = 500)
     
-    par(mfrow = c(1, 1), 
+    par(mfrow = c(1, 1),
         mar = c(1, 1, 1, 1))
-    plot(goa_ras, 
-         axes = F, 
+    plot(goa_ras,
+         axes = F,
          asp = 1,
          col = colorRampPalette(
-           brewer.pal(n = 11, 
+           brewer.pal(n = 11,
                       name = "Paired"))(length(unique(plot_solution)) ) )
     
     rect(xleft = districts$W_UTM,
          xright = districts$E_UTM,
-         ybottom = tapply(X = grid_goa$N_km, 
+         ybottom = tapply(X = grid_goa$N_km,
                           INDEX = district_vals,
-                          FUN = min), 
-         ytop = tapply(X = grid_goa$N_km, 
+                          FUN = min),
+         ytop = tapply(X = grid_goa$N_km,
                        INDEX = district_vals,
                        FUN = max))
     
     text(x = rowMeans(districts[, c("W_UTM", "E_UTM")]),
-         y = tapply(X = grid_goa$N_km, 
+         y = tapply(X = grid_goa$N_km,
                     INDEX = district_vals,
                     FUN = max),
          labels = districts$district,
@@ -207,66 +223,131 @@ for (which_species in c(spp_idx_opt, spp_idx_eval)[1:3]) {
     box()
     dev.off()
     
-    ## Save a plot of the solution with one simulation of station locations
-    png(filename = "solution_with_stations.png",
-        width = 6,
-        height = 3,
-        units = "in",
-        res = 500)
+    ##################################################
+    ####   Tune CV to hit 1, 2 or 3 boats (292, 550, 825 stations) 
+    ####   Assume CVs at the gulf-scale regardless on whether scale of the 
+    ####   optimization
+    ##################################################
+    temp_frame <- frame
+    temp_frame$domainvalue <- 1
+    srs_stats <- SamplingStrata::buildStrataDF(
+      dataset = cbind( temp_frame[, -grep(x = names(temp_frame), 
+                                          pattern = "X")],
+                       X1 = 1))
+    srs_n <- as.numeric(550 * table(temp_frame$domainvalue) / n_cells)
     
-    par(mfrow = c(1, 1), 
-        mar = c(1, 1, 1, 1))
-    plot(goa_ras, 
-         axes = F, 
-         asp = 1,
-         col = colorRampPalette(
-           brewer.pal(n = 11, 
-                      name = "Paired"))(length(unique(plot_solution)) ) )
+    ## SRS statistics
+    srs_var <- srs_stats$S1^2 * (1 - srs_n / n_cells) / srs_n
+    srs_cv <- sqrt(srs_var) / srs_stats$M1
     
-    rect(xleft = districts$W_UTM,
-         xright = districts$E_UTM,
-         ybottom = tapply(X = grid_goa$N_km, 
-                          INDEX = district_vals,
-                          FUN = min), 
-         ytop = tapply(X = grid_goa$N_km, 
-                       INDEX = district_vals,
-                       FUN = max))
+    sample_allocations <- matrix(nrow = nrow(sum_stats), 
+                                 ncol = 3,
+                                 dimnames = list(NULL, paste0("boat_", 1:3)))
+    cv_by_boat <- data.frame(total_n = vector(length = 3),
+                             cv_constraint = vector(length = 3),
+                             actual_cv = vector(length = 3))
+
+    error_df <- data.frame("DOM" = "DOM1",
+                           "CV1" = srs_cv,
+                           "domainvalue"  = 1)
     
-    text(x = rowMeans(districts[, c("W_UTM", "E_UTM")]),
-         y = tapply(X = grid_goa$N_km, 
-                    INDEX = district_vals,
-                    FUN = max),
-         labels = districts$district,
-         pos = 3)
-    box()
+    temp_stratif <- solution$aggr_strata
+    temp_stratif$N <- temp_stratif$N / n_years
+    temp_stratif$DOM1 <- 1
     
-    ## Take a random sample based on the allocation and stratum
-    sample_vec <- c()
-    for(istrata in 1:nrow(sum_stats)) {
-      sample_vec <- c(sample_vec,
-                      sample(x = which(plot_solution == istrata),
-                             size = sum_stats$Allocation[istrata]) )
+    temp_bethel <- SamplingStrata::bethel(
+      errors = error_df,
+      stratif = temp_stratif, 
+      realAllocation = T, 
+      printa = T)
+    temp_n <- sum(ceiling(temp_bethel))
+    
+    for (isample in 1:3) {
+      while (temp_n != c(292, 550, 825)[isample]){
+        over_under <- temp_n > c(292, 550, 825)[isample]
+        CV_adj <- ifelse(over_under == TRUE, 
+                         yes = 1.001,
+                         no = 0.999)
+        
+        error_df$CV1 <- 
+          as.numeric(attributes(temp_bethel)$outcv[, "PLANNED CV "]) * CV_adj
+        temp_bethel <- SamplingStrata::bethel(stratif = temp_stratif,
+                                              errors = error_df, 
+                                              printa = TRUE)
+        
+        temp_n <- sum(as.numeric(temp_bethel))
+        
+        print(paste0("n = ", temp_n, ", CV = ", 
+                     as.numeric(attributes(temp_bethel)$outcv[, "ACTUAL CV"])) )
+      }
+      
+      ##################################################
+      ####   Updated nh
+      ##################################################
+      sample_allocations[, paste0("boat_", isample)] <- as.numeric(temp_bethel)
+      cv_by_boat[isample, "cv_constraint"] <- 
+        as.numeric(attributes(temp_bethel)$outcv[, "PLANNED CV "])
+      cv_by_boat[isample, "actual_cv"] <- 
+        as.numeric(attributes(temp_bethel)$outcv[, "ACTUAL CV"])
+      cv_by_boat[isample, "total_n"] <- temp_n
+      
+      ## Save a plot of the solution with one simulation of station locations
+      png(filename = paste0("solution_with_stations_boat_", isample, ".png"),
+          width = 6,
+          height = 3,
+          units = "in",
+          res = 500)
+      
+      par(mfrow = c(1, 1),
+          mar = c(1, 1, 1, 1))
+      plot(goa_ras,
+           axes = F,
+           asp = 1,
+           col = colorRampPalette(
+             brewer.pal(n = 11,
+                        name = "Paired"))(length(unique(plot_solution)) ) )
+      
+      rect(xleft = districts$W_UTM,
+           xright = districts$E_UTM,
+           ybottom = tapply(X = grid_goa$N_km,
+                            INDEX = district_vals,
+                            FUN = min),
+           ytop = tapply(X = grid_goa$N_km,
+                         INDEX = district_vals,
+                         FUN = max))
+      
+      text(x = rowMeans(districts[, c("W_UTM", "E_UTM")]),
+           y = tapply(X = grid_goa$N_km,
+                      INDEX = district_vals,
+                      FUN = max),
+           labels = districts$district,
+           pos = 3)
+      box()
+      
+      ## Take a random sample based on the allocation and stratum
+      sample_vec <- c()
+      for(istrata in 1:nrow(sample_allocations)) {
+        sample_vec <- c(sample_vec,
+                        sample(x = which(plot_solution == istrata),
+                               size = sample_allocations[istrata, isample]) )
+      }
+      
+      points(grid_goa[sample_vec, c("E_km", "N_km")],
+             pch = 16, cex = 0.5)
+      
+      dev.off()
+      
     }
     
-    points(grid_goa[sample_vec, c("E_km", "N_km")],
-           pch = 16, cex = 0.5)
-    
-    dev.off()
-    
-    ## Set up next run by changing slightly reducing the CV constraints
-    ## CVs are reduced proportionally at a rate that reduces as total current 
-    ## sample size increases
-    run <- run + 1
-    effort_level <- as.integer(cut(x = current_n, 
-                                   breaks = c(0, 50, 100, 200, samples, 1000), 
-                                   labels = 1:7))
-    CV_constraints <- CV_constraints * c(0.5, 0.70, 0.80, 0.90, 0.95, 0.975)[effort_level]
-    
-    ## Create CV dataframe in the format of SamplingStrata
-    cv <- list()
-    cv[["CV1"]] <- as.numeric(CV_constraints)
-    cv[["DOM"]] <- 1:n_dom
-    cv[["domainvalue"]] <- 1:n_dom
-    cv <- as.data.frame(cv)
+    ## Save Output
+    CV_constraints <- expected_CV(strata = solution$aggr_strata)
+    current_n <- sum(sum_stats$Allocation)
+    result_list <- list(solution = solution,
+                        sum_stats = sum_stats,
+                        cvs = cv_by_boat,
+                        sample_allocations = sample_allocations,
+                        sol_by_cell = temp_ids)
+    save(list = "result_list", file = "result_list.RData")
   }
 }
+
