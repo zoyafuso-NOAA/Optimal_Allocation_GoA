@@ -44,14 +44,10 @@ for (iscen in 1:nrow(scenarios)) {
   n_dom <- ifelse(test = which_domain == "full_domain", 
                   yes = 1, 
                   no = n_districts)
+
   
-  ## Subset depths < 700 m if needed
-  cell_idx <- rep(x = TRUE, times = n_cells)
-  if (scenarios$max_depth[iscen] == 700) cell_idx[depth_input > 700] <- FALSE
-  
-  domain_input <- switch(which_domain,
-                         "full_domain" = rep(1, sum(cell_idx)),
-                         "district" = district_vals[cell_idx])
+  ## depth input
+  depth_input <- grid_goa$DEPTH_EFH
   
   ## For the gulf-wide optimization, use 10 strata
   ## For the district-level optimization, use 5 strata per district
@@ -60,11 +56,20 @@ for (iscen in 1:nrow(scenarios)) {
                       "district" = rep(5, n_dom))
   
   ## Change depths > 300 m if needed
-  depth_input <- grid_goa$DEPTH_EFH[cell_idx]
+
   if (scenarios$depth_dis[iscen] == 300) depth_input[depth_input > 300] <- 300
   
+  ## Subset depths < 700 m if needed
+  cell_idx <- rep(x = TRUE, times = n_cells)
+  if (scenarios$max_depth[iscen] == 700) cell_idx[depth_input > 700] <- FALSE
+  
+  depth_input <- grid_goa$DEPTH_EFH[cell_idx]
   lon_input <- with(grid_goa[cell_idx, ], E_km - min(E_km))
   
+  
+  domain_input <- switch(which_domain,
+                         "full_domain" = rep(1, sum(cell_idx)),
+                         "district" = district_vals[cell_idx])
   ## Subset strata variables
   
   stratum_var_input <- switch(scenarios$stratum_vars[iscen], 
