@@ -28,15 +28,16 @@ github_dir <- getwd()
 ##################################################
 ####   Load Data
 ####   Load Population CVs for use in the thresholds
+####   Source plotting function
 ##################################################
 load("data/processed/optimization_data.RData")
-load("data/processed/VAST_fit_D_gct.RData")
 load("data/processed/grid_goa.RData")
+source("modified_functions/plot_solution_results.R")
 
 ##################################################
 ####   Constants to specify before doing optimization
 ##################################################
-for (iscen in 1:nrow(scenarios)) {
+for (iscen in 11) {
   ## Domain is the term used in the SamplingStrata package, is used to 
   ## distinguish whether the optimization is done gulf-wide (n_dom == 1) or 
   ## at each of the five management districts (n_dom == n_districts)
@@ -44,7 +45,7 @@ for (iscen in 1:nrow(scenarios)) {
   n_dom <- ifelse(test = which_domain == "full_domain", 
                   yes = 1, 
                   no = n_districts)
-
+  
   
   ## depth input
   depth_input <- grid_goa$DEPTH_EFH
@@ -56,12 +57,12 @@ for (iscen in 1:nrow(scenarios)) {
                       "district" = rep(5, n_dom))
   
   ## Change depths > 300 m if needed
-
+  
   if (scenarios$depth_dis[iscen] == 300) depth_input[depth_input > 300] <- 300
   
   ## Subset depths < 700 m if needed
   cell_idx <- rep(x = TRUE, times = n_cells)
-  if (scenarios$max_depth[iscen] == 700) cell_idx[depth_input > 700] <- FALSE
+  if (scenarios$max_depth[iscen] == 700) cell_idx[grid_goa$DEPTH_EFH > 700] <- FALSE
   
   depth_input <- grid_goa$DEPTH_EFH[cell_idx]
   lon_input <- with(grid_goa[cell_idx, ], E_km - min(E_km))
@@ -77,7 +78,7 @@ for (iscen in 1:nrow(scenarios)) {
                                                        X2 = lon_input),
                               "depth" = data.frame(X1 = depth_input))
   
-  for (which_species in c(spp_idx_opt)) {
+  for (which_species in c(spp_idx_opt)[1]) {
     
     ## Which density values are we using?
     density_input <- 
@@ -145,8 +146,10 @@ for (iscen in 1:nrow(scenarios)) {
     solution <- optimStrata(method = "continuous",
                             errors = cv, 
                             framesamp = frame,
-                            iter = 300,
-                            pops = 100,
+                            iter = 10,
+                            pops = 10,
+                            # iter = 300,
+                            # pops = 100,
                             elitism_rate = 0.1,
                             mut_chance = 1 / (no_strata[1] + 1),
                             nStrata = no_strata,
@@ -186,47 +189,13 @@ for (iscen in 1:nrow(scenarios)) {
     ##################################################
     temp_ids <- rep(0, n_cells)
     temp_ids[cell_idx] <- plot_solution
-    goa <- sp::SpatialPointsDataFrame(
-      coords = grid_goa[, c("E_km", "N_km")],
-      data = data.frame(Str_no = temp_ids) )
-    goa_ras <- raster::raster(x = goa,
-                              resolution = 5)
-    goa_ras <- raster::rasterize(x = goa,
-                                 y = goa_ras,
-                                 field = "Str_no")
     
-    png(filename = "solution.png",
-        width = 6,
-        height = 3,
-        units = "in",
-        res = 500)
-    
-    par(mfrow = c(1, 1),
-        mar = c(1, 1, 1, 1))
-    plot(goa_ras,
-         axes = F,
-         asp = 1,
-         col = colorRampPalette(
-           brewer.pal(n = 11,
-                      name = "Paired"))(length(unique(plot_solution)) ) )
-    
-    rect(xleft = districts$W_UTM,
-         xright = districts$E_UTM,
-         ybottom = tapply(X = grid_goa$N_km,
-                          INDEX = district_vals,
-                          FUN = min),
-         ytop = tapply(X = grid_goa$N_km,
-                       INDEX = district_vals,
-                       FUN = max))
-    
-    text(x = rowMeans(districts[, c("W_UTM", "E_UTM")]),
-         y = tapply(X = grid_goa$N_km,
-                    INDEX = district_vals,
-                    FUN = max),
-         labels = districts$district,
-         pos = 3)
-    box()
-    dev.off()
+    plot_solution_results(file_name = paste0("solution.png"),
+                          grid_object =  grid_goa,
+                          districts_object = districts,
+                          district_values = district_vals,
+                          sol_by_cell = temp_ids,
+                          draw_stations = FALSE)
     
     ##################################################
     ####   Tune CV to hit 1, 2 or 3 boats (292, 550, 825 stations) 
@@ -251,7 +220,7 @@ for (iscen in 1:nrow(scenarios)) {
     cv_by_boat <- data.frame(total_n = vector(length = 3),
                              cv_constraint = vector(length = 3),
                              actual_cv = vector(length = 3))
-
+    
     error_df <- data.frame("DOM" = "DOM1",
                            "CV1" = srs_cv,
                            "domainvalue"  = 1)
@@ -287,7 +256,7 @@ for (iscen in 1:nrow(scenarios)) {
       }
       
       ##################################################
-      ####   Updated nh
+      ####   Update sample_allocations with optimal allocation
       ##################################################
       sample_allocations[, paste0("boat_", isample)] <- as.numeric(temp_bethel)
       cv_by_boat[isample, "cv_constraint"] <- 
@@ -296,57 +265,22 @@ for (iscen in 1:nrow(scenarios)) {
         as.numeric(attributes(temp_bethel)$outcv[, "ACTUAL CV"])
       cv_by_boat[isample, "total_n"] <- temp_n
       
-      ## Save a plot of the solution with one simulation of station locations
-      png(filename = paste0("solution_with_stations_boat_", isample, ".png"),
-          width = 6,
-          height = 3,
-          units = "in",
-          res = 500)
-      
-      par(mfrow = c(1, 1),
-          mar = c(1, 1, 1, 1))
-      plot(goa_ras,
-           axes = F,
-           asp = 1,
-           col = colorRampPalette(
-             brewer.pal(n = 11,
-                        name = "Paired"))(length(unique(plot_solution)) ) )
-      
-      rect(xleft = districts$W_UTM,
-           xright = districts$E_UTM,
-           ybottom = tapply(X = grid_goa$N_km,
-                            INDEX = district_vals,
-                            FUN = min),
-           ytop = tapply(X = grid_goa$N_km,
-                         INDEX = district_vals,
-                         FUN = max))
-      
-      text(x = rowMeans(districts[, c("W_UTM", "E_UTM")]),
-           y = tapply(X = grid_goa$N_km,
-                      INDEX = district_vals,
-                      FUN = max),
-           labels = districts$district,
-           pos = 3)
-      box()
-      
-      ## Take a random sample based on the allocation and stratum
-      sample_vec <- c()
-      for(istrata in 1:nrow(sample_allocations)) {
-        sample_vec <- c(sample_vec,
-                        sample(x = which(plot_solution == istrata),
-                               size = sample_allocations[istrata, isample]) )
-      }
-      
-      points(grid_goa[sample_vec, c("E_km", "N_km")],
-             pch = 16, cex = 0.5)
-      
-      dev.off()
-      
+      ##################################################
+      ####   Plot solution with a random draw of the design
+      ##################################################
+      plot_solution_results(file_name = paste0("solution_with_stations_boat_",
+                                               isample, ".png"),
+                            grid_object =  grid_goa,
+                            districts_object = districts,
+                            district_values = district_vals,
+                            sol_by_cell = temp_ids,
+                            draw_stations = TRUE, 
+                            allocations = sample_allocations[, isample])
     }
     
-    ## Save Output
-    CV_constraints <- expected_CV(strata = solution$aggr_strata)
-    current_n <- sum(sum_stats$Allocation)
+    ##################################################
+    ####   Save output
+    ##################################################
     result_list <- list(solution = solution,
                         sum_stats = sum_stats,
                         cvs = cv_by_boat,
