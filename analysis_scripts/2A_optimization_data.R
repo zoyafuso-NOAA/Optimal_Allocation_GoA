@@ -162,7 +162,7 @@ for (itype in c("MLE", "measurement", "fixed_random")) {
   temp_dens_vals <- array(dim = c(n_cells, ns_all, n_years),
                           dimnames = list(NULL, common_names_all, NULL))
   
-  for (ispp in common_names_opt) {
+  for (ispp in common_names_all) {
     
     pred_jnll_score <- subset(x = pred_jnll, 
                               spp_name == ispp, 
@@ -214,10 +214,9 @@ for (itype in c("MLE", "measurement", "fixed_random")) {
 
 
 ##################################################
-####   Save Data
+####   Save Data, Species densities separately
 ##################################################
-save(list = c("scenarios", 
-              paste0("dens_vals_", c("MLE", "measurement", "fixed_random")),
+save(list = c("scenarios",
               "districts", "district_vals", "n_districts", "inpfc_vals_current",
               "true_mean", "true_index", "true_index_district",
               "ns_all", "ns_eval", "ns_opt", 
@@ -227,3 +226,7 @@ save(list = c("scenarios",
               "year_set", "years_included", "n_years", 
               "n_cells", "samples", "n_boats", "n_iters"),
      file = "data/processed/optimization_data.RData")
+
+for(ival in paste0("dens_vals_", c("MLE", "measurement", "fixed_random")))
+  save(list = ival,
+       file = paste0("data/processed/", ival, ".RData") )
