@@ -31,13 +31,17 @@ github_dir <- getwd()
 ####   Source plotting function
 ##################################################
 load("data/processed/optimization_data.RData")
+load('data/processed/dens_vals_fixed_random.RData')
+load('data/processed/dens_vals_measurement.RData')
+load('data/processed/dens_vals_MLE.RData')
+
 load("data/processed/grid_goa.RData")
 source("modified_functions/plot_solution_results.R")
 
 ##################################################
 ####   Constants to specify before doing optimization
 ##################################################
-for (iscen in 11) {
+for (iscen in 1:5) {
   ## Domain is the term used in the SamplingStrata package, is used to 
   ## distinguish whether the optimization is done gulf-wide (n_dom == 1) or 
   ## at each of the five management districts (n_dom == n_districts)
@@ -146,10 +150,10 @@ for (iscen in 11) {
     solution <- optimStrata(method = "continuous",
                             errors = cv, 
                             framesamp = frame,
-                            iter = 10,
-                            pops = 10,
-                            # iter = 300,
-                            # pops = 100,
+                            # iter = 10,
+                            # pops = 10,
+                            iter = 300,
+                            pops = 100,
                             elitism_rate = 0.1,
                             mut_chance = 1 / (no_strata[1] + 1),
                             nStrata = no_strata,
