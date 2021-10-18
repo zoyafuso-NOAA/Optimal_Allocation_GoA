@@ -91,40 +91,6 @@ surveys:
 | *Enteroctopus dofleini*             | giant octopus                         |
 | *Squalus suckleyi*                  | Pacific spiny dogfish                 |
 
-## Script Overview (Optimal_Allocation_GoA/analysis_scripts/)
+## Script Overview 
 
-The survey optimization framework is modularized into separate scripts. These
-are the scripts used below and the sections following are the order in which
-the optimization is conducted. As of now, there are no high-level wrapper
-functions that may ease wider general use. 
-
-[optimization_data.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/optimization_data.R):
-Synthesizes data inputs and constants common to all subsequent scripts. 
-
-[Survey_Optimization_SS.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/Survey_Optimization_SS.R):
-Conducts single-species survey optimization.
-
-[knitting_runs_SS.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/knitting_runs_SS.R):
-Knits all the single-species optimization runs into neat result outputs.
-
-[Survey_Optimization.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/Survey_Optimization.R):
-Conducts the multispecies survey optimization.
-
-[knitting_runs.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/knitting_runs.R): 
-Knits all the multispecies optimization runs into neat result outputs.
-
-[Simulate_Surveys.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/Simulate_Surveys.R):
-Simulates current and optimized stratified random surveys.
-
-[survey_distance_travelled/haul_data.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/survey_distance_travelled/haul_data.R): 
-Synthesizes haul-level historical data
-
-[survey_distance_travelled/historical_surveys.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/survey_distance_travelled/historical_surveys.R): 
-Calculates actual distance travelled and the approximate shortest 
-total distance using the TSP package for the historically observed
-stations for each survey year. The nearest and second closest stations 
-are also calculated.
-
-[survey_distance_travelled/survey_feasibility.R](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/blob/master/analysis_scripts/survey_distance_travelled/survey_feasibility.R): 
-Simulates station locations under the current and optimized STRS designs
-and calculates the approximate shortest total distance using the TSP package.
+Tasks are done modularly from data wrangling to VAST model fits to survey optimization to survey simulations to figure/table production. See the [wiki page](https://github.com/zoyafuso-NOAA/Optimal_Allocation_GoA/wiki) for a breakdown of the script workflow. 
