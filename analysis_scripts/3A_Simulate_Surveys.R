@@ -9,14 +9,8 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-VAST_sim_data_dir <- "D:/VAST_Runs/"
+VAST_sim_data_dir <- "E:/VAST_Runs/"
 github_dir <- getwd()
-
-##################################################
-####   Result directories
-##################################################
-if(!dir.exists("results/survey_simulations/"))
-  dir.create("results/survey_simulations/")
 
 ##################################################
 ####   Set up cores
@@ -25,80 +19,90 @@ library(foreach)
 library(parallel)
 library(doParallel)
 
-cl <- parallel::makeCluster(parallel::detectCores())
+cl <- parallel::makeCluster(parallel::detectCores() - 1)
 doParallel::registerDoParallel(cl)
 
 ##################################################
-####   Optimization scenarios
+####   Load data used by all cores
 ##################################################
-scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
-                   strata = c("cur", 3, 5, 10, 15),
-                   domain = c("full_domain", 
-                              rep(c("district", "full_domain"), each = 2)))
+load('data/processed/optimization_data.RData')
+load('data/processed/dens_vals_fixed_random.RData')
+load('data/processed/dens_vals_measurement.RData')
+load('data/processed/dens_vals_MLE.RData')
 
-foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
-  
-  isurvey <- scen$survey_type[irow]
-  
+load('data/processed/grid_goa.RData')
+load("data/processed/prednll_VAST_models.RData")
+load("data/processed/VAST_fit_I_gct.RData")
+
+##################################
+#### Import current STRS design allocations and add to scenarios
+##################################
+GOA_allocations <- 
+  readxl::read_xlsx(path = "data/GOA 2019 stations by stratum.xlsx")
+GOA_allocations3 <- 
+  readxl::read_xlsx(path = 'data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')
+
+## Specify Management Districts
+new_strata_labels = 1:length(unique(grid_goa$stratum))
+names(new_strata_labels) <- sort(unique(grid_goa$stratum))
+
+## Rename Current Stratum labels
+grid_goa$stratum_new_label <- new_strata_labels[paste(grid_goa$stratum)]
+
+## Create dataframe of effort allocations across boats
+allocations <- data.frame(Stratum = sort(unique(GOA_allocations3$stratum)),
+                          boat3 = aggregate(id ~ stratum, 
+                                            data = GOA_allocations3, 
+                                            FUN = length)$id,
+                          boat2 = c(GOA_allocations$`Number stations`,
+                                    rep(0, 5)))
+allocations$boat1 <- ceiling(allocations$boat2 / 2)
+
+allocations$boat1 <- ifelse(allocations$boat1 == 0, 0, 
+                            ifelse(allocations$boat1 == 1, 2, 
+                                   allocations$boat1))
+
+allocations <- rbind(data.frame(Stratum = 0, boat3 = 0, boat2 = 0, boat1 = 0),
+                     allocations)
+
+allocations$Stratum <- 1:nrow(allocations)
+
+
+scenarios <- data.frame(scen_name = c(rep(x = LETTERS[1:11], each = 2), 
+                                      c("L", "M")),
+                        scale_opt = c(rep(x = "full_domain", times = 2),
+                                      rep(x = "district", times = 10 * 2),
+                                      rep(x = "current", times = 2)),
+                        strata = c(10, 15, 
+                                   rep(x = c(3, 5), times = 10),
+                                   "current", "current"),
+                        opt_type = c(rep(x = "opt", times = 22), 
+                                     c("current", "current")),
+                        max_depth = c(rep(x = c(rep(x = 1000, 9*2), 
+                                                rep(700, 2*2), c(1000, 700)))))
+
+## Create result directories for the existing designs
+curr_design_dir <- paste0(github_dir, "/results/scenario_", 
+                          scenarios$scen_name[23:24], 
+                          "/Multispecies_Optimization/Str_",
+                          scenarios$strata[23:24], "/")
+for(idir in curr_design_dir) 
+  if(!dir.exists(idir)) 
+    dir.create(idir, recursive = TRUE)
+
+##################################################
+####   Load simulate survey function
+##################################################
+source("modified_functions/sim_fns.R") 
+
+foreach(iscen = 23:24) %dopar% {
   ##################################################
-  ####   Import Libraries
+  ####   Load scenario results
   ##################################################
-  library(readxl)
-  library(sp)
-  
-  ##################################
-  ## Import Strata Allocations and spatial grid and predicted density
-  ##################################
-  load('data/processed/optimization_data.RData')
-  load('data/processed/grid_goa.RData')
-  load("results/MS_optimization_knitted_results.RData")
-  load("data/processed/prednll_VAST_models.RData")
-  
-  GOA_allocations <- 
-    readxl::read_xlsx(path = "data/GOA 2019 stations by stratum.xlsx")
-  GOA_allocations3 <- 
-    readxl::read_xlsx(path = 'data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')
-  
-  ##################################
-  ## Specify Management Districts
-  ##################################
-  new_strata_labels = 1:length(unique(grid_goa$stratum))
-  names(new_strata_labels) <- sort(unique(grid_goa$stratum))
-  
-  ##################################
-  ## Rename Current Stratum labels
-  ##################################
-  grid_goa$stratum_new_label <- new_strata_labels[paste(grid_goa$stratum)]
-  
-  ##################################################
-  ####   Create dataframe of effort allocations across boats
-  ##################################################
-  allocations <- data.frame(Stratum = sort(unique(GOA_allocations3$stratum)),
-                            boat3 = aggregate(id ~ stratum, 
-                                              data = GOA_allocations3, 
-                                              FUN = length)$id,
-                            boat2 = c(GOA_allocations$`Number stations`,
-                                      rep(0, 5)))
-  allocations$boat1 <- ceiling(allocations$boat2 / 2)
-  
-  allocations$boat1 <- ifelse(allocations$boat1 == 0, 0, 
-                              ifelse(allocations$boat1 == 1, 2, 
-                                     allocations$boat1))
-  
-  allocations <- rbind(data.frame(Stratum = 0, boat3 = 0, boat2 = 0, boat1 = 0),
-                       allocations)
-  
-  allocations$Stratum <- 1:nrow(allocations)
-  
-  ##################################################
-  ####   Load simulate survey function
-  ##################################################
-  source("modified_functions/sim_fns.R") 
-  
-  ##################################################
-  ####   
-  ##################################################
-  scen_name <- paste0(scen$domain[irow], "_STR_", scen$strata[irow], "_")
+  if (scenarios$opt_type[iscen] == "opt") 
+    load(paste0(github_dir, "/results/scenario_", scenarios$scen_name[iscen], 
+                "/Multispecies_Optimization/Str_", scenarios$strata[iscen], 
+                "/result_list.RData"))
   
   ##################################################
   ####   Result Objects
@@ -125,6 +129,14 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
                           common_names_all,
                           paste0("boat_", 1:n_boats)))
   
+  cell_idx <- rep(x = TRUE, times = n_cells)
+  if(scenarios$max_depth[iscen] == 700) cell_idx[grid_goa$DEPTH_EFH > 700] <- F
+  
+  temp_solution <- switch(
+    scenarios$opt_type[iscen],
+    "current" = grid_goa$stratum_new_label[cell_idx],
+    "opt" = result_list$sol_by_cell[cell_idx])
+  
   ##################################################
   ####   Simulate Survey
   ##################################################
@@ -139,45 +151,36 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
                 ifelse(test = depth_in_model, yes = "_depth", no = ""),
                 "/simulated_data.RData"))
     
+    ## Calculate true index based on the survey footprint
+    temp_true_index_district <- 
+      t(apply(X = I_gct[cell_idx, ispp, ],
+              MARGIN = 2,
+              FUN = function(x) tapply(X = x, 
+                                       INDEX = district_vals[cell_idx],
+                                       FUN = sum)))
     for (iter in 1:n_iters) { ## loop over survey replicates--start
       set.seed(n_iters + iter)
       for (iboat in 1:n_boats) { ## loop over boat-effort--start
         
-        ## Temporary input objects for the survey simulation
-        temp_density <- sweep(x = sim_data[, , iter] / 0.001,
-                              MARGIN = 1,
-                              STATS = grid_goa$Area_km2,
-                              FUN = "/")
-        
-        temp_solution <- switch(
-          isurvey,
-          "cur" = grid_goa$stratum_new_label,
-          "opt" = {
-            idx <- which(settings$strata == as.numeric(scen$strata[irow]) &
-                           settings$boat == iboat &
-                           settings$domain == scen$domain[irow])
-            res_df[, idx]
-          })
-        
         temp_allocation <- switch(
-          isurvey,
-          "cur" = allocations[, paste0("boat", iboat)],
-          "opt" = {
-            idx <- which(settings$strata == as.numeric(scen$strata[irow]) &
-                           settings$boat == iboat &
-                           settings$domain == scen$domain[irow])
-            
-            strata_list[[idx]]$Allocation
-          })
+          scenarios$opt_type[iscen],
+          "current" = allocations[, paste0("boat", iboat)],
+          "opt" = result_list$sample_allocations[, paste0("boat_", iboat)])
+        
+        ## Temporary input objects for the survey simulation
+        temp_density <- sweep(x = sim_data[cell_idx, , iter] / 0.001,
+                              MARGIN = 1,
+                              STATS = grid_goa$Area_km2[cell_idx],
+                              FUN = "/")
         
         ## Subset the iter-th simulated dataset and turn into densities
         sim_survey <- do_STRS(input = list(
           "density" = temp_density,
-          "cell_areas" = grid_goa$Area_km2,
+          "cell_areas" = grid_goa$Area_km2[cell_idx],
           "solution" = temp_solution,
           "allocation" = temp_allocation,
-          "true_index_district" = true_index_district[ispp, , ],
-          "post_strata" = district_vals
+          "true_index_district" = temp_true_index_district,
+          "post_strata" = district_vals[cell_idx]
         ))
         
         ## Record results
@@ -204,7 +207,7 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
             
             ## Calculate True CV
             STRS_true_cv_array[iyear, ispp, iboat] <- temp_true_cv <-
-              sd(STRS_sim_index[iyear, ispp, iboat, ], na.rm = T) / 
+              sd(STRS_sim_index[iyear, ispp, iboat, ], na.rm = T) /
               (true_index[ispp, iyear])
             
             temp_sim_cv <- STRS_sim_cv[iyear, ispp, iboat, ]
@@ -215,13 +218,13 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
               mean(temp_sim_cv, na.rm = T)
             
             #Update progress to file
-            update_file  <- file(paste0(github_dir, 
-                                        "/results/survey_simulations/",
-                                        scen_name, "progress.txt"))
-            writeLines(c(scen_name,
-                         paste0("Finished: Iteration ", iter, ", ",
-                                ispp, ", ", " scenario, ",
-                                scen$strata[irow], " strata")), update_file)
+            update_file  <- file(paste0(github_dir, "/results/scenario_",
+                                        scenarios$scen_name[iscen], 
+                                        "/Multispecies_Optimization/Str_",
+                                        scenarios$strata[iscen], 
+                                        "/progress.txt"))
+            writeLines(c(paste0("Finished: Iteration ", iter, 
+                                ", Species: ", ispp)), update_file)
             close(update_file)
             
           } ## subloop over years--end
@@ -231,33 +234,17 @@ foreach(irow = nrow(scen):1 ) %dopar% { ## loop over scenario type -- start
         ##################################
         ## Save results
         ##################################
-        assign(value = STRS_sim_index,
-               x = paste0(scen_name, "sim_index"))
-        assign(value = STRS_sim_cv,
-               x = paste0(scen_name, "sim_cv"))
-        
-        assign(value = STRS_rel_bias_est,
-               x = paste0(scen_name, "rb_agg"))
-        
-        assign(value = STRS_rel_bias_index_district,
-               x = paste0(scen_name, "rb_district"))
-        assign(value = STRS_log_bias_index_district,
-               x = paste0(scen_name, "log_rb_district"))
-        
-        assign(value = STRS_true_cv_array,
-               x = paste0(scen_name, "true_cv"))
-        assign(value = STRS_rrmse_cv_array,
-               x = paste0(scen_name, "rrmse_cv"))
-        
-        save(list = paste0(scen_name,
-                           c("sim_index", "sim_cv", "rb_agg",
-                             "true_cv", "rrmse_cv",
-                             "rb_district", "log_rb_district") ),
-             file = paste0(github_dir, "/results/survey_simulations/",
-                           scen_name, "simulation_results.RData"))
+        save(list = c("STRS_sim_index", "STRS_sim_cv",
+                      "STRS_rel_bias_est", "STRS_rel_bias_index_district",
+                      "STRS_log_bias_index_district",
+                      "STRS_true_cv_array", "STRS_rrmse_cv_array" ),
+             file = paste0(github_dir, "/results/scenario_", 
+                           scenarios$scen_name[iscen], 
+                           "/Multispecies_Optimization/Str_",
+                           scenarios$strata[iscen], 
+                           "/simulation_results.RData"))
         
       } ## update results--end
     } ## loop over survey replicates--end
-  } ## loop over species--end
-  ## loop over data OM type -- end
-} ## loop over scenario type -- end
+  } ## loop over species--end  
+}
