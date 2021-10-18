@@ -1,2 +1,0 @@
-full_domain_STR_15_
-Finished: Iteration 1000, yelloweye rockfish,  scenario, 15 strata
