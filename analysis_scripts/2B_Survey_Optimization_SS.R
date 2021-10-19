@@ -41,7 +41,7 @@ source("modified_functions/plot_solution_results.R")
 ##################################################
 ####   Constants to specify before doing optimization
 ##################################################
-for (iscen in 1:5) { ## Start loop over scenarios
+for (iscen in 6) { ## Start loop over scenarios
   
   ## Domain is the term used in the SamplingStrata package, is used to 
   ## distinguish whether the optimization is done gulf-wide (n_dom == 1) or 
@@ -85,7 +85,7 @@ for (iscen in 1:5) { ## Start loop over scenarios
                               "depth" = data.frame(X1 = depth_input))
   
   for (which_species in c(spp_idx_opt, 
-                          spp_idx_eval)) { ## Start loop over species
+                          spp_idx_eval)[-1]) { ## Start loop over species
     
     ## Which density values are we using?
     density_input <- 
@@ -277,24 +277,24 @@ for (iscen in 1:5) { ## Start loop over scenarios
       ##################################################
       ####   Update sample_allocations with optimal allocation
       ##################################################
-      sample_allocations[, paste0("boat_", isample)] <- as.numeric(temp_bethel)
-      cv_by_boat[isample, "cv_constraint"] <- 
+      sample_allocations[, paste0("boat_", iboat)] <- as.numeric(temp_bethel)
+      cv_by_boat[iboat, "cv_constraint"] <- 
         as.numeric(attributes(temp_bethel)$outcv[, "PLANNED CV "])
-      cv_by_boat[isample, "actual_cv"] <- 
+      cv_by_boat[iboat, "actual_cv"] <- 
         as.numeric(attributes(temp_bethel)$outcv[, "ACTUAL CV"])
-      cv_by_boat[isample, "total_n"] <- temp_n
+      cv_by_boat[iboat, "total_n"] <- temp_n
       
       ##################################################
       ####   Plot solution with a random draw of the design
       ##################################################
       plot_solution_results(file_name = paste0("solution_with_stations_boat_",
-                                               isample, ".png"),
+                                               iboat, ".png"),
                             grid_object =  grid_goa,
                             districts_object = districts,
                             district_values = district_vals,
                             sol_by_cell = temp_ids,
                             draw_stations = TRUE, 
-                            allocations = sample_allocations[, isample])
+                            allocations = sample_allocations[, iboat])
       
       ##################################################
       ####   Save output
