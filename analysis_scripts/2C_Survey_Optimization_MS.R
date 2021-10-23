@@ -110,16 +110,16 @@ for (iscen in c(11)){
            dimnames = list(NULL, paste0("Y", 1:ns_opt, "_SQ_SUM")))
   )
   
-  
-  ## Compile Single-Species CVs to establish a lower limit
-  ss_cvs <- vector(length = ns_opt); names(ss_cvs) <- common_names_opt
-  for (ispp in common_names_opt){
-    load( paste0(github_dir, "/results/scenario_", scenarios$scen_name[iscen], 
-                 "/Single_Species_Optimization/", ispp, "/result_list.RData"))
-    ss_cvs[ispp] <- result_list$cvs[1, "actual_cv"]
-  }
-  
-  for (isample in 1:3) {
+  for (isample in 1:n_boats) {
+    
+    ## Compile Single-Species CVs to establish a lower limit for a given boat
+    ss_cvs <- vector(length = ns_opt); names(ss_cvs) <- common_names_opt
+    for (ispp in common_names_opt){
+      load( paste0(github_dir, "/results/scenario_", scenarios$scen_name[iscen], 
+                   "/Single_Species_Optimization/", ispp, "/boat_", isample,
+                   "/result_list.RData"))
+      ss_cvs[ispp] <- result_list$cvs[1, "actual_cv"]
+    }
     
     ## Initiate CVs to be those calculated under SRS, assign to a variable 
     ## named cv_constraints
@@ -129,7 +129,7 @@ for (iscen in c(11)){
       dataset = cbind( frame[, -grep(x = names(frame), pattern = "X")],       
                        X1 = 1))
     
-    srs_n <- as.numeric(samples[isample] * table(frame$domainvalue) / n_cells)
+    srs_n <- as.numeric(samples[isample] * table(frame$domainvalue) / nrow(frame))
     srs_var <- as.matrix(srs_stats[, paste0("S", 1:ns_opt)])^2
     
     srs_var <- sweep(x = srs_var, 
@@ -155,10 +155,10 @@ for (iscen in c(11)){
     for(temp_strata in no_strata) {
       
       ## Set the result directory to which optimization outputs will save 
-      result_dir = paste0(github_dir, "/results/scenario_", 
-                          scenarios$scen_name[iscen], 
-                          "/Multispecies_Optimization/Str_", temp_strata, 
-                          '/boat_', iboat, "/")
+      result_dir <- paste0(github_dir, "/results/scenario_", 
+                           scenarios$scen_name[iscen], 
+                           "/Multispecies_Optimization/Str_", 
+                           temp_strata, '/boat_', isample, "/")
       if(!dir.exists(result_dir)) dir.create(path = result_dir, recursive = T)
       setwd(result_dir)
       
@@ -169,8 +169,8 @@ for (iscen in c(11)){
       solution <- optimStrata(method = "continuous",
                               errors = cv, 
                               framesamp = frame,
-                              iter = 300,
-                              pops = 100,
+                              iter = 30,
+                              pops = 10,
                               elitism_rate = 0.1,
                               mut_chance = 1 / (rep(temp_strata, n_dom) + 1),
                               nStrata = rep(temp_strata, n_dom),
@@ -229,19 +229,20 @@ for (iscen in c(11)){
                                             pattern = "X")],
                          X1 = 1))
       
-      srs_n <- as.numeric(samples[isample] * table(temp_frame$domainvalue) / n_cells)
+      srs_n <- sum(as.numeric(samples[isample] * table(frame$domainvalue) / nrow(frame)))
       srs_var <- as.matrix(srs_stats[, paste0("S", 1:ns_opt)])^2
       
       ## SRS statistics
       srs_var <- sweep(x = srs_var, 
                        MARGIN = 1, 
-                       STATS = (1 - srs_n / n_cells) / srs_n, 
+                       STATS = (1 - srs_n / nrow(frame)) / srs_n, 
                        FUN = "*")
       srs_cv <- sqrt(srs_var) / srs_stats[, paste0("M", 1:ns_opt)]
       
       sample_allocations <- matrix(nrow = nrow(sum_stats), 
                                    ncol = 3,
-                                   dimnames = list(NULL, paste0("boat_", 1:3)))
+                                   dimnames = list(NULL, 
+                                                   paste0("boat_", 1:n_boats)))
       cv_by_boat <- list()
       
       error_df <- data.frame("DOM" = "DOM1",
@@ -261,8 +262,8 @@ for (iscen in c(11)){
       temp_n <- sum(ceiling(temp_bethel))
       
       
-      while (temp_n != c(292, 550, 825)[isample]){
-        over_under <- temp_n > c(292, 550, 825)[isample]
+      while (temp_n != samples[isample]){
+        over_under <- temp_n > samples[isample]
         CV_adj <- ifelse(over_under == TRUE, 
                          yes = 1.001,
                          no = 0.999)
