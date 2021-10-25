@@ -303,16 +303,17 @@ for (iscen in c(11)){
                             sol_by_cell = temp_ids,
                             draw_stations = TRUE, 
                             allocations = sample_allocations[, isample])
+      
+      ##################################################
+      ####   Save output
+      ##################################################
+      result_list <- list(solution = solution,
+                          sum_stats = sum_stats,
+                          cvs = cv_by_boat,
+                          sample_allocations = sample_allocations,
+                          sol_by_cell = temp_ids)
+      save(list = "result_list", file = "result_list.RData")
+      
     }
-    
-    ##################################################
-    ####   Save output
-    ##################################################
-    result_list <- list(solution = solution,
-                        sum_stats = sum_stats,
-                        cvs = cv_by_boat,
-                        sample_allocations = sample_allocations,
-                        sol_by_cell = temp_ids)
-    save(list = "result_list", file = "result_list.RData")
   }
 }
