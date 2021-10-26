@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-VAST_sim_data_dir <- "E:/VAST_Runs/"
+VAST_sim_data_dir <- "D:/VAST_Runs/"
 github_dir <- getwd()
 
 ##################################################
@@ -19,7 +19,7 @@ library(foreach)
 library(parallel)
 library(doParallel)
 
-cl <- parallel::makeCluster(parallel::detectCores() - 1)
+cl <- parallel::makeCluster(parallel::detectCores() - 2)
 doParallel::registerDoParallel(cl)
 
 ##################################################
@@ -95,15 +95,8 @@ for(idir in curr_design_dir)
 ##################################################
 source("modified_functions/sim_fns.R") 
 
-foreach(iscen = 23:24) %dopar% {
-  ##################################################
-  ####   Load scenario results
-  ##################################################
-  if (scenarios$opt_type[iscen] == "opt") 
-    load(paste0(github_dir, "/results/scenario_", scenarios$scen_name[iscen], 
-                "/Multispecies_Optimization/Str_", scenarios$strata[iscen], 
-                "/result_list.RData"))
-  
+foreach(iscen = 24:5) %dopar% {
+
   ##################################################
   ####   Result Objects
   ##################################################
@@ -132,10 +125,7 @@ foreach(iscen = 23:24) %dopar% {
   cell_idx <- rep(x = TRUE, times = n_cells)
   if(scenarios$max_depth[iscen] == 700) cell_idx[grid_goa$DEPTH_EFH > 700] <- F
   
-  temp_solution <- switch(
-    scenarios$opt_type[iscen],
-    "current" = grid_goa$stratum_new_label[cell_idx],
-    "opt" = result_list$sol_by_cell[cell_idx])
+
   
   ##################################################
   ####   Simulate Survey
@@ -158,9 +148,26 @@ foreach(iscen = 23:24) %dopar% {
               FUN = function(x) tapply(X = x, 
                                        INDEX = district_vals[cell_idx],
                                        FUN = sum)))
+    temp_true_index <- rowSums(temp_true_index_district)
+      
     for (iter in 1:n_iters) { ## loop over survey replicates--start
       set.seed(n_iters + iter)
       for (iboat in 1:n_boats) { ## loop over boat-effort--start
+        
+        ##################################################
+        ####   Load scenario results
+        ##################################################
+        if (scenarios$opt_type[iscen] == "opt") 
+          load(paste0(github_dir, "/results/scenario_", 
+                      scenarios$scen_name[iscen], 
+                      "/Multispecies_Optimization/Str_", 
+                      scenarios$strata[iscen], "/boat_", iboat, 
+                      "/result_list.RData"))
+        
+        temp_solution <- switch(
+          scenarios$opt_type[iscen],
+          "current" = grid_goa$stratum_new_label[cell_idx],
+          "opt" = result_list$sol_by_cell[cell_idx])
         
         temp_allocation <- switch(
           scenarios$opt_type[iscen],
@@ -208,7 +215,7 @@ foreach(iscen = 23:24) %dopar% {
             ## Calculate True CV
             STRS_true_cv_array[iyear, ispp, iboat] <- temp_true_cv <-
               sd(STRS_sim_index[iyear, ispp, iboat, ], na.rm = T) /
-              (true_index[ispp, iyear])
+              (temp_true_index[iyear])
             
             temp_sim_cv <- STRS_sim_cv[iyear, ispp, iboat, ]
             
