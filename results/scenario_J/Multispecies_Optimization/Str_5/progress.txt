@@ -1,1 +1,1 @@
-Finished: Iteration 1000, Species: Pacific halibut
+Finished: Iteration 1000, Species: yelloweye rockfish
