@@ -1,1 +1,1 @@
-Finished: Iteration 100, Species: Pacific ocean perch
+Finished: Iteration 1000, Species: yelloweye rockfish
