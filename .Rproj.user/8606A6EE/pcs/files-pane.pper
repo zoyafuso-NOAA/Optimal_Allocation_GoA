@@ -1,0 +1,13 @@
+{
+    "path" : "~/GitHub/Optimal_Allocation_GoA/analysis_scripts/sensitivity_analysis",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 1
+        },
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}
