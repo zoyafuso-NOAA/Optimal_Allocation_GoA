@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 .Rproj
+*.pper
+.Rproj.user/shared/notebooks/paths
