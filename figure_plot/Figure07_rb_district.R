@@ -6,6 +6,9 @@
 ###############################################################################
 rm(list = ls())
 
+##################################################
+####   Import Libraries
+##################################################
 library(raster)
 
 ##################################################
@@ -27,18 +30,29 @@ source("modified_functions/plot_percentiles.R")
 load('data/processed/optimization_data.RData')
 load('data/processed/grid_goa.RData')
 
-scen <- data.frame(survey_type = c("cur", rep("opt", 4) ),
-                   strata = c("cur", 3, 5, 10, 15),
-                   domain = c("full_domain",
-                              rep(c("district", "full_domain"), each = 2)))
+##################################
+## Load Survey Simulations for the current optimization (scenario L),
+## full-scale optimization with 15 strata (scenario A) and 
+## area-level optimization with 5 strata per area (scenario B)
+##################################
+main_rb <- array(dim = c(3, n_years, ns_all, n_districts, n_iters),
+                 dimnames = list(c("current", "full_domain", "district"),
+                                 paste0("year_", 1:n_years),
+                                 common_names_all, 
+                                 paste0("district_", 1:n_districts), 
+                                 NULL) )
 
-for (irow in 1:nrow(scen)) {
-  scen_name <- paste0(scen$domain[irow], "_STR_", scen$strata[irow], "_")
-  file_name <- paste0("results/survey_simulations/",
-                      scen_name, "simulation_results.RData")
-  
-  load(file_name)
-}
+load(paste0("results/scenario_L/Multispecies_Optimization/Str_current/",
+            "simulation_results.RData"))
+main_rb["current", , , , ] <- STRS_rel_bias_est[, , "boat_2", ]
+
+load(paste0("results/scenario_A/Multispecies_Optimization/Str_15/",
+            "simulation_results.RData"))
+main_rb["full_domain", , , , ] <- STRS_rel_bias_est[, , "boat_2", ]
+
+load(paste0("results/scenario_B/Multispecies_Optimization/Str_5/",
+            "simulation_results.RData"))
+main_rb["district", , , , ] <- STRS_rel_bias_est[, , "boat_2", ]
 
 ##################################
 ## General layout of plots
@@ -56,8 +70,141 @@ legend_layout <- matrix(c(7, 1, 1, 1,
                           7, 3:5,
                           7, 6, 6, 6), nrow = 4)
 
-# layout(legend_layout)
-plot_legend <- function() {
+##################################################
+####   This plot is split into four pages. Set the species indices for
+####   each page.
+##################################################
+spp_idx_1 <- spp_idx_opt[1:7]
+spp_idx_2 <- spp_idx_opt[8:14]
+spp_idx_3 <- c(spp_idx_opt[15], spp_idx_eval[1:6])
+spp_idx_4 <- spp_idx_eval[7:11]
+
+for (which_spp in paste(1:4)) {
+  
+  ## Open png file
+  # png(filename = paste0(output_dir, "Figure07_RB_district_", which_spp, ".png"),
+  #     width = 190,
+  #     height = 220,
+  #     units = "mm",
+  #     res = 500)
+  
+  ## Set up plot layout
+  par(mar = c(0.25, 0, 0.25, 0), oma = c(1.25, 5, 0, 0))
+  plot_layout <- rbind( cbind(gen_layout + 17*0, gen_layout + 17*1),
+                        cbind(gen_layout + 17*2, gen_layout + 17*3),
+                        switch(paste0(which_spp %in% paste0(1:3)),
+                               "TRUE" = rbind(cbind(gen_layout + 17*4, 
+                                                    gen_layout + 17*5),
+                                              cbind(gen_layout + 17*6, 
+                                                    legend_layout + 17*7)),
+                               "FALSE" = cbind(gen_layout + 17*4, 
+                                               legend_layout + 17*5))
+                        
+  )
+  
+  layout(mat =  plot_layout, 
+         widths = c(rep(1, 11), 0.1),
+         heights = c(0.75, 1, 1, 1,
+                     0.75, 1, 1, 1,
+                     0.75, 1, 1, 1,
+                     0.75, 1, 1, 1))
+  
+  ## Loop over species
+  for (ispp in get(paste0("spp_idx_", which_spp)) ) {
+    
+    ## Calculate y-max for the plot: for each survey type (MARGIN = 1),
+    ## calculate the 95% percentile for each year and calculate the max
+    ## absolute value of that output
+    y_max <- max(abs(apply(main_rb[, , ispp, ,],
+                           MARGIN = 1, 
+                           FUN = function(x) 
+                             plot_percentiles(values = x, plot = F))))
+    
+    y_max <- ifelse(y_max * 1.5 < 0.35, 0.35, y_max * 1.5)
+    
+    for (itype in dimnames(main_rb)[[1]] ) {  ## Loop over design -- start
+      for (idistrict in 1:5) { ## Loop over district -- start
+        
+        ## Base plot
+        plot(1,
+             type = "n",
+             xlim = c(0, 12),
+             ylim = c(-y_max, y_max),
+             axes = F,
+             ann = F)
+        box()
+        
+        ## Color of the background determines the survey type
+        rect(xleft = par("usr")[1], 
+             xright = par("usr")[2], 
+             ybottom = par("usr")[3], 
+             ytop = par("usr")[4], 
+             col = switch(itype,
+                          "current" = "white",
+                          "full_domain" = "grey90",
+                          "district" = "grey50"))
+        
+
+        ## Time axis
+        axis(side = 1, 
+             at = 1:11, 
+             labels = NA,
+             tck = -0.05)
+        
+        if (itype == "district") {
+          if(idistrict %in% c(1, 3, 5) ) {
+            axis(side = 1, 
+                 at = c(1, 11), 
+                 labels = c("Yr 1", "Yr 11"),
+                 lwd = F, 
+                 tick = F, 
+                 line = -0.5, 
+                 cex.axis = 0.75)
+          }
+        }
+        
+        
+        ## Plot time series
+        plot_this <- main_rb[itype,
+                             ,
+                             ispp,
+                             idistrict,
+                             ]
+        
+        plot_percentiles(values = plot_this,
+                         xs = 1:11, 
+                         pt.cex = 0.25,
+                         pt.colors = "black")
+        
+        if(idistrict == 1) {
+          axis(side = 2,
+               las = 1,
+               at = pretty(c(-y_max, y_max), n = 3),
+               cex.axis = 0.7,
+               tck = -0.1)
+        }
+        
+        ## District Labels
+        if(itype == "current") mtext(side = 3, 
+                                     line = -0.75,
+                                     text = districts$district[idistrict],
+                                     cex = 0.5)
+        
+        abline(h = 0, lwd = 0.5, lty = "dotted")
+      } ## Loop over district -- end
+    } ## Loop over design scenario -- end
+    
+    ## Species Label
+    plot(1,type = "n", axes = F, ann = F)  
+    plot(1,type = "n", axes = F, ann = F, xlim = c(0, 1), ylim = c(0, 1))
+    text(x = 0.4, 
+         y = 0.35, 
+         labels = common_names_all[ispp], 
+         cex = 1.4, 
+         font = 2)
+  }
+  
+  par(mar = c(0.25, 0, 0.25, 0))
   goa <- sp::SpatialPointsDataFrame(
     coords = grid_goa[, c("E_km", "N_km")],
     data = data.frame(Str_no = as.integer(district_vals) ) )
@@ -102,196 +249,21 @@ plot_legend <- function() {
   
   plot(1, type = "n", xlim = c(0, 1), ylim = c(0, 1), axes = F)
   box()
-  text(0.5, 0.5, "Current\nSTRS Design")
+  text(0.5, 0.5, "Existing\nSTRS Design")
   
   plot(1, type = "n", xlim = c(0, 1), ylim = c(0, 1), axes = F)
   rect(xleft = -2, xright = 2,
        ybottom = -2, ytop = 2,
        col = "grey90")
   box()
-  text(0.5, 0.5, "Gulf-Wide\n(10 Strata)\nOpt. STRS Design")
+  text(0.5, 0.5, "Gulf-Wide\n(15 Strata)\nProposed STRS Design")
   
   plot(1, type = "n", xlim = c(0, 1), ylim = c(0, 1), axes = F)
   rect(xleft = -2, xright = 2,
        ybottom = -2, ytop = 2,
        col = "grey50")
   box()
-  text(0.5, 0.5, "District-Level\n(3 Strata per District)\nOpt. STRS Design")
-  # plot(1, type = "n",  axes = F)
-
-}
-
-
-
-spp_idx_1 <- spp_idx_opt[1:7]
-spp_idx_2 <- spp_idx_opt[8:14]
-spp_idx_3 <- c(spp_idx_opt[15], spp_idx_eval[1:6])
-spp_idx_4 <- spp_idx_eval[7:11]
-
-for (which_spp in paste(1:4)) {
-  
-  ## Open png file
-  png(filename = paste0(output_dir, "Figure07_RB_district_", which_spp, ".png"),
-      width = 190,
-      height = 220,
-      units = "mm",
-      res = 500)
-  
-  ## Set up plot layout
-  par(mar = c(0.25, 0, 0.25, 0), oma = c(1.25, 5, 0, 0))
-  plot_layout <- rbind( cbind(gen_layout + 17*0, gen_layout + 17*1),
-                        cbind(gen_layout + 17*2, gen_layout + 17*3),
-                        switch(paste0(which_spp %in% paste0(1:3)),
-                               "TRUE" = rbind(cbind(gen_layout + 17*4, 
-                                                    gen_layout + 17*5),
-                                              cbind(gen_layout + 17*6, 
-                                                    legend_layout + 17*7)),
-                               "FALSE" = cbind(gen_layout + 17*4, 
-                                               legend_layout + 17*5))
-                        
-  )
-  
-  layout(mat =  plot_layout, 
-         widths = c(rep(1, 11), 0.1),
-         heights = c(0.75, 1, 1, 1,
-                     0.75, 1, 1, 1,
-                     0.75, 1, 1, 1,
-                     0.75, 1, 1, 1))
-  
-  ## Loop over species
-  for (ispp in get(paste0("spp_idx_", which_spp)) ) {
-    ## Loop over three survey scenarios
-    ## 1) Current
-    ## 4) Gulf-wide optiization, 10 strata
-    ## 2) District-level optimiztion, 3 strata per district
-    
-    ## Calculate what should be the ylimits for each set of species plots
-    plot_this <- list()
-    for (irow in c(1, 4, 2) ) { 
-      ## subset result object based on survey scenario
-      scen_name <- paste0(scen$domain[irow], "_STR_", scen$strata[irow], "_")
-      # rb_district <- get(paste0(scen_name, "log_rb_district"))
-      rb_district <- get(paste0(scen_name, "log_rb_district"))
-      
-      for (idistrict in 1:5) {
-        plot_this <- c(plot_this, 
-                       list(plot_percentiles(values = rb_district[1:n_years, 
-                                                                  ispp, 
-                                                                  "boat_2",
-                                                                  idistrict, 
-                                                                  1:n_iters],
-                                             plot = F) ))
-      }
-      
-    }
-    
-    ymax_ <- max(unlist(plot_this), 1, na.rm = T) 
-    ymin_ <- min(unlist(plot_this), -1, na.rm = T)
-    
-    for (irow in c(1, 4, 2) ) { ## Loop over design scenario -- start
-      ## subset result object based on survey scenario
-      scen_name <- paste0(scen$domain[irow], "_STR_", scen$strata[irow], "_")
-      rb_district <- get(paste0(scen_name, "log_rb_district"))
-      
-      for (idistrict in 1:5) { ## Loop over district -- start
-        
-        ## Base plot
-        plot(1,
-             type = "n",
-             xlim = c(0, 12),
-             ylim = c(ymin_, ymax_),
-             axes = F,
-             ann = F)
-        box()
-        
-        ## Color of the background determines the survey type
-        rect(xleft = -5, 
-             xright = 15, 
-             ybottom = -2, 
-             ytop = 5, 
-             col = ifelse(irow %in% 1, 
-                          "white",
-                          ifelse(irow %in% 4, "grey90", 
-                                 "grey50")))
-        
-        ## District Labels
-        if(irow == 1) mtext(side = 3, 
-                            line = -0.75,
-                            text = districts$district[idistrict],
-                            cex = 0.5)
-        
-        ## Time axis
-        axis(side = 1, 
-             at = 1:11, 
-             labels = NA,
-             tck = -0.05)
-        
-        if (irow == 2) {
-          if(idistrict %in% c(1, 3, 5) ) {
-            axis(side = 1, 
-                 at = c(1, 11), 
-                 labels = c("Yr 1", "Yr 11"),
-                 lwd = F, 
-                 tick = F, 
-                 line = -0.5, 
-                 cex.axis = 0.75)
-          }
-        }
-
-        
-        ## Plot time series
-        plot_this <- rb_district[,
-                                 ispp,
-                                 "boat_2" ,
-                                 idistrict,
-                                 ]
-        
-        plot_percentiles(values = plot_this,
-                         xs = 1:11, 
-                         pt.cex = 0.25,
-                         pt.colors = "black")
-        
-        ## 
-        if(idistrict == 1) {
-          axis(side = 2, 
-               las = 1, 
-               at = log10(c(0.1, 1, 10, 100, 1000)),
-               labels = NA,
-               cex.axis = 0.7,
-               tck = -0.1)
-          
-          axis(side = 2, 
-               las = 1, 
-               at = log10(c(0.1, 1, 10, 100, 1000)),
-               labels = c(0.1, 1, 10, 100, 1000),
-               cex.axis = 0.75,
-               lwd = 0,
-               line = -0.25)
-          
-          axis(side = 2, 
-               las = 1, 
-               at = log10(c(0.05, 0.5, 5, 50, 500)),
-               labels = NA,
-               cex.axis = 0.7,
-               tck = -0.05)
-        }
-        
-        abline(h = 0, lwd = 0.5, lty = "dotted")
-      } ## Loop over district -- end
-    } ## Loop over design scenario -- end
-    
-    ## Species Label
-    plot(1,type = "n", axes = F, ann = F)  
-    plot(1,type = "n", axes = F, ann = F, xlim = c(0, 1), ylim = c(0, 1))
-    text(x = 0.4, 
-         y = 0.35, 
-         labels = common_names_all[ispp], 
-         cex = 1.4, 
-         font = 2)
-  }
-  
-  par(mar = c(0.25, 0, 0.25, 1))
-  plot_legend()
+  text(0.5, 0.5, "Area-Level\n(5 Strata per Area)\nProposed STRS Design")
   
   mtext(side = 2, 
         outer = T, 
@@ -299,5 +271,5 @@ for (which_spp in paste(1:4)) {
         line = 3, 
         font = 2)
   
-  dev.off()
+  # dev.off()
 }

@@ -1,4 +1,3 @@
-
 ###############################################################################
 ## Project:         Lower-CV constraint on species CV
 ## Author:          Zack Oyafuso (zack.oyafuso@noaa.go)
@@ -39,26 +38,24 @@ load("data/processed/optimization_data.RData")
 load("data/processed/grid_goa.RData")
 load("data/processed/prednll_VAST_models.RData")
 load("data/processed/VAST_fit_D_gct.RData")
-load("results/MS_optimization_knitted_results.RData")
-source("modified_functions/sim_fns.R")
-
-
+load('data/processed/dens_vals_MLE.RData')
+load("results/scenario_B/Multispecies_Optimization/Str_5/boat_2/result_list.RData")
 
 ##################################################
 ####  Isolate District-Level optimization, 3 strata per district
 ####  Set lower threshold values
 ##################################################
-sol_idx <- 2
 threshold <- c(0.15, 0.25)
 
-strata_df <- strata_stats_list[[sol_idx]]
-nh <- strata_list[[sol_idx]]$Allocation
+strata_df <- result_list$solution$aggr_strata
+strata_df$N <- strata_df$N / n_years
+nh <- result_list$sample_allocations[, 2]
 strata_df$stratum <- 1:nrow(strata_df)
 strata_df$DOM1 <- 1
 
 spp_order <- c(1:9, 15, 11, 10, 12:14) #For plotting
 
-plot_solution <- res_df[, sol_idx]
+plot_solution <- result_list$sol_by_cell
 goa <- sp::SpatialPointsDataFrame(
   coords = grid_goa[,c("E_km", "N_km")],
   data = data.frame(Str_no = plot_solution) )
@@ -74,6 +71,28 @@ xrange_diff <- diff(xrange)
 yrange_diff <- diff(yrange)
 
 ##################################################
+####   Density Input
+##################################################
+frame <- cbind(
+  data.frame(domainvalue = 1,
+             X1 = 1,
+             id = 1:n_cells,
+             WEIGHT = n_years),
+  
+  matrix(data = apply(X = dens_vals_MLE,
+                      MARGIN = 1:2,
+                      FUN = sum),
+         ncol = ns_all,
+         dimnames = list(NULL, paste0("Y", 1:ns_all))),
+  
+  matrix(data = apply(X = dens_vals_MLE,
+                      MARGIN = 1:2,
+                      FUN = function(x) sum(x^2)),
+         ncol = ns_all,
+         dimnames = list(NULL, paste0("Y", 1:ns_all, "_SQ_SUM")))
+)
+
+##################################################
 ####  Result Object
 ##################################################
 tradeoff_df <- matrix(nrow = ns_opt, 
@@ -85,9 +104,7 @@ tradeoff_sample_allocations[, 1] <- nh
 for (ithreshold in 1:length(threshold)) {
   
   ## Initiate CVs to be those calculated under SRS
-  srs_stats <- SamplingStrata::buildStrataDF( 
-    dataset = cbind( subset(frame_all, select = -c(X1, X2)),
-                     X1 = 1))
+  srs_stats <- SamplingStrata::buildStrataDF(dataset = frame)
   
   srs_var <- as.matrix(srs_stats[, paste0("S", spp_idx_opt)])^2
   
@@ -130,8 +147,8 @@ for (ithreshold in 1:length(threshold)) {
   
   while(over_or_under %in% c("under", "over")) {
     change_rate <- switch(over_or_under, 
-                          "under" = 0.99,
-                          "over" = 1.01,
+                          "under" = 0.999,
+                          "over" = 1.001,
                           "exact" = 1)
     error_df[, paste0("CV", 1:ns_opt)] <- 
       pop_cvs * change_rate
@@ -149,66 +166,13 @@ for (ithreshold in 1:length(threshold)) {
     
     print(n <- sum(bethel_allocation))
     
-    over_or_under <- ifelse(n < 549, "under", 
-                            ifelse(n > 551, "over", 
+    over_or_under <- ifelse(n < 548, "under", 
+                            ifelse(n > 552, "over", 
                                    "exact"))
   }
   
   tradeoff_df[, ithreshold] <- pop_cvs
   tradeoff_sample_allocations[, 1 + ithreshold] <- as.numeric(bethel_allocation)
-}
-
-##################################################
-####   
-##################################################
-
-temp_res <- array(dim = c(length(threshold) + 1, n_years, ns_all, n_iters),
-                  dimnames = list(NULL, NULL, common_names_all, NULL))
-
-for (ispp in common_names_all) {
-  
-  ## Load species specific simulated data
-  depth_in_model <- c(F, T)[which.min(pred_jnll[pred_jnll$spp_name == ispp, 
-                                                2:3])]
-  load(paste0(VAST_sim_data_dir, ispp, 
-              ifelse(test = depth_in_model, yes = "_depth", no = ""),
-              "/simulated_data.RData"))
-  
-  for (isurvey in 1:(length(threshold)+1) ) {
-    for (isim in 1:n_iters) {
-      
-      set.seed(isim + 23423)
-      sim_survey <- do_STRS(input = list(
-        "density" = sweep(x = sim_data[, , isim],
-                          MARGIN = 1,
-                          STATS = grid_goa$Area_km2,
-                          FUN = "/"),
-        "cell_areas" = grid_goa$Area_km2,
-        "solution" = res_df[, sol_idx],
-        "allocation" = tradeoff_sample_allocations[, isurvey],
-        "true_density" = true_mean[ispp, ],
-        "true_index_district" = true_index_district[ispp, , ] ,
-        "post_strata" = district_vals))
-      temp_res[isurvey, , ispp, isim] <- sim_survey$strs_index
-      
-      if (isim%%50 == 0) print(isim)
-    }
-  }
-  
-}
-
-par(mfrow = c(5, 3), mar = c(3,3,1,1))
-for (ispp in common_names_opt) {
-  plot_this <- t(sweep(x = apply(X = temp_res[, , ispp, ],
-                                 MARGIN = 1:2,
-                                 FUN = sd),
-                       MARGIN = 2,
-                       STATS = true_index[ispp, ] / 1000,
-                       FUN = '/'))
-  boxplot(plot_this,
-          main = ispp,
-          ylim = c(0, max(plot_this)),
-          las = 1)
 }
 
 
@@ -261,7 +225,7 @@ for (ispp in common_names_opt) {
     
     ## Plot orignal solution's expected CV
     points(y = 1:ns_opt,
-           x = settings[sol_idx, paste0("CV", spp_order)],
+           x = result_list$cvs$boat_2[spp_order, "actual_cv"],
            col = "darkgrey", 
            pch = 16)
     

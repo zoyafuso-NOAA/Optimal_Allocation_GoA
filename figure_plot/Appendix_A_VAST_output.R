@@ -14,7 +14,8 @@
 rm(list = ls())
 
 VAST_dir <- "D:/VAST_Runs/"
-output_dir <- "C:/Users/Zack Oyafuso/Google Drive/MS_Optimizations/TechMemo/appendix/Appendix B plots/"
+output_dir <- paste0("C:/Users/Zack Oyafuso/Google Drive/MS_Optimizations/",
+                     "TechMemo/appendix/Appendix A plots/")
 if(!dir.exists(output_dir)) dir.create(path = output_dir)
 
 ##################################################
@@ -128,13 +129,13 @@ for (which_spp in 1:nrow(pred_jnll)) {
                       report$Omega2_gc[, 1])[[omegatype]]
     
     ## Plot spatial effect
-    goa = SpatialPointsDataFrame(
+    goa = sp::SpatialPointsDataFrame(
       coords = grid_goa[, c("E_km", "N_km")], 
       data = data.frame(var = scaled_var) )
     
-    goa_ras = raster(x = goa, 
+    goa_ras = raster::raster(x = goa, 
                      resolution = 10)
-    goa_ras = rasterize(x = goa, 
+    goa_ras = raster::rasterize(x = goa, 
                         y = goa_ras, 
                         field = "var")
     offset_y <- 0.6 * yrange_diff * (omegatype - 1)
@@ -172,7 +173,7 @@ for (which_spp in 1:nrow(pred_jnll)) {
   text(x = -0.25, 
        y = 0.5,
        labels = paste0(
-         "Appendix Figure B-", which_spp, ". -- ",
+         "Appendix Figure A-", which_spp, ". -- ",
          plot_spp_names[which_spp], " (depth ", 
          ifelse(depth_in_model, yes = "included).", no = "excluded)."), 
          "\n                                        ",

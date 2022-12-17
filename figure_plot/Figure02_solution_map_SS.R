@@ -25,13 +25,10 @@ library(RColorBrewer)
 ##################################################
 load("data/processed/optimization_data.RData")
 load("data/processed/grid_goa.RData")
-load(paste0("results/full_domain/Single_Species_Optimization/",
-            "optimization_knitted_results.RData"))
 
 ##################################################
 ####   Set Constants
 ##################################################
-idomain <- "full_domain"
 isample <- 2 #1, 2, or 3 boat solution
 
 ##################################################
@@ -48,6 +45,12 @@ isample <- 2 #1, 2, or 3 boat solution
   par(mar = c(0, 0, 0, 0))
   
   for (ispp in 1:ns_all) {
+    
+    ## Load Species Optimization Data
+    load(paste0("results/scenario_A/Single_Species_Optimization/", 
+                c(rev(common_names_eval), rev(common_names_opt))[ispp], 
+                "/boat_", isample, "/result_list.RData"))
+    
     if (ispp %in% c(ns_all/2 + 1, 1)) { 
       
       ## Base Plot
@@ -63,15 +66,10 @@ isample <- 2 #1, 2, or 3 boat solution
       offset_val <- 0
     }
     
-    ## Which index to plot
-    idx = which(settings$boat == isample &
-                  settings$species == c(rev(common_names_eval),
-                                        rev(common_names_opt))[ispp])
-    
     ## Set up spatial object to plot solution
-    goa <- SpatialPointsDataFrame(
+    goa <- sp::SpatialPointsDataFrame(
       coords = grid_goa[, c("E_km", "N_km")],
-      data = data.frame("Str_no" = res_df[, idx],
+      data = data.frame("Str_no" = result_list$sol_by_cell,
                         stringsAsFactors = TRUE))
     
     goa_ras <- raster(goa,
@@ -85,7 +83,7 @@ isample <- 2 #1, 2, or 3 boat solution
     goa_ras <- raster::shift(goa_ras, dy = offset_y)
     offset_val <- offset_val + 1
     
-    n_strata <- length(unique(res_df[, idx]))
+    n_strata <- length(unique(result_list$sol_by_cell))
     
     image(x = goa_ras,
           axes = F, ann = F,
@@ -106,11 +104,10 @@ isample <- 2 #1, 2, or 3 boat solution
     
     ## Simulate station locations from a survey
     temp_samples <- c()
-    temp_strata <- nrow(strata_list[[idx]])
-    temp_solution <- res_df[, idx ]
-    temp_allocation <- strata_list[[idx]]$Allocation
+    temp_solution <- result_list$sol_by_cell
+    temp_allocation <- result_list$sample_allocations[, isample]
     
-    for (istrata in 1:temp_strata) {
+    for (istrata in 1:n_strata) {
       temp_samples = c(temp_samples,
                        sample(x = which(temp_solution == istrata),
                               size = temp_allocation[istrata])

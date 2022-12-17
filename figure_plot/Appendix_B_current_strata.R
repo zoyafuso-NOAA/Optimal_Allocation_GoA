@@ -3,21 +3,17 @@
 ## Author:          Zack Oyafuso (zack.oyafuso@noaa.gov)
 ###############################################################################
 rm(list = ls())
-set.seed(23433)
 
 ##################################################
 ####  Set up directories  
 ##################################################
 which_machine <- c("Zack_MAC" = 1, "Zack_PC" = 2)[2]
 
-which_plot <- c("main", "appendix")[1]
-
-github_dir <- paste0(c("/Users/zackoyafuso/Documents/", 
-                       "C:/Users/Zack Oyafuso/Documents/")[which_machine], 
-                     "GitHub/Optimal_Allocation_GoA/")
 output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/",
                        "C:/Users/Zack Oyafuso/Google Drive/")[which_machine],
-                     "MS_Optimizations/TechMemo/appendix/Appendix C plots/")
+                     "MS_Optimizations/TechMemo/appendix/Appendix B plots/")
+
+if (!dir.exists(output_dir)) dir.create(output_dir)
 
 ##################################################
 ####  Libraries
@@ -34,28 +30,19 @@ library(RColorBrewer)
 ####  grid_goa.RData: goa_grid that corresponds to the solutions
 ####  optimization_data.RData: constants 
 ##################################################
-AK_land <- rgdal::readOGR(paste0(github_dir,
-                                 "data/shapefiles/AKland.shp"))
+AK_land <- rgdal::readOGR("data/shapefiles/AKland.shp")
 AK_land <- sp::spTransform(x = AK_land,
                            CRSobj = "+proj=utm +units=km +zone=5")
 
-goa_strata <- rgdal::readOGR(paste0(github_dir, 
-                                    "data/shapefiles/goa_strata.shp"))
+goa_strata <- rgdal::readOGR("data/shapefiles/goa_strata.shp")
 goa_strata <- sp::spTransform(x = goa_strata,
                               CRSobj = "+proj=utm +units=km +zone=5")
 
-load(paste0(github_dir, "results/MS_optimization_knitted_results.RData"))
-load(paste0(github_dir, "data/processed/grid_goa.RData"))
-load(paste0(github_dir, "data/processed/optimization_data.RData"))
+load("data/processed/grid_goa.RData")
+load("data/processed/optimization_data.RData")
 
 n_districts <- 5
 n_depth_zones <- 4
-
-##################################################
-####  Which optimal solution to plot?
-##################################################
-sol_idx <- with(settings, 
-                which(boat == 2 & strata == 3 & domain == "district"))
 
 ##################################################
 ####  Current GoA Strata names
@@ -145,12 +132,12 @@ plot_settings <- data.frame(district = districts$district,
 ##################################################
 ####  Plot
 ##################################################
-{
-
+for (iscen in scenarios$scen_name[-1]) {
+  
+  set.seed(23433)
+  
   ## Set up plot
-  png(filename = paste0(output_dir, "Appendix C", switch(which_plot,
-                                                         "main" = "1",
-                                                         "appendix" = 2) ,".png"),
+  png(filename = paste0(output_dir, "Appendix B scenario ", iscen, ".png"),
       units = "in", width = 6, height = 6.5, res = 500, family = "serif")
   
   ## Set up plot layout
@@ -160,10 +147,13 @@ plot_settings <- data.frame(district = districts$district,
                          6, 6, 2, 2, 2, 3, 3, 3, 5, 5), ncol = 2),
          widths = c(1, 2))
   
+  load(paste0("results/scenario_", iscen, "/Multispecies_Optimization/",
+              "Str_5/boat_2/result_list.RData"))
+  
   for(idistrict_idx in 1:n_districts) { ## For each district--start loop
     
     ## Subset those cells that are in the given district 
-    sub_res_df <- res_df[district_vals == paste(idistrict_idx), sol_idx]
+    sub_res_df <- result_list$sol_by_cell[district_vals == paste(idistrict_idx)]
     
     ## Set up spatial object
     goa <- sp::SpatialPointsDataFrame(
@@ -214,7 +204,7 @@ plot_settings <- data.frame(district = districts$district,
         raster::shift( x = goa_ras, 
                        dx = plot_settings$x_offset[idistrict_idx] * (istratas - 1),
                        dy = plot_settings$y_offset[idistrict_idx] * (istratas - 1)), 
-        col = sample(brewer.pal(n = 9, name = "Set3"), size = 3),
+        col = sample(brewer.pal(n = 9, name = "Set3"), size = 5),
         asp = 1,
         add = TRUE)
       

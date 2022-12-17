@@ -27,7 +27,6 @@ output_dir <- paste0(c("/Users/zackoyafuso/Google Drive/",
 ##################################################
 load("data/processed/optimization_data.RData")
 load("data/processed/grid_goa.RData")
-load("results/MS_optimization_knitted_results.RData")
 
 seed <- 234233
 districts$E_UTM[4] <- 1240
@@ -39,23 +38,20 @@ districts$W_UTM[5] <- 1240
 {
   
   ## Open device
-  png(filename = paste0(output_dir, "Figure03_MS_solutions.png"),
-      width = 170, height = 170, units = "mm",
-      res = 500)
-  
+  png(filename = paste0(output_dir, "Figure04_MS_solutions.png"),
+      width = 170, height = 170, units = "mm", res = 500)
+
+  ## Panel Layout
   layout(mat = matrix(data = c(1, 2,
                                3, 4,
                                5, 5), ncol = 2, byrow = T),
          heights = c(1, 1, 0.4))
   par(mar = c(0, 0, 0, 0))
   
-  for (idomain in c("district", "full_domain")) {
+  for (iscen in c("A", "B")) {
     
-    istrata <- list("district" = c(3, 5),
-                    "full_domain" = c(10, 15))[[idomain]][1]
-    
-    for(istrata in list("district" = c(3, 5),
-                        "full_domain" = c(10, 15))[[idomain]]) {
+    for(istrata in list("B" = c(3, 5),
+                        "A" = c(10, 15))[[iscen]]) {
       ## Base Plot layer
       plot(x = 1, y = 1, asp = 1,
            type = "n", axes = F, ann = F,
@@ -70,24 +66,22 @@ districts$W_UTM[5] <- 1240
             line = -2,
             cex = 1.25,
             font = 2,
-            text = paste(c("3" = "A)", "5" = "B)", 
-                           "10" = "C)", "15" = "D)")[paste(istrata)],
+            text = paste(c("3" = "C)", "5" = "D)", 
+                           "10" = "A)", "15" = "B)")[paste(istrata)],
                          istrata, 
-                         c("full_domain" = "Strata", 
-                           "district" = "Strata Per District")[idomain] ))
+                         c("A" = "Strata", 
+                           "B" = "Strata Per Area")[iscen] ))
       
       for (iboat in 1:n_boats) {
         
-        ## Find index that corresponds to the solution scenario
-        sol_idx <- with(settings, 
-                        which(domain == idomain & 
-                                strata == istrata & 
-                                boat == iboat))
+        ## Load Solution
+        load(paste0("results/scenario_", iscen, "/Multispecies_Optimization/", 
+                    "Str_", istrata, "/boat_", iboat, "/result_list.RData"))
         
         ## Set up spatial object to plot solution
         goa <- sp::SpatialPointsDataFrame(
           coords = grid_goa[, c("E_km", "N_km")],
-          data = data.frame(Str_no = res_df[, sol_idx]) )
+          data = data.frame(Str_no = result_list$sol_by_cell) )
         goa_ras <- raster::raster(x = goa, 
                                   resolution = 10)
         goa_ras <- raster::rasterize(x = goa, 
@@ -97,7 +91,7 @@ districts$W_UTM[5] <- 1240
         goa_ras <- raster::shift(x = goa_ras, dy = offset_y )
         
         ## Set strata colors
-        n_strata <- nrow(strata_list[[sol_idx]])
+        n_strata <- length(unique(result_list$sol_by_cell))
         strata_cols <- colorRampPalette(
           c(brewer.pal(n = 11, name = "Paired"),
             brewer.pal(n = 11, name = "Spectral")))(n_strata)
@@ -130,11 +124,10 @@ districts$W_UTM[5] <- 1240
         
         ## Simulate a sample solution
         temp_samples <- c()
-        temp_strata <- nrow(strata_list[[sol_idx]])
-        temp_solution <- res_df[, sol_idx]
-        temp_allocation <- strata_list[[sol_idx]]$Allocation
+        temp_solution <- result_list$sol_by_cell
+        temp_allocation <- result_list$sample_allocations[, iboat]
         
-        for (temp_istrata in 1:temp_strata) {
+        for (temp_istrata in 1:n_strata) {
           temp_samples = c(temp_samples,
                            sample(x = which(temp_solution == temp_istrata),
                                   size = temp_allocation[temp_istrata]) )
@@ -154,7 +147,7 @@ districts$W_UTM[5] <- 1240
   ## Districts Legend
   goa <- sp::SpatialPointsDataFrame(
     coords = grid_goa[, c("E_km", "N_km")],
-    data = data.frame(Str_no = res_df[, sol_idx]) )
+    data = data.frame(Str_no =result_list$sol_by_cell) )
   goa_ras <- raster::raster(x = goa, 
                             resolution = 10)
   goa_ras <- raster::rasterize(x = goa, 
@@ -187,5 +180,6 @@ districts$W_UTM[5] <- 1240
        font = 2,
        cex = 0.8)
   
+  ## Close Device
   dev.off()
 }
