@@ -5,3 +5,4 @@
 .Rproj
 *.pper
 .Rproj.user/shared/notebooks/paths
+temp/

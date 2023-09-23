@@ -9,30 +9,18 @@ rm(list = ls())
 ##################################################
 ####   Import packages
 ##################################################
-library(rgdal)
-library(raster)
-library(SpaDES)
+library(terra)
 
 ##################################################
 ####   CRSs used
 ##################################################
 lonlat_crs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
-utm_crs <- "+proj=utm +zone=5N +units=km"
 
 ##################################################
 ####   Merge together bathymetry rasters
 ##################################################
-split_bathy <- list()
-n_split_rasters <- length(dir("data/raw_data/split_goa_bathy_ras/")) / 2
-for (i in 1:n_split_rasters) {
-  split_bathy[[i]] <- raster::raster(paste0("data/raw_data/",
-                                            "split_goa_bathy_ras",
-                                            "/goa_bathy_processed_", 
-                                            i, ".grd"))
-}
-
-bathy <- SpaDES.tools::mergeRaster(split_bathy)
-rm(split_bathy)
+goa_bathy <-
+  terra::rast("//AKC0SS-n086/AKC_PubliC/Dropbox/Zimm/GEBCO/GOA/goa_bathy/")
 
 ##################################################
 ####   Import Current Strata (current_survey_strata)
@@ -41,93 +29,60 @@ rm(split_bathy)
 ####   Import CPUE data (data)
 ####   Untrawlable areas (goa_grid_nountrawl)
 ##################################################
-current_survey_strata <- rgdal::readOGR("data/shapefiles/goa_strata.shp")
-current_survey_mask <- rgdal::readOGR("data/shapefiles/goagrid_polygon.shp")
-current_survey_mask <- sp::spTransform(x = current_survey_mask,
-                                       CRSobj = crs(bathy))
-current_survey_mask <- rgeos::gUnaryUnion(spgeom = current_survey_mask)
+current_survey_strata <- terra::vect(x = "data/shapefiles/goa_strata.shp")
+current_survey_strata <- 
+  current_survey_strata[current_survey_strata$STRATUM != 0]
 
-goa_grid <- read.csv("data/extrapolation_grid/GOAThorsonGrid.csv")
-
+goa_grid <- read.csv("data/extrapolation_grid/GOAThorsonGrid_Less700m.csv")
 goa_grid <- goa_grid[, c("Id", "Shape_Area", "Longitude", "Latitude")]
 goa_grid$Shape_Area <- goa_grid$Shape_Area / 1000 / 1000 #Convert to km2 
 names(goa_grid) <- c( "Id", "Area_km2", "Lon", "Lat")
 
-data = read.csv("data/processed/goa_vast_data_input.csv")
-
-goa_grid_nountrawl <- read.csv("data/extrapolation_grid/GOA_ALL_nountrawl.csv")
+goa_data_geostat = read.csv("data/processed/goa_data_geostat.csv")
 
 ##################################################
 ####   Transform extrapolation grid to aea, extract bathymetry values onto grid
 ##################################################
-grid_shape = sp::SpatialPointsDataFrame(
-  coords = goa_grid[, c("Lon", "Lat")],
-  data = goa_grid,
-  proj4string = CRS(lonlat_crs))
+grid_shape = terra::vect(x = goa_grid[, c("Lon", "Lat", "Area_km2")], 
+                         geom = c("Lon", "Lat"), keepgeom = TRUE,
+                         crs = lonlat_crs)
+grid_shape_aea = terra::project(x = grid_shape, terra::crs(x = goa_bathy))
 
-grid_shape_aea = sp::spTransform(x = grid_shape,
-                                 CRSobj = crs(bathy))
-grid_shape_aea@data$DEPTH_EFH =  raster::extract(x = bathy,
-                                                 y = grid_shape_aea,
-                                                 method = "simple")
+grid_shape_aea$Depth_m <- 
+  terra::extract(x = goa_bathy, y = grid_shape_aea, ID = FALSE)
 
 ##################################################
 ####   Remove cells not already in the goa stratification
 ##################################################
-grid_shape_aea <- raster::intersect(x = grid_shape_aea,
-                                    y = current_survey_mask)
+grid_shape_aea <- terra::intersect(x = grid_shape_aea,
+                                    y = current_survey_strata[, "STRATUM"])
 
 ##################################################
 ####   Remove cells with depths outside the observed range to the range
 ##################################################
-grid_shape_aea <- subset(grid_shape_aea,
-                         DEPTH_EFH >= min(data$DEPTH_EFH) & 
-                           DEPTH_EFH <= max(data$DEPTH_EFH))
-
-##################################################
-####   Plot depth covariate of the extrapolation grid
-##################################################
-# spplot(grid_shape_aea[, "DEPTH_EFH"], 
-#        col.regions = rev(terrain.colors(1000)),
-#        pch = 16, cex = 0.1,
-#        cuts = 100, colorkey = T)
-
-grid_goa <- grid_shape_aea@data
-grid_goa[, c("E_km", "N_km")] <- 
-  project(xy = coordinates(grid_goa[, c("Lon", "Lat")]), 
-          proj = utm_crs )
-
-##################################################
-####   Create indices to easily subset <700 m cells and untrawlable cells
-##################################################
-grid_goa$shallower_than_700m <- cells_shallower_than_700m <- 
-  grid_goa$DEPTH_EFH <= 700
-grid_goa$trawlable <- cells_trawlable <- grid_goa$Id %in% goa_grid_nountrawl$Id
-grid_goa$shallow_trawlable <- 
-  rowSums(grid_goa[, c("shallower_than_700m", "trawlable")]) == 2
+grid_shape_aea <- grid_shape_aea[
+  (grid_shape_aea$Depth_m >= min(x = goa_data_geostat$Depth_m) & 
+     grid_shape_aea$Depth_m <= 700),
+]
 
 ##################################################
 ####   scale grid bathymetry values to standard normal, using the mean and sd
 ####   of the BTS data
 ##################################################
-BTS_mean <- mean(log(data$DEPTH_EFH))
-BTS_sd   <- sd(log(data$DEPTH_EFH))
+BTS_mean <- mean(log10(x = goa_data_geostat$Depth_m))
+BTS_sd   <- sd(log10(x = goa_data_geostat$Depth_m))
 
-grid_goa$LOG_DEPTH_EFH <- log(grid_goa$DEPTH_EFH)
-grid_goa$LOG_DEPTH_EFH_CEN <- (grid_goa$LOG_DEPTH_EFH - BTS_mean) / BTS_sd
-grid_goa$LOG_DEPTH_EFH_CEN_SQ <- grid_goa$LOG_DEPTH_EFH_CEN ^ 2
-
-##################################################
-####   Add current strata labels to each grid cell
-##################################################
-grid_goa$stratum <- raster::extract(x = current_survey_strata, 
-                                    y = grid_shape_aea)$STRATUM
-grid_goa$stratum[is.na(grid_goa$stratum)] <- 0
+grid_shape_aea$LOG10_DEPTH_M <- log10(x = grid_shape_aea$Depth_m)
+grid_shape_aea$LOG10_DEPTH_M_CEN <- 
+  (grid_shape_aea$LOG10_DEPTH_M - BTS_mean) / BTS_sd
 
 ##################################################
 ####   Save
 ##################################################
-if(!dir.exists("data/processed/")) dir.create("data/processed/")
-save(list = "grid_goa", file = paste0("data/processed/grid_goa.RData"))
-write.csv(grid_goa, row.names = F, file = "data/processed/grid_goa.csv")
+if(!dir.exists(paths = "data/processed/")) dir.create(path = "data/processed/")
+write.csv(as.data.frame(x = grid_shape_aea), 
+          row.names = F, 
+          file = "data/processed/goa_interpolation_grid.csv")
 
+saveRDS(object = as.data.frame(x = grid_shape_aea), 
+        file = "data/processed/goa_interpolation_grid.RDS")
