@@ -73,8 +73,8 @@ goa_interpolation_grid <-
 #################################################
 spp_names <- sort(x = unique(x = goa_data_geostat$Species))
 
-for (ispp in spp_names) {
-  for (depth_in_model in c(F, T)) {
+for (depth_in_model in c(F, T)[2]) {
+  for (ispp in spp_names[7]) {
     
     ##################################################
     ## Create directory to store model results
@@ -83,7 +83,8 @@ for (ispp in spp_names) {
                                                          yes = "_depth/", 
                                                          no = "/"))
     
-    if (!dir.exists(paths = result_dir)) dir.create(path = result_dir)  
+    if (!dir.exists(paths = result_dir)) 
+      dir.create(path = result_dir, recursive = TRUE)  
     
     ##################################################
     ####   Subset species
@@ -131,7 +132,7 @@ for (ispp in spp_names) {
       n_x = 500,   # Number of knots
       Region = "User", #User inputted extrapolation grid
       purpose = "index2",
-      bias.correct = FALSE,
+      bias.correct = TRUE,
       FieldConfig = c(
         "Omega1" = 1,   #Spatial random effect on occurence 
         "Epsilon1" = 1, #Spatiotemporal random effect on occurence 
@@ -155,7 +156,6 @@ for (ispp in spp_names) {
     X_gtp <- array(dim = c(n_g, n_t, n_p) )
     for (i in 1:n_t) X_gtp[, i, ] <- 
       as.matrix(x = goa_interpolation_grid[, c("LOG10_DEPTH_M_CEN")])
-    
     
     ##################################################
     ####   Fit the model and save output
@@ -201,7 +201,6 @@ for (ispp in spp_names) {
     ## Initial Fit
     fit <- do.call(what = FishStatsUtils::fit_model, args = vast_arguments)
     
-    
     ##################################################
     ####   Diagnostics plots
     ##################################################
@@ -215,197 +214,211 @@ for (ispp in spp_names) {
     ##################################################
     ####   Save original model fit and copy output from the temporary res dir
     ##################################################
-    save(list = "fit", file = paste0(result_dir, "/fit.RData"))
-    file.copy(from = dir(temp_res, full.names = T), to = result_dir)
+    ## Save original model fit
+    saveRDS(object =  fit, file = paste0(result_dir, "/fit.RDS"))
+    
+    ## Plot depth effects
+    if (depth_in_model) {
+      
+      # Must add data-frames to global environment (hope to fix in future)
+      covariate_data_full = fit$effects$covariate_data_full
+      catchability_data_full = fit$effects$catchability_data_full
+      depth_effect_pred1 <-
+        VAST::Effect.fit_model( fit,
+                                focal.predictors = c("LOG10_DEPTH_M"),
+                                which_formula = "X1",
+                                xlevels = 100,
+                                transformation = list(link=identity,
+                                                      inverse=identity) )
+      depth_effect_pred2 <-
+        VAST::Effect.fit_model( fit,
+                                focal.predictors = c("LOG10_DEPTH_M"),
+                                which_formula = "X2",
+                                xlevels = 100,
+                                transformation = list(link=identity,
+                                                      inverse=identity) )
+      
+      ## Save a reduced form of the predicted effects
+      depth_effect_pred1 <-
+        with(depth_effect_pred1,
+             data.frame(x = x, pred = fit, lower = lower, upper = upper))
+      
+      depth_effect_pred2 <-
+        with(depth_effect_pred2,
+             data.frame(x = x, pred = fit, lower = lower, upper = upper))
+      
+      pdf(file = paste0(result_dir, "depth_effects.pdf"),
+          width = 5, height = 5, onefile = TRUE )
+      for (ipred in 1:2) {
+        temp <- get(paste0("depth_effect_pred", ipred))
+        plot(x = temp$LOG10_DEPTH_M, y = temp$pred, type = "n", xaxt = "n",
+             ylim = range(temp[, c("lower", "upper")]),
+             las = 1, ylab = "Marginal Effect", xlab = "Depth (m)",
+             main = paste0("Depth Effect on ", c("1st", "2nd")[ipred],
+                           " Predictor\n", ispp))
+        with(temp, polygon(x = c(LOG10_DEPTH_M, rev(LOG10_DEPTH_M)),
+                           y = c(lower, rev(upper)),
+                           col = "cornflowerblue", border = F))
+        with(temp, lines(x = LOG10_DEPTH_M, y = pred, lwd = 2))
+        axis(side = 1, labels = NA, tck = -0.015,
+             at = log10(c(seq(10, 90, 10), seq(100, 1000, 100))))
+        axis(side = 1, labels = NA, tck = -0.03,
+             at = log10(c(10,20,50,100,200,500,1000)))
+        axis(side = 1, at = log10(c(10,20,50,100,200,500,1000)),
+             labels = c(10,20,50,100,200,500,1000))
+      }
+      dev.off()
+      
+      save(list = c("depth_effect_pred1", "depth_effect_pred2"),
+           file = paste0(result_dir, "depth_effect.RData"))
+    }
     
     ##################################################
     ####   10-fold Cross Validation
+    ####   First, save MLE parameter values to the VAST arguments to be used
+    ####   as starting values for the subsequent CV runs
     ##################################################
-    n_fold <- 10
-    for (fI in 1:n_fold) { 
-      if (!dir.exists(paste0(result_dir, "CV_", fI))) {
-        dir.create(paste0(result_dir, "CV_", fI))
-        
-        file.copy(from = paste0(result_dir, get_latest_version(), 
-                                c(".cpp", ".dll", ".o")),
-                  to = paste0(result_dir, "CV_", fI, "/", 
-                              get_latest_version(), 
-                              c(".cpp", ".dll", ".o")))
-        
-      }
-    } 
+    vast_arguments$Parameters <- fit$ParHat
     
-    # Loop through partitions, refitting each time with a different PredTF_i
-    for (fI in 1:n_fold) {
-      PredTF_i <- ifelse( test = data_geostat$fold == fI, 
-                          yes = TRUE, 
+    ## Loop through partitions, refitting each time with a different PredTF_i
+    for (fI in 1:n_fold) { ## Loop over folds -- start
+      
+      ## Create directory for CV run
+      if (!dir.exists(paths = paste0(result_dir, "CV_", fI))){
+        dir.create(path = paste0(result_dir, "CV_", fI))
+        file.copy(from = paste0(result_dir, "Kmeans_knots-",
+                                settings$n_x, ".RData"),
+                  to = paste0(result_dir, "CV_", fI, "/"))
+      }
+      
+      ## Update which indices are withheld for prediction
+      PredTF_i <- ifelse( test = temp_df$fold == fI,
+                          yes = TRUE,
                           no = FALSE )
+      vast_arguments$PredTF_i <- PredTF_i
+      vast_arguments$working_dir <- paste0(result_dir, "CV_", fI, "/")
       
-      fit_CV <- switch(paste0(depth_in_model),
-                       "FALSE" = FishStatsUtils::fit_model( 
-                         "settings" = settings,
-                         "working_dir" = temp_res,
-                         "Lat_i" = data_geostat[, "Lat"],
-                         "Lon_i" = data_geostat[, "Lon"],
-                         "t_i" = data_geostat[, "Year"],
-                         "c_i" = as.numeric(data_geostat[, "spp"]) - 1,
-                         "b_i" = data_geostat[, "Catch_KG"],
-                         "a_i" = data_geostat[, "AreaSwept_km2"],
-                         "getJointPrecision" = TRUE,
-                         "newtonsteps" = 1,
-                         "test_fit" = F,
-                         "input_grid" = grid_goa,
-                         "PredTF_i" = PredTF_i,
-                         "Parameters" = fit$ParHat),
-                       
-                       "TRUE" = FishStatsUtils::fit_model( 
-                         "settings" = settings,
-                         "working_dir" = temp_res,
-                         "Lat_i" = data_geostat[, "Lat"],
-                         "Lon_i" = data_geostat[, "Lon"],
-                         "t_i" = data_geostat[, "Year"],
-                         "c_i" = as.numeric(data_geostat[, "spp"]) - 1,
-                         "b_i" = data_geostat[, "Catch_KG"],
-                         "a_i" = data_geostat[, "AreaSwept_km2"],
-                         "getJointPrecision" = TRUE,
-                         "newtonsteps" = 1,
-                         "test_fit" = F,
-                         "input_grid" = grid_goa[, c("Area_km2", "Lon", "Lat")],
-                         "PredTF_i" = PredTF_i,
-                         
-                         ##Additional arguments for covariates
-                         "X1_formula" =  "Catch_KG ~ LOG_DEPTH + LOG_DEPTH2",
-                         "X2_formula" =  "Catch_KG ~ LOG_DEPTH + LOG_DEPTH2",
-                         "covariate_data" = cbind(data_geostat[, c("Lat",
-                                                                   "Lon",
-                                                                   "LOG_DEPTH",
-                                                                   "LOG_DEPTH2",
-                                                                   "Catch_KG")],
-                                                  Year = NA),
-                         "X_gtp" = X_gtp,
-                         "Parameters" = fit$ParHat))
+      ## Turn bias correction off for Cross Validation runs  
+      vast_arguments$settings$bias.correct <- FALSE
       
-      ## Save fit
-      save(list = "fit_CV",  
-           file = paste0(result_dir, "CV_", fI, "/fit.RData"))
+      ## Fit CV run
+      fit_CV <- do.call(what = FishStatsUtils::fit_model, args = vast_arguments)
       
       ## Save predicted and observed CPUEs
-      obs_cpue <- with(data_geostat[PredTF_i, ], Catch_KG / AreaSwept_km2)
+      obs_cpue <- with(temp_df[PredTF_i, ], Catch_KG / AreaSwept_km2)
       pred_cpue <- fit_CV$Report$D_i[PredTF_i]
       
-      cv_performance <- list(cpues = data.frame(cv_fold = fI, 
-                                                obs_cpue, 
-                                                pred_cpue),
-                             prednll = fit_CV$Report$pred_jnll)
+      cv_performance <-
+        list(cpues = data.frame(cv_fold = fI,
+                                obs_cpue,
+                                pred_cpue),
+             prednll = fit_CV$Report$pred_jnll,
+             max_gradient = fit_CV$parameter_estimates$max_gradient)
       
-      save(cv_performance,
-           file = paste0(result_dir, "CV_", fI, 
-                         "/crossval_fit_performance.RData"))
+      ## Save fit
+      saveRDS(object =  fit_CV,
+              file = paste0(result_dir, "CV_", fI, "/fit.RDS"))
+      saveRDS(object = cv_performance,
+              file = paste0(result_dir, "CV_", fI,
+                            "/crossval_fit_performance.RDS"))
       
-      ## Copy other outputs to the CV-fold directory
-      file.copy(from = dir(temp_res, full.names = T), 
-                to = paste0(result_dir, "CV_", fI, "/"))
+      if (depth_in_model) {
+        # Must add data-frames to global environment (hope to fix in future)
+        covariate_data_full = fit$effects$covariate_data_full
+        catchability_data_full = fit$effects$catchability_data_full
+        depth_effect_pred1 <-
+          VAST::Effect.fit_model(fit,
+                                 focal.predictors = c("LOG10_DEPTH_M"),
+                                 which_formula = "X1",
+                                 xlevels = 100,
+                                 transformation = list(link=identity,
+                                                       inverse=identity) )
+        depth_effect_pred2 <-
+          VAST::Effect.fit_model(fit,
+                                 focal.predictors = c("LOG10_DEPTH_M"),
+                                 which_formula = "X2",
+                                 xlevels = 100,
+                                 transformation = list(link=identity,
+                                                       inverse=identity) )
+        
+        ## Save a reduced form of the predicted effects
+        depth_effect_pred1 <-
+          with(depth_effect_pred1,
+               data.frame(x = x, pred = fit, lower = lower, upper = upper))
+        
+        depth_effect_pred2 <-
+          with(depth_effect_pred2,
+               data.frame(x = x, pred = fit, lower = lower, upper = upper))
+        
+        save(list = c("depth_effect_pred1", "depth_effect_pred2"),
+             file = paste0(result_dir, "CV_", fI, "/depth_effect.RData"))
+      }
       
-    }
+    } ## Loop over folds -- end
     
     ##################################################
     #### Prediction Grid: df of the grid to simulate data onto
     ##################################################
     grid_df <- data.frame()
-    for(itime in unique(data$YEAR)) {
-      grid_df <- rbind(grid_df,
-                       data.frame(spp = ispp,
-                                  Year = rep(itime, nrow(grid_goa)),
-                                  Catch_KG = mean(data$WEIGHT),
-                                  AreaSwept_km2 = grid_goa$Area_km2,
-                                  Lat = grid_goa$Lat,
-                                  Lon = grid_goa$Lon,
-                                  LOG_DEPTH = grid_goa$LOG_DEPTH_EFH_CEN,
-                                  LOG_DEPTH2 = grid_goa$LOG_DEPTH_EFH_CEN_SQ,
-                                  stringsAsFactors = T)
-      )
+    for (itime in sort(x = unique(x = temp_df$Year))) {
+      grid_df <- 
+        rbind(grid_df,
+              data.frame(
+                Species = ispp,
+                Year = rep(itime, nrow(x = goa_interpolation_grid)),
+                Catch_KG = mean(temp_df$Catch_KG),
+                AreaSwept_km2 = goa_interpolation_grid$Area_km2,
+                Lat = goa_interpolation_grid$Lat,
+                Lon = goa_interpolation_grid$Lon,
+                LOG10_DEPTH_M_CEN = goa_interpolation_grid$LOG10_DEPTH_M_CEN,
+                stringsAsFactors = T)
+        )
     }
     
     ###################################################
     ## Add New Points: set catch to NAs?
     ###################################################
-    data_geostat_with_grid <- rbind(data_geostat[, names(grid_df)],
+    data_geostat_with_grid <- rbind(temp_df[, names(x = grid_df)],
                                     grid_df)
     
     ##################################################
     ####   Fit the model and save output
     ##################################################
-    pred_TF <- rep(1, nrow(data_geostat_with_grid))
-    pred_TF[1:nrow(data)] <- 0
+    pred_TF <- rep(1, nrow(x = data_geostat_with_grid))
+    pred_TF[1:nrow(x = temp_df)] <- 0
     
-    fit_sim <-
-      switch(paste0(depth_in_model),
-             "FALSE" = FishStatsUtils::fit_model( 
-               "settings" = settings,
-               "working_dir" = temp_res,
-               "Lat_i" = data_geostat_with_grid[, "Lat"],
-               "Lon_i" = data_geostat_with_grid[, "Lon"],
-               "t_i" = data_geostat_with_grid[, "Year"],
-               "c_i" = as.numeric(data_geostat_with_grid[, "spp"]) - 1,
-               "b_i" = data_geostat_with_grid[, "Catch_KG"],
-               "a_i" = data_geostat_with_grid[, "AreaSwept_km2"],
-               "getJointPrecision" = TRUE,
-               "newtonsteps" = 1,
-               "test_fit" = F,
-               "input_grid" = grid_goa, 
-               "PredTF_i" = pred_TF,
-               "Parameters" = fit$ParHat),
-             
-             "TRUE" = FishStatsUtils::fit_model( 
-               "settings" = settings,
-               "working_dir" = temp_res,
-               "Lat_i" = data_geostat_with_grid[, "Lat"],
-               "Lon_i" = data_geostat_with_grid[, "Lon"],
-               "t_i" = data_geostat_with_grid[, "Year"],
-               "c_i" = as.numeric(data_geostat_with_grid[, "spp"]) - 1,
-               "b_i" = data_geostat_with_grid[, "Catch_KG"],
-               "a_i" = data_geostat_with_grid[, "AreaSwept_km2"],
-               "getJointPrecision" = TRUE,
-               "newtonsteps" = 1,
-               "test_fit" = F,
-               "input_grid" = grid_goa[, c("Area_km2", "Lon", "Lat")],
-               "Parameters" = fit$ParHat,
-               
-               ##Additional arguments for covariates
-               "X1_formula" =  "Catch_KG ~ LOG_DEPTH + LOG_DEPTH2",
-               "X2_formula" =  "Catch_KG ~ LOG_DEPTH + LOG_DEPTH2",
-               "covariate_data" = cbind(data_geostat[, c("Lat",
-                                                         "Lon",
-                                                         "LOG_DEPTH",
-                                                         "LOG_DEPTH2",
-                                                         "Catch_KG")],
-                                        Year = NA),
-               "X_gtp" = X_gtp, 
-               "PredTF_i" = pred_TF))
-    
-    ##################################################
-    ####   Save model fit
-    ##################################################
-    save(list = "fit_sim", file = paste0(result_dir, "/fit_sim.RData"))
+    vast_arguments$Lat_i <- data_geostat_with_grid[, "Lat"]
+    vast_arguments$Lon_i <- data_geostat_with_grid[, "Lon"]
+    vast_arguments$t_i <- data_geostat_with_grid[, "Year"]
+    vast_arguments$a_i <- data_geostat_with_grid[, "AreaSwept_km2"]
+    vast_arguments$b_i <- data_geostat_with_grid[, "Catch_KG"]
+    vast_arguments$c_i <- rep(x = 0, nrow(x = data_geostat_with_grid))
+    vast_arguments$PredTF_i <- pred_TF
+      
+    ## Fit CV run and save model fit
+    vast_arguments$settings$bias.correct <- TRUE
+    fit_sim <- do.call(what = FishStatsUtils::fit_model, args = vast_arguments)
+    saveRDS(object = "fit_sim", 
+            file = paste0(result_dir, "/fit_sim.RDS"))
     
     ##################################################
     ####   Simulate 1000 iterations of data
     ##################################################
-    sim_data <- array(data = NA, dim = c(nrow(grid_goa),
-                                         length(unique(data$YEAR)),
-                                         1000))
+    sim_data <- array(data = NA, dim = c(n_g, n_t, 1000))
     
-    for (isim in 1:1000) {
+    for (isim in 1:1000) { ## Loop over replicates -- start
       Sim1 <- FishStatsUtils::simulate_data(fit = fit_sim, 
                                             type = 1, 
                                             random_seed = isim)
       sim_data[, , isim] <- matrix(data = Sim1$b_i[pred_TF == 1] * 0.001, 
-                                   nrow = nrow(grid_goa), 
-                                   ncol = length(unique(data$YEAR)))
+                                   nrow = n_g, 
+                                   ncol = n_t)
       if(isim%%100 == 0) print(paste("Done with", ispp, "Iteration", isim))
-    }
+    } ## Loop over replicates -- end
     
-    save(sim_data, file = paste0(result_dir, "/simulated_data.RData"))
+    ## Save simulated data
+    saveRDS(object = sim_data, 
+            file = paste0(result_dir, "/simulated_data.RDS"))
     
   }
 }

@@ -22,14 +22,15 @@ rm(list = ls())
 VAST_dir <- c("F:/VAST_Runs_splines/")
 if(!dir.exists(VAST_dir)) dir.create(VAST_dir, recursive = T)
 
-temp_res <- paste0(getwd(), "/results/temp_res/")
-if(!dir.exists(temp_res)) dir.create(temp_res, recursive = T)
+# temp_res <- paste0(getwd(), "/results/temp_res/")
+# if(!dir.exists(temp_res)) dir.create(temp_res, recursive = T)
 
 ##################################################
 ####   Load packages, make sure versions are consistent
 ##################################################
 library(VAST)
 library(splines)
+library(units)
 
 {
   switch(EXPR = R.version$version.string == "R version 4.0.2 (2020-06-22)",
@@ -55,7 +56,7 @@ library(splines)
                   "Update R package FishStatsUtils to be consistent")))
 }
 
-vast_cpp_version <- "VAST_v12_0_0"
+VAST_cpp_version <- "VAST_v13_1_0"
 
 ##################################################
 ####   Import CPUE dataset, species set spreadsheet
@@ -140,7 +141,7 @@ for (ispp in spp_names[4]) {
   ####   Stratification for results
   ##################################################
   settings <- FishStatsUtils::make_settings( 
-    Version = vast_cpp_version,
+    Version = VAST_cpp_version,
     n_x = 500,   # Number of knots
     Region = "User", #User inputted extrapolation grid
     purpose = "index2",
@@ -161,30 +162,31 @@ for (ispp in spp_names[4]) {
   ####   Import "true" and not interpolated covariate 
   ####   data if using depth covariates
   ##################################################
-  load("data/processed/grid_goa.RData")
+  grid_goa <- read.csv("data/GOA/grid_goa.csv")
+  grid_goa$LOG_DEPTH <- log(grid_goa$DEPTH_EFH)
   
-  n_g <- nrow(grid_goa) #number of grid cells
-  n_t <- diff(range(data_geostat$Year)) + 1 #Number of total years
-  n_p <- 2 #two density covariates
-  
-  X_gtp <- array(dim = c(n_g, n_t, n_p) )
-  for (i in 1:n_t) {
-    X_gtp[, i, ] <- as.matrix(grid_goa[, c("LOG_DEPTH_EFH_CEN", 
-                                           "LOG_DEPTH_EFH_CEN_SQ")])
-  }
+  # n_g <- nrow(grid_goa) #number of grid cells
+  # n_t <- diff(range(data_geostat$Year)) + 1 #Number of total years
+  # n_p <- 2 #two density covariates
+  # 
+  # X_gtp <- array(dim = c(n_g, n_t, n_p) )
+  # for (i in 1:n_t) {
+  #   X_gtp[, i, ] <- as.matrix(grid_goa[, c("LOG_DEPTH_EFH_CEN", 
+  #                                          "LOG_DEPTH_EFH_CEN_SQ")])
+  # }
   
   ##################################################
   ####   Fit the model and save output
   ##################################################
   fit <- FishStatsUtils::fit_model( 
     "settings" = settings,
-    "working_dir" = temp_res,
+    "working_dir" = VAST_dir,
     "Lat_i" = data_geostat[, "Lat"],
     "Lon_i" = data_geostat[, "Lon"],
     "t_i" = data_geostat[, "Year"],
-    "c_i" = as.numeric(data_geostat[, "spp"]) - 1,
-    "b_i" = data_geostat[, "Catch_KG"],
-    "a_i" = data_geostat[, "AreaSwept_km2"],
+    "c_i" = rep(0, nrow(data_geostat)),
+    "b_i" = units::as_units(data_geostat[, "Catch_KG"], "kg"),
+    "a_i" = units::as_units(data_geostat[, "AreaSwept_km2"], "km2"),
     "getJointPrecision" = TRUE,
     "newtonsteps" = 1,
     "test_fit" = F,
@@ -193,16 +195,19 @@ for (ispp in spp_names[4]) {
     ##Additional arguments for covariates
     "X1_formula" = ~ splines::bs(LOG_DEPTH, degree = 3, intercept = FALSE),
     "X2_formula" = ~ splines::bs(LOG_DEPTH, degree = 3, intercept = FALSE),
-    
-    # "X1_formula" =  "Catch_KG ~ LOG_DEPTH + LOG_DEPTH2",
-    # "X2_formula" =  "Catch_KG ~ LOG_DEPTH + LOG_DEPTH2",
-    "covariate_data" = cbind(data_geostat[, c("Lat",
-                                              "Lon",
-                                              "LOG_DEPTH",
-                                              # "LOG_DEPTH2",
-                                              "Catch_KG")],
-                             Year = NA),
-    "X_gtp" = X_gtp)
+    # "covariate_data" = cbind(data_geostat[, c("Lat",
+    #                                           "Lon",
+    #                                           "LOG_DEPTH",
+    #                                           "Catch_KG")],
+    #                          Year = NA),
+    "covariate_data" = cbind(grid_goa[, c("Lat",
+                                          "Lon",
+                                          "LOG_DEPTH"#,
+                                          # "Catch_KG"
+    )],
+    Year = NA)#,
+    # "X_gtp" = X_gtp
+  )
   
   ##################################################
   ####   Diagnostics plots

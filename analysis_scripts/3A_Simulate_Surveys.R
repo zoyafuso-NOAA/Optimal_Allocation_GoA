@@ -9,7 +9,7 @@ rm(list = ls())
 ##################################################
 ####   Set up directories
 ##################################################
-VAST_sim_data_dir <- "D:/VAST_Runs/"
+VAST_sim_data_dir <- "temp/"
 github_dir <- getwd()
 
 ##################################################
@@ -19,28 +19,27 @@ library(foreach)
 library(parallel)
 library(doParallel)
 
-cl <- parallel::makeCluster(parallel::detectCores() - 2)
-doParallel::registerDoParallel(cl)
+# cl <- parallel::makeCluster(parallel::detectCores() - 2)
+# doParallel::registerDoParallel(cl)
 
 ##################################################
 ####   Load data used by all cores
 ##################################################
 load('data/processed/optimization_data.RData')
-load('data/processed/dens_vals_fixed_random.RData')
-load('data/processed/dens_vals_measurement.RData')
-load('data/processed/dens_vals_MLE.RData')
+# load('data/processed/dens_vals_fixed_random.RData')
+# load('data/processed/dens_vals_measurement.RData')
+# load('data/processed/dens_vals_MLE.RData')
 
-load('data/processed/grid_goa.RData')
+# load('data/processed/grid_goa.RData')
 load("data/processed/prednll_VAST_models.RData")
-load("data/processed/VAST_fit_I_gct.RData")
+# load("data/processed/VAST_fit_I_gct.RData")
 
 ##################################
 #### Import current STRS design allocations and add to scenarios
 ##################################
 GOA_allocations <- 
   readxl::read_xlsx(path = "data/GOA 2019 stations by stratum.xlsx")
-GOA_allocations3 <- 
-  readxl::read_xlsx(path = 'data/GOA2019_ 3 boat_825_RNDM_stations.xlsx')
+grid_goa <- readRDS(file = "data/processed/goa_interpolation_grid.RDS")
 
 ## Specify Management Districts
 new_strata_labels = 1:length(unique(grid_goa$stratum))

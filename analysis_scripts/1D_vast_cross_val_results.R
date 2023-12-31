@@ -15,9 +15,8 @@ library(tidyr)
 ####   Set VAST_dir to the external drive that the VAST runs are stored
 ####   Import the VAST data input
 ##################################################
-VAST_dir <- "D:/VAST_Runs/"
-VAST_bias_corrected_dir <- "D:/VAST_Runs_Bias_Corrected/"
-data_df <- read.csv("data/processed/goa_vast_data_input.csv")
+VAST_dir <- "temp/"
+data_df <- read.csv("data/processed/goa_data_geostat.csv")
 
 ##################################################
 ####   Result object
@@ -29,11 +28,11 @@ cross_val_results <- data.frame()
 ####   synthesize RRMSE, pred_jnll, maximum gradient
 ##################################################
 
-spp_names <- sort(unique(data_df$COMMON_NAME))
+spp_names <- sort(x = unique(x = data_df$Species))
 for (ispp in spp_names){ ## Loop through species -- start
   
-  mean_obs_cpue <- with(subset(data_df, COMMON_NAME == ispp), 
-                        mean(WEIGHT / EFFORT))
+  mean_obs_cpue <- with(subset(data_df, Species == ispp), 
+                        mean(Catch_KG / AreaSwept_km2))
   
   for (depth_in_model in c("", 
                            "_depth")) { ## Loop through depth models -- start
@@ -41,13 +40,14 @@ for (ispp in spp_names){ ## Loop through species -- start
       
       ## Only go through CV folds where a model run was successful 
       fit_file <- paste0(VAST_dir, ispp, depth_in_model, 
-                         "/CV_", icv, "/", "fit.RData")
+                         "/CV_", icv, "/", "fit.RDS")
       
       if(file.exists(fit_file)) {
         
         ## Load performance metrics
-        load(paste0(VAST_dir, ispp, depth_in_model, 
-                    "/CV_", icv, "/", "crossval_fit_performance.RData"))
+        cv_performance <- 
+          readRDS(paste0(VAST_dir, ispp, depth_in_model, 
+                         "/CV_", icv, "/", "crossval_fit_performance.RDS"))
         load(paste0(VAST_dir, ispp, depth_in_model,
                     "/CV_", icv, "/", "parameter_estimates.RData"))
         
@@ -74,104 +74,65 @@ for (ispp in spp_names){ ## Loop through species -- start
 ##################################################
 ####   Synthesize Cross Validation Results
 ##################################################
-converged <- spread(data = aggregate(max_gradient ~ depth_in_model + spp_name,
-                                     FUN = function(x) sum(x < 1e4),
-                                     data = cross_val_results),
-                    key = depth_in_model,
-                    value = max_gradient)
-
-rrmse <- spread(data = aggregate(rrmse ~ depth_in_model + spp_name,
-                                 FUN = function(x) round(mean(x, na.rm = T), 
-                                                         digits = 3),
-                                 data = cross_val_results,
-                                 subset = max_gradient < 1e-4),
-                key = depth_in_model,
-                value = rrmse)
-
 pred_jnll <- spread(data = aggregate(pred_jnll ~ depth_in_model + spp_name,
-                                     FUN = function(x) round(mean(x, na.rm = T)),
-                                     data = cross_val_results,
-                                     subset = max_gradient < 1e-4),
+                                     FUN = function(x) round(sum(x, na.rm = T)),
+                                     data = cross_val_results),
                     key = depth_in_model,
                     value = pred_jnll)
 
 ##################################################
 ####   Save
 ##################################################
-save(list = c("converged", "cross_val_results", "pred_jnll", "rrmse"),
+save(list = c("cross_val_results", "pred_jnll"),
      file = "data/processed/prednll_VAST_models.RData")
 
 ##################################################
 ####   Synthesize the densities and abundance indices for the best models
 ##################################################
-load(paste0(VAST_dir, "arrowtooth flounder/fit.RData"))
-year_idx <- 1 + as.integer(names(table(fit$data_list$t_i)))
-n_years <- length(year_idx)
-n_cells <- dim(fit$Report$D_gct)[1]
-n_spp <- nrow(pred_jnll)
+fit <- readRDS(file = paste0(VAST_dir, "arrowtooth flounder/fit.RDS"))
+year_idx <- 1 + as.integer(x = names(table(fit$data_list$t_i)))
+n_years <- length(x = year_idx)
+n_cells <- dim(x = fit$Report$D_gct)[1]
+n_spp <- nrow(x = pred_jnll)
 spp_names <- pred_jnll$spp_name
 
-D_gct <- I_gct <- array(dim = c(n_cells, n_spp, n_years), 
-                        dimnames = list(NULL, spp_names, NULL))
+D_gct <- array(dim = c(n_cells, n_spp, n_years), 
+               dimnames = list(NULL, spp_names, NULL))
 
-I_gc_bias_corrected <- array(dim = c(n_spp, n_years), 
-                             dimnames = list(spp_names, NULL))
+index <- data.frame()
 
-index <- index_bias_corrected <- data.frame()
-
-for(irow in 1:nrow(pred_jnll)) { ## Loop over species -- start
+for (irow in 1:nrow(x = pred_jnll)) { ## Loop over species -- start
   
   ## Extract file name of best model
   ispp <- pred_jnll$spp_name[irow]
-  depth_in_model <- c(FALSE, TRUE)[which.min(pred_jnll[irow, 2:3])]
-  
-  if(irow == 21) depth_in_model <- FALSE
+  depth_in_model <- c(FALSE, TRUE)[which.min(x = pred_jnll[irow, 2:3])]
   
   filename <- paste0(VAST_dir, ispp, ifelse(test = depth_in_model, 
                                             yes = "_depth/", 
                                             no = "/"),
-                     "fit.RData")
+                     "fit.RDS")
   
   ## Load data
-  load(filename)
+  fit <- readRDS(file = filename)
   
   ## Extract grid specific density and abundance
   D_gct[, irow, ] <- fit$Report$D_gct[, 1, year_idx]
-  I_gct[, irow, ] <- fit$Report$Index_gctl[, 1, year_idx, 1]
   
   ## Rbind abundance index table
   temp_index <- read.csv(paste0(VAST_dir, ispp, 
                                 ifelse(test = depth_in_model, 
                                        yes = "_depth/", 
                                        no = "/"), 
-                                "diagnostics/Table_for_SS3.csv" ))
+                                "diagnostics/Index.csv" ))
   
   index <- rbind(index, data.frame(Species_Name = ispp, 
                                    temp_index[year_idx, ]))
-  
-  ## Rbind bias-indexed abundance index table
-  temp_index_BC <- read.csv(paste0(VAST_bias_corrected_dir, ispp, 
-                                   ifelse(test = depth_in_model, 
-                                          yes = "_depth/", 
-                                          no = "/"),
-                                   "diagnostics/Table_for_SS3.csv"))
-  
-  index_bias_corrected <- rbind(index_bias_corrected, 
-                                data.frame(Species_Name = ispp, 
-                                           temp_index_BC[year_idx, ]))
-  
-  
+
   print(paste0(ispp, ifelse(depth_in_model, " with Depth", " without Depth")))
 }  ## Loop over species -- end
-
-I_ct <- apply(I_gct, MARGIN = c(2:3), FUN = sum)
 
 ##################################################
 ####   Save
 ##################################################
-save(list = "D_gct", file = "data/processed/VAST_fit_D_gct.RData")
-save(list = "I_gct", file = "data/processed/VAST_fit_I_gct.RData")
-save(list = "index", file = "data/processed/index.RData")
-save(list = "index_bias_corrected", 
-     file = "data/processed/index_bias_corrected.RData")
-save(list = "I_ct", file = "data/processed/I_ct.RData")
+saveRDS(object = D_gct, file = "data/processed/VAST_fit_D_gct.RDS")
+saveRDS(object = index, file = "data/processed/index.RDS")

@@ -1,13 +1,13 @@
 {
-    "path" : "~/GitHub/Optimal_Allocation_GoA/products",
-    "sortOrder" : [
+    "path": "~/GitHub/Optimal_Allocation_GoA",
+    "sortOrder": [
         {
-            "ascending" : true,
-            "columnIndex" : 1
+            "columnIndex": 1,
+            "ascending": true
         },
         {
-            "ascending" : true,
-            "columnIndex" : 2
+            "columnIndex": 2,
+            "ascending": true
         }
     ]
 }

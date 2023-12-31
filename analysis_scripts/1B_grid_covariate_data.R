@@ -20,7 +20,8 @@ lonlat_crs <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 ####   Merge together bathymetry rasters
 ##################################################
 goa_bathy <-
-  terra::rast("//AKC0SS-n086/AKC_PubliC/Dropbox/Zimm/GEBCO/GOA/goa_bathy/")
+  # terra::rast("//AKC0SS-n086/AKC_PubliC/Dropbox/Zimm/GEBCO/GOA/goa_bathy/")
+terra::rast("C:/Users/zack.oyafuso/Desktop/goa_bathy/")
 
 ##################################################
 ####   Import Current Strata (current_survey_strata)
@@ -32,6 +33,8 @@ goa_bathy <-
 current_survey_strata <- terra::vect(x = "data/shapefiles/goa_strata.shp")
 current_survey_strata <- 
   current_survey_strata[current_survey_strata$STRATUM != 0]
+current_survey_strata <- 
+  terra::project(x = current_survey_strata, terra::crs(goa_bathy))
 
 goa_grid <- read.csv("data/extrapolation_grid/GOAThorsonGrid_Less700m.csv")
 goa_grid <- goa_grid[, c("Id", "Shape_Area", "Longitude", "Latitude")]
@@ -46,13 +49,14 @@ goa_data_geostat = read.csv("data/processed/goa_data_geostat.csv")
 grid_shape = terra::vect(x = goa_grid[, c("Lon", "Lat", "Area_km2")], 
                          geom = c("Lon", "Lat"), keepgeom = TRUE,
                          crs = lonlat_crs)
-grid_shape_aea = terra::project(x = grid_shape, terra::crs(x = goa_bathy))
+grid_shape_aea <- terra::project(x = grid_shape, terra::crs(x = goa_bathy))
+grid_shape_aea[, c("Eastings", "Northings")] <- terra::crds(x = grid_shape_aea)
 
-grid_shape_aea$Depth_m <- 
-  terra::extract(x = goa_bathy, y = grid_shape_aea, ID = FALSE)
+grid_shape_aea$Depth_m <-
+  terra::extract(x = goa_bathy, y = grid_shape_aea, ID = FALSE)$goa_bathy
 
 ##################################################
-####   Remove cells not already in the goa stratification
+####   Remove cells not already in the current GOA strata
 ##################################################
 grid_shape_aea <- terra::intersect(x = grid_shape_aea,
                                     y = current_survey_strata[, "STRATUM"])
